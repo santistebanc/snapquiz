@@ -5,9 +5,21 @@ export interface Player {
   connectedAt: number;
 }
 
+export interface Question {
+  id: string;
+  text: string;
+  category: string;
+  answer: string;
+  options: string[];
+  revealedQuestion: boolean;
+  openOptions: boolean;
+}
+
 export interface GameState {
   roomId: string;
   players: Map<string, Player>;
+  questions: Question[];
+  gameStatus: 'lobby' | 'inRound' | 'gameOver';
 }
 
 export interface ServerMessage {
@@ -16,7 +28,7 @@ export interface ServerMessage {
 }
 
 export interface ClientMessage {
-  type: 'joinAsPlayer' | 'joinAsScreen' | 'changePlayerName' | 'changePlayerAvatar';
+  type: 'joinAsPlayer' | 'joinAsScreen' | 'changePlayerName' | 'changePlayerAvatar' | 'startGame' | 'resetGame';
   data: {
     name?: string;
     avatar?: string;

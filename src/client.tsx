@@ -2,36 +2,51 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import "./styles.css";
 import { useGameConnection } from "./useGameConnection";
-import ScreenMode from "./ScreenMode";
-import PlayerMode from "./PlayerMode";
+import { useGameStore } from "./store";
+import ScreenLobby from "./screen/lobby";
+import ScreenInRound from "./screen/inRound";
+import PlayerLobby from "./player/lobby";
+import PlayerInRound from "./player/inRound";
+import { Card, CardContent } from "./components/ui/card";
+import { Container } from "./components/ui/container";
+import { Spinner } from "./components/ui/spinner";
+import { Text } from "./components/ui/text";
 
 function App() {
   const { isConnected, isPlayer } = useGameConnection();
+  const { gameState } = useGameStore();
 
   if (!isConnected) {
     return (
-      <div className="h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 flex items-center justify-center overflow-hidden animate-fadeIn">
-        <div className="text-center animate-slideUp">
-          <div className="relative">
-            <div className="animate-spin rounded-full h-12 w-12 border-4 border-white/20 mx-auto mb-4"></div>
-            <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-white absolute top-0 left-1/2 transform -translate-x-1/2"></div>
-          </div>
-          <p className="text-white text-lg font-medium animate-fadeIn">Connecting to game...</p>
-          <div className="mt-4 flex justify-center space-x-1">
-            <div className="w-2 h-2 bg-white rounded-full animate-bounce"></div>
-            <div className="w-2 h-2 bg-white rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-            <div className="w-2 h-2 bg-white rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-          </div>
-        </div>
-      </div>
+      <Container variant="page">
+        <Card className="w-full max-w-md">
+          <CardContent className="text-center p-8">
+            <Spinner size="md" className="mx-auto mb-4" />
+            <Text variant="large" className="mb-4">Connecting to game...</Text>
+            <Spinner variant="dots" />
+          </CardContent>
+        </Card>
+      </Container>
     );
   }
 
+  // Player mode
   if (isPlayer) {
-    return <PlayerMode />;
+    // InRound screen for players
+    if (gameState.gameStatus === "inRound") {
+      return <PlayerInRound />;
+    }
+    // Lobby screen (default)
+    return <PlayerLobby />;
   }
 
-  return <ScreenMode />;
+  // Screen mode
+  // InRound screen
+  if (gameState.gameStatus === "inRound") {
+    return <ScreenInRound />;
+  }
+  // Lobby screen (default)
+  return <ScreenLobby />;
 }
 
 // Initialize React app

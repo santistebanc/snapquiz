@@ -1,5 +1,6 @@
 import type * as Party from "partykit/server";
 import type { GameState, Player, ServerMessage, ClientMessage } from "./types";
+import { questions } from "./questions";
 
 export default class RoomServer implements Party.Server {
   private gameState: GameState;
@@ -9,6 +10,8 @@ export default class RoomServer implements Party.Server {
     this.gameState = {
       roomId: room.id,
       players: new Map(),
+      questions: questions,
+      gameStatus: 'lobby',
     };
     this.connectionToPlayerMap = new Map();
   }
@@ -133,6 +136,18 @@ export default class RoomServer implements Party.Server {
               //     players: Array.from(this.gameState.players.values())
               //   },
               // });
+              break;
+
+            case "startGame":
+              console.log('Starting game');
+              this.gameState.gameStatus = 'inRound';
+              this.broadcastGameState();
+              break;
+
+            case "resetGame":
+              console.log('Resetting game');
+              this.gameState.gameStatus = 'lobby';
+              this.broadcastGameState();
               break;
           }
         } catch (error) {

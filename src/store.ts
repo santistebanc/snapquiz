@@ -40,6 +40,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
   gameState: {
     roomId: "",
     players: new Map(),
+    questions: [],
+    gameStatus: 'lobby',
   },
   isConnected: false,
   isPlayer: false,
@@ -124,7 +126,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       socket: null,
       isConnected: false,
       connectionId: "",
-      gameState: { roomId: "", players: new Map() },
+      gameState: { roomId: "", players: new Map(), questions: [], gameStatus: 'lobby' },
     });
   },
 
@@ -183,7 +185,6 @@ export const useCurrentPlayerName = () => {
   if (!isPlayer || !connectionId) return "";
 
   // Find the player that matches our connection ID
-  console.log('gameState.players', gameState.players)
   const currentPlayer = gameState.players.get(connectionId);
 
   return currentPlayer?.name || "";
