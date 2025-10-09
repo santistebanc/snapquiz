@@ -1,0 +1,43 @@
+{
+  "name": "snapquiz",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "partykit dev --live --port ${VITE_PARTYKIT_PORT:-37011}",
+    "deploy": "partykit deploy",
+    "build:css": "tailwindcss -i ./src/styles.css -o ./public/dist/tailwind.css --minify"
+  },
+  "dependencies": {
+    "@ai-sdk/openai": "^2.0.19",
+    "@hello-pangea/dnd": "^18.0.1",
+    "@types/react": "^19.1.9",
+    "@types/react-dom": "^19.1.7",
+    "ai": "^5.0.22",
+    "framer-motion": "^12.23.12",
+    "lucide-react": "^0.536.0",
+    "openai": "^5.16.0",
+    "partysocket": "^1.0.2",
+    "qrcode": "^1.5.4",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "react-speech-recognition": "^4.0.1",
+    "tyfsm": "^1.0.11",
+    "unique-names-generator": "^4.7.1",
+    "y-indexeddb": "^9.0.12",
+    "y-partykit": "^0.0.33",
+    "y-websocket": "^3.0.0",
+    "yjs": "^13.6.27",
+    "zod": "^3.25.76",
+    "zustand": "^5.0.8"
+  },
+  "devDependencies": {
+    "@babel/preset-react": "^7.27.1",
+    "@babel/preset-typescript": "^7.27.1",
+    "@types/qrcode": "^1.5.5",
+    "autoprefixer": "^10.4.21",
+    "partykit": "^0.0.115",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.5.4"
+  }
+}

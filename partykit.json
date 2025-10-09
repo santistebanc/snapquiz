@@ -1,0 +1,25 @@
+{
+  "$schema": "https://www.partykit.io/schema.json",
+  "name": "snapquiz",
+  "main": "src/room.ts",
+  "compatibilityDate": "2025-08-31",
+  "build": {
+    "command": "npm run build:css",
+    "watch": "src"
+  },
+  "serve": {
+    "path": "public",
+    "build": {
+      "entry": "src/client.tsx",
+      "bundle": true,
+      "splitting": true,
+      "outdir": "public/dist",
+      "minify": true,
+      "format": "esm",
+      "sourcemap": true
+    }
+  },
+  "parties": {
+    "room": "src/room.ts"
+  }
+}
