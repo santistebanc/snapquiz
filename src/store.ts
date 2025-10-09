@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import PartySocket from "partysocket";
 import type { GameState, Player, ServerMessage } from "./types";
-import { getStoredConnectionId, setStoredConnectionId, setStoredPlayerName, setStoredRoomId } from "./utils";
+import { getStoredConnectionId, setStoredConnectionId, setStoredPlayerName, setStoredPlayerAvatar, setStoredRoomId } from "./utils";
 
 // Get PartyKit host from environment variable
 function getPartyKitHost(): string {
@@ -29,7 +29,7 @@ interface GameStore {
   connectionId: string;
 
   updateGameState: (updates: Partial<GameState>) => void;
-  connect: (roomId: string, isPlayer: boolean, name?: string) => void;
+  connect: (roomId: string, isPlayer: boolean, name?: string, avatar?: string) => void;
   disconnect: () => void;
   sendMessage: (message: any) => void;
   handleServerMessage: (message: ServerMessage) => void;
@@ -54,7 +54,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     })),
 
   // Connection actions
-      connect: (roomId, isPlayer, name) => {
+      connect: (roomId, isPlayer, name, avatar) => {
         const { socket } = get();
 
         // Close existing connection
@@ -85,7 +85,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
           // Send join message with connectionId
           const message = {
             type: isPlayer ? "joinAsPlayer" : "joinAsScreen",
-            data: isPlayer ? { name, connectionId } : { connectionId },
+            data: isPlayer ? { name, avatar, connectionId } : { connectionId },
           };
           newSocket.send(JSON.stringify(message));
         });
@@ -143,7 +143,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   // Message handlers
   handleServerMessage: (message) => {
     switch (message.type) {
-      case "gameStateUpdate":
+      case "update":
         const newGameState = {
           ...message.data,
           players: new Map(
@@ -156,12 +156,15 @@ export const useGameStore = create<GameStore>((set, get) => ({
           setStoredRoomId(newGameState.roomId);
         }
         
-        // Update player name in localStorage if this is a player connection
+        // Update player name and avatar in localStorage if this is a player connection
         const { isPlayer, connectionId } = get();
         if (isPlayer && connectionId) {
           const currentPlayer = newGameState.players.get(connectionId);
           if (currentPlayer?.name) {
             setStoredPlayerName(currentPlayer.name);
+          }
+          if (currentPlayer?.avatar) {
+            setStoredPlayerAvatar(currentPlayer.avatar);
           }
         }
         
@@ -184,4 +187,16 @@ export const useCurrentPlayerName = () => {
   const currentPlayer = gameState.players.get(connectionId);
 
   return currentPlayer?.name || "";
+};
+
+// Selector to get current player avatar
+export const useCurrentPlayerAvatar = () => {
+  const { gameState, isPlayer, connectionId } = useGameStore();
+
+  if (!isPlayer || !connectionId) return "";
+
+  // Find the player that matches our connection ID
+  const currentPlayer = gameState.players.get(connectionId);
+
+  return currentPlayer?.avatar || "";
 };

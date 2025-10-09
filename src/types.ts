@@ -1,6 +1,7 @@
 export interface Player {
   id: string;
   name: string;
+  avatar: string;
   connectedAt: number;
 }
 
@@ -10,14 +11,15 @@ export interface GameState {
 }
 
 export interface ServerMessage {
-  type: 'gameStateUpdate';
+  type: 'update';
   data: any;
 }
 
 export interface ClientMessage {
-  type: 'joinAsPlayer' | 'joinAsScreen' | 'changePlayerName';
+  type: 'joinAsPlayer' | 'joinAsScreen' | 'changePlayerName' | 'changePlayerAvatar';
   data: {
     name?: string;
+    avatar?: string;
     connectionId?: string;
   };
 }

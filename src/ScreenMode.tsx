@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useGameStore } from "./store";
-import { generateQRCode } from "./utils";
+import { generateQRCode, generateAvatarUrl } from "./utils";
 import type { Player } from "./types";
 
 export default function ScreenMode() {
@@ -73,9 +73,16 @@ export default function ScreenMode() {
                       key={player.id}
                       className="bg-white/20 rounded-lg px-3 py-2 flex items-center justify-between"
                     >
-                      <span className="text-white font-medium text-sm truncate flex-1">
-                        {player.name}
-                      </span>
+                      <div className="flex items-center space-x-3 flex-1">
+                        <img
+                          src={generateAvatarUrl(player.avatar || 'robot-1')}
+                          alt={`${player.name} avatar`}
+                          className="w-8 h-8 rounded-full flex-shrink-0"
+                        />
+                        <span className="text-white font-medium text-sm truncate">
+                          {player.name}
+                        </span>
+                      </div>
                       <div className="w-2 h-2 bg-green-400 rounded-full flex-shrink-0 ml-2"></div>
                     </div>
                   ))}

@@ -12,7 +12,7 @@ export function generateRoomId(): string {
 
 // Generate QR code data URL for player join link
 export async function generateQRCode(roomId: string): Promise<string> {
-  const playerUrl = `${window.location.origin}?roomId=${roomId}`;
+  const playerUrl = `${window.location.origin}?room=${roomId}`;
 
   try {
     const qrCodeDataUrl = await QRCode.toDataURL(playerUrl, {
@@ -35,7 +35,7 @@ export function getUrlParams(): { name?: string; roomId?: string } {
   const urlParams = new URLSearchParams(window.location.search);
   return {
     name: urlParams.get("name") || undefined,
-    roomId: urlParams.get("roomId") || undefined,
+    roomId: urlParams.get("room") || undefined,
   };
 }
 
@@ -54,6 +54,14 @@ export function setStoredRoomId(roomId: string): void {
 
 export function setStoredPlayerName(playerName: string): void {
   localStorage.setItem("snapquiz_playerName", playerName.toUpperCase());
+}
+
+export function getStoredPlayerAvatar(): string | null {
+  return localStorage.getItem("snapquiz_playerAvatar");
+}
+
+export function setStoredPlayerAvatar(avatar: string): void {
+  localStorage.setItem("snapquiz_playerAvatar", avatar);
 }
 
 // Connection ID utilities
@@ -97,5 +105,43 @@ export function getPlayerName(): string {
 
   // Return empty string if no name is provided
   return "";
+}
+
+// Avatar utilities
+export function generateAvatarUrl(seed: string): string {
+  return `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(seed)}`;
+}
+
+export function getAvailableAvatars(): string[] {
+  // Return a curated list of fun bottts avatar seeds
+  return [
+    'robot-1', 'robot-2', 'robot-3', 'robot-4', 'robot-5',
+    'bot-1', 'bot-2', 'bot-3', 'bot-4', 'bot-5',
+    'android-1', 'android-2', 'android-3', 'android-4', 'android-5',
+    'cyber-1', 'cyber-2', 'cyber-3', 'cyber-4', 'cyber-5',
+    'tech-1', 'tech-2', 'tech-3', 'tech-4', 'tech-5',
+    'ai-1', 'ai-2', 'ai-3', 'ai-4', 'ai-5',
+    'digital-1', 'digital-2', 'digital-3', 'digital-4', 'digital-5',
+    'neon-1', 'neon-2', 'neon-3', 'neon-4', 'neon-5',
+    'matrix-1', 'matrix-2', 'matrix-3', 'matrix-4', 'matrix-5',
+    'future-1', 'future-2', 'future-3', 'future-4', 'future-5'
+  ];
+}
+
+export function getPlayerAvatar(): string {
+  const storedAvatar = getStoredPlayerAvatar();
+  if (storedAvatar) {
+    return storedAvatar;
+  }
+  
+  // Randomly select an avatar if none is stored
+  const availableAvatars = getAvailableAvatars();
+  const randomIndex = Math.floor(Math.random() * availableAvatars.length);
+  const randomAvatar = availableAvatars[randomIndex];
+  
+  // Store the randomly selected avatar so it persists
+  setStoredPlayerAvatar(randomAvatar);
+  
+  return randomAvatar;
 }
 

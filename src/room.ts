@@ -17,7 +17,7 @@ export default class RoomServer implements Party.Server {
     // Send current game state to the new connection
     conn.send(
       JSON.stringify({
-        type: "gameStateUpdate",
+        type: "update",
         data: {
           ...this.gameState,
           players: Array.from(this.gameState.players.values()),
@@ -35,6 +35,7 @@ export default class RoomServer implements Party.Server {
               if (clientMessage.data.name) {
                 // Truncate name to 20 characters
                 const truncatedName = clientMessage.data.name.substring(0, 20);
+                const avatar = clientMessage.data.avatar || 'robot-1';
 
                 // Use connectionId if provided, otherwise fall back to sender.id
                 const playerId = clientMessage.data.connectionId || sender.id;
@@ -45,6 +46,7 @@ export default class RoomServer implements Party.Server {
                 const player: Player = {
                   id: playerId,
                   name: truncatedName,
+                  avatar: avatar,
                   connectedAt: Date.now(),
                 };
 
@@ -79,9 +81,12 @@ export default class RoomServer implements Party.Server {
                 } else {
                   console.log('Creating new player:', truncatedName);
                   // Create new player if doesn't exist
+                  // Use avatar from message if provided, otherwise default to robot-1
+                  const avatar = clientMessage.data.avatar || 'robot-1';
                   const player: Player = {
                     id: playerId,
                     name: truncatedName,
+                    avatar: avatar,
                     connectedAt: Date.now(),
                   };
                   this.gameState.players.set(playerId, player);
@@ -94,9 +99,35 @@ export default class RoomServer implements Party.Server {
               }
               break;
 
+            case "changePlayerAvatar":
+              console.log('Received changePlayerAvatar:', clientMessage.data);
+              if (clientMessage.data.avatar) {
+                // Use connectionId if provided, otherwise fall back to sender.id
+                const playerId = clientMessage.data.connectionId || sender.id;
+                console.log('Using playerId for avatar change:', playerId);
+                
+                // Map this connection to the player ID
+                this.connectionToPlayerMap.set(sender.id, playerId);
+                
+                // Check if player exists
+                const existingPlayer = this.gameState.players.get(playerId);
+                if (existingPlayer) {
+                  console.log('Updating player avatar:', existingPlayer.avatar, '->', clientMessage.data.avatar);
+                  // Update the player's avatar
+                  existingPlayer.avatar = clientMessage.data.avatar;
+                  this.gameState.players.set(playerId, existingPlayer);
+                  
+                  // Broadcast updated game state to all connections
+                  this.broadcastGameState();
+                } else {
+                  console.log('Player not found for avatar change');
+                }
+              }
+              break;
+
             case "joinAsScreen":
               // this.broadcast({
-              //   type: "gameStateUpdate",
+              //   type: "update",
               //   data: {
               //     ...this.gameState,
               //     players: Array.from(this.gameState.players.values())
@@ -132,7 +163,7 @@ export default class RoomServer implements Party.Server {
 
   private broadcastGameState() {
     this.room.broadcast(JSON.stringify({
-      type: "gameStateUpdate",
+      type: "update",
       data: {
         ...this.gameState,
         players: Array.from(this.gameState.players.values()),
