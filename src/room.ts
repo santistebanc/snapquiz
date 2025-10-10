@@ -1,5 +1,6 @@
 import type * as Party from "partykit/server";
 import type { GameState, Player, ServerMessage, ClientMessage } from "./types";
+import { questions } from "./questions";
 
 export default class RoomServer implements Party.Server {
   private gameState: GameState;
@@ -9,7 +10,7 @@ export default class RoomServer implements Party.Server {
     this.gameState = {
       roomId: room.id,
       players: new Map(),
-      questions: [],
+      questions: questions,
       gameStatus: 'lobby',
     };
     this.connectionToPlayerMap = new Map();
