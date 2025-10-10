@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { Activity } from "react";
 import { useGameStore, useCurrentPlayerName, useCurrentPlayerAvatar } from "../store";
-import KeepAlive from "react-activation";
 
 // ProfileDialog component that can be preloaded
 function ProfileDialog({ 
@@ -286,8 +286,8 @@ export default function Lobby() {
                 </Button>
               </DialogTrigger>
               
-              {/* Preload ProfileDialog with KeepAlive */}
-              <KeepAlive>
+              {/* Preload ProfileDialog with React Activity */}
+              <Activity mode={isEditingProfile ? "visible" : "hidden"}>
                 <ProfileDialog
                   isOpen={isEditingProfile}
                   onOpenChange={setIsEditingProfile}
@@ -301,7 +301,7 @@ export default function Lobby() {
                   availableAvatars={availableAvatars}
                   nameInputRef={nameInputRef}
                 />
-              </KeepAlive>
+              </Activity>
             </Dialog>
           </CardContent>
         </Card>
