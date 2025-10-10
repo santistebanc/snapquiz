@@ -134,14 +134,14 @@ export default function Lobby() {
       <Container variant="section" className="w-full max-w-md">
         {/* Room and Player Info */}
         <Card>
-          <CardHeader>
-            <div className="flex items-center justify-center gap-4">
-              <CardTitle>Room:</CardTitle>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-center gap-3">
+              <CardTitle className="text-lg">Room:</CardTitle>
               <Dialog open={isEditingRoom} onOpenChange={setIsEditingRoom}>
                 <DialogTrigger asChild>
                   <Button
                     variant="outline"
-                    className="h-20 text-2xl font-mono"
+                    className="h-12 text-lg font-mono px-4"
                   >
                     {gameState.roomId}
                   </Button>
@@ -188,13 +188,13 @@ export default function Lobby() {
               </Dialog>
             </div>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-3 pt-3">
             {/* Player Name */}
             <Dialog open={isEditingName} onOpenChange={setIsEditingName}>
               <DialogTrigger asChild>
                 <Button
                   variant="outline"
-                  className="w-full h-20 text-2xl"
+                  className="w-full h-16 text-xl"
                 >
                   {playerName || "Enter Name"}
                 </Button>
@@ -245,9 +245,9 @@ export default function Lobby() {
               <DialogTrigger asChild>
                 <Button
                   variant="outline"
-                  className="w-full h-20"
+                  className="w-full h-16"
                 >
-                  <Avatar className="w-16 h-16">
+                  <Avatar className="w-12 h-12">
                     <AvatarImage 
                       src={generateAvatarUrl(playerAvatar || getStoredPlayerAvatar() || getPlayerAvatar())}
                       alt="Player avatar"
