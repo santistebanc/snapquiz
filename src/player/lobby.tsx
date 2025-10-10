@@ -17,9 +17,8 @@ export default function Lobby() {
   const { gameState, sendMessage, connectionId } = useGameStore();
   const playerName = useCurrentPlayerName();
   const playerAvatar = useCurrentPlayerAvatar();
-  const [isEditingName, setIsEditingName] = useState(!getStoredPlayerName());
+  const [isEditingProfile, setIsEditingProfile] = useState(!getStoredPlayerName());
   const [isEditingRoom, setIsEditingRoom] = useState(false);
-  const [isEditingAvatar, setIsEditingAvatar] = useState(false);
   const [editName, setEditName] = useState(
     playerName || getStoredPlayerName() || ""
   );
@@ -33,11 +32,11 @@ export default function Lobby() {
 
   // Auto-focus name input if no name exists
   useEffect(() => {
-    if (isEditingName && nameInputRef.current) {
+    if (isEditingProfile && nameInputRef.current) {
       nameInputRef.current.focus();
       nameInputRef.current.select();
     }
-  }, [isEditingName]);
+  }, [isEditingProfile]);
 
   // Auto-focus room input when editing
   useEffect(() => {
@@ -69,59 +68,33 @@ export default function Lobby() {
     setIsEditingRoom(false);
   }, []);
 
-  const handleNameSubmit = useCallback((e: React.FormEvent) => {
-    e.preventDefault();
-    if (editName.trim()) {
-      const capitalizedName = editName.trim().toUpperCase();
-      const currentAvatar = playerAvatar || getStoredPlayerAvatar() || getPlayerAvatar();
 
-      // Send changePlayerName message with current avatar (server will truncate if needed)
-      sendMessage({
-        type: "changePlayerName",
-        data: { name: capitalizedName, avatar: currentAvatar, connectionId },
-      });
-
-      // Exit edit mode manually
-      setIsEditingName(false);
-    } else {
-      console.log("editName is empty:", editName);
-    }
-  }, [editName, playerAvatar, sendMessage, connectionId]);
-
-  const handleNameClick = useCallback(() => {
+  const handleProfileClick = useCallback(() => {
     // Use playerName from server, or fallback to localStorage if empty
     const nameToUse = playerName || getStoredPlayerName() || "";
+    const avatarToUse = playerAvatar || getStoredPlayerAvatar() || getPlayerAvatar();
     setEditName(nameToUse);
-    setIsEditingName(true);
-  }, [playerName]);
+    setEditAvatar(avatarToUse);
+    setIsEditingProfile(true);
+  }, [playerName, playerAvatar]);
 
-  const handleNameCancel = useCallback(() => {
-    setIsEditingName(false);
+  const handleProfileCancel = useCallback(() => {
+    setIsEditingProfile(false);
   }, []);
 
-  const handleAvatarClick = useCallback(() => {
-    const avatarToUse = playerAvatar || getStoredPlayerAvatar() || getPlayerAvatar();
-    setEditAvatar(avatarToUse);
-    setIsEditingAvatar(true);
-  }, [playerAvatar]);
-
-  const handleAvatarSubmit = useCallback((e: React.FormEvent) => {
+  const handleProfileSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault();
-    if (editAvatar) {
-      // Send changePlayerAvatar message
+    if (editName.trim() && editAvatar) {
+      // Send changePlayerName message
       sendMessage({
-        type: "changePlayerAvatar",
-        data: { avatar: editAvatar, connectionId },
+        type: "changePlayerName",
+        data: { name: editName.trim().toUpperCase(), avatar: editAvatar, connectionId },
       });
 
       // Exit edit mode manually
-      setIsEditingAvatar(false);
+      setIsEditingProfile(false);
     }
-  }, [editAvatar, sendMessage, connectionId]);
-
-  const handleAvatarCancel = useCallback(() => {
-    setIsEditingAvatar(false);
-  }, []);
+  }, [editName, editAvatar, sendMessage, connectionId]);
 
   const handleAvatarSelect = useCallback((avatar: string) => {
     setEditAvatar(avatar);
@@ -187,21 +160,28 @@ export default function Lobby() {
             </div>
           </CardHeader>
           <CardContent className="space-y-3 pt-3">
-            {/* Player Name */}
-            <Dialog open={isEditingName} onOpenChange={setIsEditingName}>
+            {/* Player Profile */}
+            <Dialog open={isEditingProfile} onOpenChange={setIsEditingProfile}>
               <DialogTrigger asChild>
                 <Button
                   variant="outline"
-                  className="w-full h-16 text-xl"
+                  className="w-full h-16 text-xl flex items-center gap-3"
                 >
-                  {playerName || "Enter Name"}
+                  <Avatar className="w-12 h-12">
+                    <AvatarImage 
+                      src={generateAvatarUrl(playerAvatar || getStoredPlayerAvatar() || getPlayerAvatar())}
+                      alt="Player avatar"
+                    />
+                  </Avatar>
+                  <span>{playerName || "Enter Name"}</span>
                 </Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="max-w-md">
                 <DialogHeader>
-                  <DialogTitle>Edit Name</DialogTitle>
+                  <DialogTitle>Profile</DialogTitle>
                 </DialogHeader>
-                <form onSubmit={handleNameSubmit} className="space-y-4">
+                <form onSubmit={handleProfileSubmit} className="space-y-4">
+                  {/* Player Name Section */}
                   <div className="space-y-2">
                     <Label htmlFor="playerName">
                       Player Name
@@ -217,86 +197,52 @@ export default function Lobby() {
                       maxLength={20}
                     />
                   </div>
-                  <div className="flex gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={handleNameCancel}
-                      className="flex-1"
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      type="submit"
-                      disabled={!editName.trim()}
-                      className="flex-1"
-                    >
-                      Save Name
-                    </Button>
-                  </div>
-                </form>
-              </DialogContent>
-            </Dialog>
 
-            {/* Player Avatar */}
-            <Dialog open={isEditingAvatar} onOpenChange={setIsEditingAvatar}>
-              <DialogTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="w-full h-16"
-                >
-                  <Avatar className="w-12 h-12">
-                    <AvatarImage 
-                      src={generateAvatarUrl(playerAvatar || getStoredPlayerAvatar() || getPlayerAvatar())}
-                      alt="Player avatar"
-                    />
-                  </Avatar>
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-md">
-                <DialogHeader>
-                  <DialogTitle>Select Avatar</DialogTitle>
-                </DialogHeader>
-                <form onSubmit={handleAvatarSubmit} className="space-y-4">
-                  <div className="flex justify-center">
-                    <Avatar className="w-20 h-20">
-                      <AvatarImage src={generateAvatarUrl(editAvatar)} alt="Current avatar" />
-                    </Avatar>
-                  </div>
-                  <Separator />
-                  <ScrollArea className="h-64">
-                    <div className="grid grid-cols-5 gap-2 p-2">
-                      {availableAvatars.map((avatar) => (
-                        <Button
-                          key={avatar}
-                          type="button"
-                          variant={editAvatar === avatar ? "default" : "outline"}
-                          size="icon"
-                          onClick={() => handleAvatarSelect(avatar)}
-                          className="h-16 w-16"
-                        >
-                          <Avatar className="w-12 h-12">
-                            <AvatarImage src={generateAvatarUrl(avatar)} alt={avatar} />
-                          </Avatar>
-                        </Button>
-                      ))}
+                  {/* Avatar Section */}
+                  <div className="space-y-2">
+                    <Label>Avatar</Label>
+                    <div className="flex justify-center">
+                      <Avatar className="w-20 h-20">
+                        <AvatarImage src={generateAvatarUrl(editAvatar)} alt="Current avatar" />
+                      </Avatar>
                     </div>
-                  </ScrollArea>
+                    <Separator />
+                    <ScrollArea className="h-64">
+                      <div className="grid grid-cols-5 gap-2 p-2">
+                        {availableAvatars.map((avatar) => (
+                          <Button
+                            key={avatar}
+                            type="button"
+                            variant={editAvatar === avatar ? "default" : "outline"}
+                            size="icon"
+                            onClick={() => handleAvatarSelect(avatar)}
+                            className="h-16 w-16"
+                          >
+                            <Avatar className="w-12 h-12">
+                              <AvatarImage src={generateAvatarUrl(avatar)} alt={avatar} />
+                            </Avatar>
+                          </Button>
+                        ))}
+                      </div>
+                    </ScrollArea>
+                  </div>
+
+                  {/* Action Buttons */}
                   <div className="flex gap-2">
                     <Button
                       type="button"
                       variant="outline"
-                      onClick={handleAvatarCancel}
+                      onClick={handleProfileCancel}
                       className="flex-1"
                     >
                       Cancel
                     </Button>
                     <Button
                       type="submit"
-                      disabled={!editAvatar}
+                      disabled={!editName.trim() || !editAvatar}
                       className="flex-1"
                     >
-                      Save Avatar
+                      Save Profile
                     </Button>
                   </div>
                 </form>
