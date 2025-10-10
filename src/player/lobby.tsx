@@ -135,15 +135,15 @@ export default function Lobby() {
         {/* Room and Player Info */}
         <Card>
           <CardHeader className="pb-3">
-            <div className="flex items-center justify-center gap-3">
-              <CardTitle className="text-lg">Room:</CardTitle>
+            <div className="flex items-center justify-center">
               <Dialog open={isEditingRoom} onOpenChange={setIsEditingRoom}>
                 <DialogTrigger asChild>
                   <Button
                     variant="outline"
-                    className="h-12 text-lg font-mono px-4"
+                    className="h-12 text-lg font-mono px-4 flex items-center gap-2"
                   >
-                    {gameState.roomId}
+                    <span className="text-muted-foreground">Room:</span>
+                    <span className="font-bold">{gameState.roomId}</span>
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
