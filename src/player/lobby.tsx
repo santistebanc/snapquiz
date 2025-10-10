@@ -249,76 +249,69 @@ export default function Lobby() {
         </Card>
 
         {/* Player Avatar */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Player Avatar</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Dialog open={isEditingAvatar} onOpenChange={setIsEditingAvatar}>
-              <DialogTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="w-full h-20"
-                >
-                  <Avatar className="w-16 h-16">
-                    <AvatarImage 
-                      src={generateAvatarUrl(playerAvatar || getStoredPlayerAvatar() || getPlayerAvatar())}
-                      alt="Player avatar"
-                    />
-                  </Avatar>
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-md">
-                <DialogHeader>
-                  <DialogTitle>Select Avatar</DialogTitle>
-                </DialogHeader>
-                <form onSubmit={handleAvatarSubmit} className="space-y-4">
-                  <div className="flex justify-center">
-                    <Avatar className="w-20 h-20">
-                      <AvatarImage src={generateAvatarUrl(editAvatar)} alt="Current avatar" />
-                    </Avatar>
-                  </div>
-                  <Separator />
-                  <ScrollArea className="h-64">
-                    <div className="grid grid-cols-5 gap-2 p-2">
-                      {availableAvatars.map((avatar) => (
-                        <Button
-                          key={avatar}
-                          type="button"
-                          variant={editAvatar === avatar ? "default" : "outline"}
-                          size="icon"
-                          onClick={() => handleAvatarSelect(avatar)}
-                          className="h-16 w-16"
-                        >
-                          <Avatar className="w-12 h-12">
-                            <AvatarImage src={generateAvatarUrl(avatar)} alt={avatar} />
-                          </Avatar>
-                        </Button>
-                      ))}
-                    </div>
-                  </ScrollArea>
-                  <div className="flex gap-2">
+        <Dialog open={isEditingAvatar} onOpenChange={setIsEditingAvatar}>
+          <DialogTrigger asChild>
+            <Button
+              variant="outline"
+              className="w-full h-20"
+            >
+              <Avatar className="w-16 h-16">
+                <AvatarImage 
+                  src={generateAvatarUrl(playerAvatar || getStoredPlayerAvatar() || getPlayerAvatar())}
+                  alt="Player avatar"
+                />
+              </Avatar>
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Select Avatar</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleAvatarSubmit} className="space-y-4">
+              <div className="flex justify-center">
+                <Avatar className="w-20 h-20">
+                  <AvatarImage src={generateAvatarUrl(editAvatar)} alt="Current avatar" />
+                </Avatar>
+              </div>
+              <Separator />
+              <ScrollArea className="h-64">
+                <div className="grid grid-cols-5 gap-2 p-2">
+                  {availableAvatars.map((avatar) => (
                     <Button
+                      key={avatar}
                       type="button"
-                      variant="outline"
-                      onClick={handleAvatarCancel}
-                      className="flex-1"
+                      variant={editAvatar === avatar ? "default" : "outline"}
+                      size="icon"
+                      onClick={() => handleAvatarSelect(avatar)}
+                      className="h-16 w-16"
                     >
-                      Cancel
+                      <Avatar className="w-12 h-12">
+                        <AvatarImage src={generateAvatarUrl(avatar)} alt={avatar} />
+                      </Avatar>
                     </Button>
-                    <Button
-                      type="submit"
-                      disabled={!editAvatar}
-                      className="flex-1"
-                    >
-                      Save Avatar
-                    </Button>
-                  </div>
-                </form>
-              </DialogContent>
-            </Dialog>
-          </CardContent>
-        </Card>
+                  ))}
+                </div>
+              </ScrollArea>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleAvatarCancel}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={!editAvatar}
+                  className="flex-1"
+                >
+                  Save Avatar
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
       </Container>
     </Container>
   );
