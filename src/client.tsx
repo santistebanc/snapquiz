@@ -2,7 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import "./styles.css";
 import { useGameConnection } from "./useGameConnection";
-import { useGameStore } from "./store";
+import { useGameStore, useCurrentPlayerName } from "./store";
 import ScreenLobby from "./screen/lobby";
 import ScreenInRound from "./screen/inRound";
 import PlayerLobby from "./player/lobby";
@@ -15,6 +15,7 @@ import { Text } from "./components/ui/text";
 function App() {
   const { isConnected, isPlayer } = useGameConnection();
   const { gameState } = useGameStore();
+  const playerName = useCurrentPlayerName();
 
   if (!isConnected) {
     return (
@@ -32,8 +33,8 @@ function App() {
 
   // Player mode
   if (isPlayer) {
-    // InRound screen for players
-    if (gameState.gameStatus === "inRound") {
+    // InRound screen for players (only if player has a name)
+    if (gameState.gameStatus === "inRound" && playerName) {
       return <PlayerInRound />;
     }
     // Lobby screen (default)

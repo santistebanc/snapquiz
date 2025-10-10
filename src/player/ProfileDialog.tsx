@@ -1,68 +1,73 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../components/ui/dialog";
+import React, { useState, useRef, useCallback, useMemo } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "../components/ui/dialog";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Avatar, AvatarImage } from "../components/ui/avatar";
 import { ScrollArea } from "../components/ui/scroll-area";
 import { Separator } from "../components/ui/separator";
 import { Label } from "../components/ui/label";
-import { generateAvatarUrl, getStoredPlayerName, getStoredPlayerAvatar, getAvailableAvatars, getPlayerAvatar } from "../utils";
-import { useGameStore, useCurrentPlayerName, useCurrentPlayerAvatar } from "../store";
+import {
+  generateAvatarUrl,
+  getStoredPlayerName,
+  getStoredPlayerAvatar,
+  getAvailableAvatars,
+  getPlayerAvatar,
+} from "../utils";
+import {
+  useGameStore,
+  useCurrentPlayerName,
+  useCurrentPlayerAvatar,
+} from "../store";
 
 interface ProfileDialogProps {
-  isOpen: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-export function ProfileDialog({
-  isOpen,
-  onOpenChange,
-}: ProfileDialogProps) {
+export function ProfileDialog({ onOpenChange }: ProfileDialogProps) {
   const { sendMessage, connectionId } = useGameStore();
   const playerName = useCurrentPlayerName();
   const playerAvatar = useCurrentPlayerAvatar();
-  
+
+  const nameToUse = playerName || getStoredPlayerName() || "";
+  const avatarToUse =
+    playerAvatar || getStoredPlayerAvatar() || getPlayerAvatar();
+
   // Internal state for the dialog
-  const [editName, setEditName] = useState("");
-  const [editAvatar, setEditAvatar] = useState("");
+  const [editName, setEditName] = useState(nameToUse);
+  const [editAvatar, setEditAvatar] = useState(avatarToUse);
   const nameInputRef = useRef<HTMLInputElement>(null);
   const availableAvatars = useMemo(() => getAvailableAvatars(), []);
 
-  // Initialize form values when dialog opens
-  useEffect(() => {
-    if (isOpen) {
-      const nameToUse = playerName || getStoredPlayerName() || "";
-      const avatarToUse = playerAvatar || getStoredPlayerAvatar() || getPlayerAvatar();
-      setEditName(nameToUse);
-      setEditAvatar(avatarToUse);
-    }
-  }, [isOpen, playerName, playerAvatar]);
+  if (nameInputRef.current) {
+    nameInputRef.current.focus();
+    nameInputRef.current.select();
+  }
 
-  // Auto-focus name input when dialog opens
-  useEffect(() => {
-    if (isOpen && nameInputRef.current) {
-      nameInputRef.current.focus();
-      nameInputRef.current.select();
-    }
-  }, [isOpen]);
+  const handleProfileSubmit = useCallback(
+    (e: React.FormEvent) => {
+      e.preventDefault();
+      if (editName.trim() && editAvatar) {
+        // Send single changeProfile message with both name and avatar
+        sendMessage({
+          type: "changeProfile",
+          data: {
+            name: editName.trim().toUpperCase(),
+            avatar: editAvatar,
+            connectionId,
+          },
+        });
 
-  const handleProfileSubmit = useCallback((e: React.FormEvent) => {
-    e.preventDefault();
-    if (editName.trim() && editAvatar) {
-      // Send single changeProfile message with both name and avatar
-      sendMessage({
-        type: "changeProfile",
-        data: { 
-          name: editName.trim().toUpperCase(), 
-          avatar: editAvatar, 
-          connectionId 
-        },
-      });
-
-      // Close dialog
-      onOpenChange(false);
-    }
-  }, [editName, editAvatar, sendMessage, connectionId, onOpenChange]);
+        // Close dialog
+        onOpenChange(false);
+      }
+    },
+    [editName, editAvatar, sendMessage, connectionId, onOpenChange]
+  );
 
   const handleProfileCancel = useCallback(() => {
     onOpenChange(false);
@@ -72,7 +77,7 @@ export function ProfileDialog({
     setEditAvatar(avatar);
   }, []);
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+    <Dialog open onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Profile</DialogTitle>
@@ -80,9 +85,7 @@ export function ProfileDialog({
         <form onSubmit={handleProfileSubmit} className="space-y-4">
           {/* Player Name Section */}
           <div className="space-y-2">
-            <Label htmlFor="playerName">
-              Player Name
-            </Label>
+            <Label htmlFor="playerName">Player Name</Label>
             <Input
               id="playerName"
               ref={nameInputRef}
@@ -100,7 +103,10 @@ export function ProfileDialog({
             <Label>Avatar</Label>
             <div className="flex justify-center">
               <Avatar className="w-20 h-20">
-                <AvatarImage src={generateAvatarUrl(editAvatar)} alt="Current avatar" />
+                <AvatarImage
+                  src={generateAvatarUrl(editAvatar)}
+                  alt="Current avatar"
+                />
               </Avatar>
             </div>
             <Separator />
@@ -116,7 +122,10 @@ export function ProfileDialog({
                     className="h-16 w-16"
                   >
                     <Avatar className="w-12 h-12">
-                      <AvatarImage src={generateAvatarUrl(avatar)} alt={avatar} />
+                      <AvatarImage
+                        src={generateAvatarUrl(avatar)}
+                        alt={avatar}
+                      />
                     </Avatar>
                   </Button>
                 ))}

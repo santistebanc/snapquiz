@@ -1,24 +1,46 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Activity } from "react";
-import { useGameStore, useCurrentPlayerName, useCurrentPlayerAvatar } from "../store";
+import {
+  useGameStore,
+  useCurrentPlayerName,
+  useCurrentPlayerAvatar,
+} from "../store";
 import { ProfileDialog } from "./ProfileDialog";
 
-import { getStoredPlayerName, getStoredPlayerAvatar, generateAvatarUrl, getPlayerAvatar } from "../utils";
+import {
+  getStoredPlayerName,
+  getStoredPlayerAvatar,
+  generateAvatarUrl,
+  getPlayerAvatar,
+} from "../utils";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../components/ui/card";
 import { Avatar, AvatarImage } from "../components/ui/avatar";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "../components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "../components/ui/dialog";
 import { Container } from "../components/ui/container";
 import { Label } from "../components/ui/label";
 import { Text } from "../components/ui/text";
 import { cn } from "../lib/utils";
 
 export default function Lobby() {
-  const { gameState, sendMessage, connectionId } = useGameStore();
+  const { gameState } = useGameStore();
   const playerName = useCurrentPlayerName();
   const playerAvatar = useCurrentPlayerAvatar();
-  const [isEditingProfile, setIsEditingProfile] = useState(!getStoredPlayerName());
+  const [isEditingProfile, setIsEditingProfile] = useState(
+    !getStoredPlayerName()
+  );
   const [isEditingRoom, setIsEditingRoom] = useState(false);
   const [editRoomId, setEditRoomId] = useState(gameState.roomId);
   const roomInputRef = useRef<HTMLInputElement>(null);
@@ -36,23 +58,25 @@ export default function Lobby() {
     setIsEditingRoom(true);
   }, [gameState.roomId]);
 
-  const handleRoomSubmit = useCallback((e: React.FormEvent) => {
-    e.preventDefault();
-    if (editRoomId.trim()) {
-      const capitalizedRoomId = editRoomId.trim().toUpperCase();
+  const handleRoomSubmit = useCallback(
+    (e: React.FormEvent) => {
+      e.preventDefault();
+      if (editRoomId.trim()) {
+        const capitalizedRoomId = editRoomId.trim().toUpperCase();
 
-      // Update URL with new room and reload
-      const url = new URL(window.location.href);
-      url.searchParams.set("room", capitalizedRoomId);
-      window.history.replaceState({}, "", url.toString());
-      window.location.reload();
-    }
-  }, [editRoomId]);
+        // Update URL with new room and reload
+        const url = new URL(window.location.href);
+        url.searchParams.set("room", capitalizedRoomId);
+        window.history.replaceState({}, "", url.toString());
+        window.location.reload();
+      }
+    },
+    [editRoomId]
+  );
 
   const handleRoomCancel = useCallback(() => {
     setIsEditingRoom(false);
   }, []);
-
 
   const handleProfileClick = useCallback(() => {
     setIsEditingProfile(true);
@@ -81,15 +105,15 @@ export default function Lobby() {
                   </DialogHeader>
                   <form onSubmit={handleRoomSubmit} className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="roomId">
-                        Room Code
-                      </Label>
+                      <Label htmlFor="roomId">Room Code</Label>
                       <Input
                         id="roomId"
                         ref={roomInputRef}
                         type="text"
                         value={editRoomId}
-                        onChange={(e) => setEditRoomId(e.target.value.toUpperCase())}
+                        onChange={(e) =>
+                          setEditRoomId(e.target.value.toUpperCase())
+                        }
                         placeholder="Enter room code..."
                         className="text-center font-mono uppercase"
                         maxLength={4}
@@ -126,21 +150,22 @@ export default function Lobby() {
                   className="w-full h-16 text-xl flex items-center gap-3"
                 >
                   <Avatar className="w-12 h-12">
-                    <AvatarImage 
-                      src={generateAvatarUrl(playerAvatar || getStoredPlayerAvatar() || getPlayerAvatar())}
+                    <AvatarImage
+                      src={generateAvatarUrl(
+                        playerAvatar ||
+                          getStoredPlayerAvatar() ||
+                          getPlayerAvatar()
+                      )}
                       alt="Player avatar"
                     />
                   </Avatar>
                   <span>{playerName || "Enter Name"}</span>
                 </Button>
               </DialogTrigger>
-              
+
               {/* Preload ProfileDialog with React Activity */}
               <Activity mode={isEditingProfile ? "visible" : "hidden"}>
-                <ProfileDialog
-                  isOpen={isEditingProfile}
-                  onOpenChange={setIsEditingProfile}
-                />
+                <ProfileDialog onOpenChange={setIsEditingProfile} />
               </Activity>
             </Dialog>
           </CardContent>
