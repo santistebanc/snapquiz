@@ -85,16 +85,29 @@ export default function Lobby() {
   const handleProfileSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault();
     if (editName.trim() && editAvatar) {
-      // Send changePlayerName message
-      sendMessage({
-        type: "changePlayerName",
-        data: { name: editName.trim().toUpperCase(), avatar: editAvatar, connectionId },
-      });
+      const currentName = playerName || getStoredPlayerName() || "";
+      const currentAvatar = playerAvatar || getStoredPlayerAvatar() || getPlayerAvatar();
+      
+      // Send changePlayerName message if name changed
+      if (editName.trim().toUpperCase() !== currentName) {
+        sendMessage({
+          type: "changePlayerName",
+          data: { name: editName.trim().toUpperCase(), avatar: currentAvatar, connectionId },
+        });
+      }
+      
+      // Send changePlayerAvatar message if avatar changed
+      if (editAvatar !== currentAvatar) {
+        sendMessage({
+          type: "changePlayerAvatar",
+          data: { avatar: editAvatar, connectionId },
+        });
+      }
 
       // Exit edit mode manually
       setIsEditingProfile(false);
     }
-  }, [editName, editAvatar, sendMessage, connectionId]);
+  }, [editName, editAvatar, playerName, playerAvatar, sendMessage, connectionId]);
 
   const handleAvatarSelect = useCallback((avatar: string) => {
     setEditAvatar(avatar);
