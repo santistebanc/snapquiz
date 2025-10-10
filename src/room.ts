@@ -128,6 +128,64 @@ export default class RoomServer implements Party.Server {
               }
               break;
 
+            case "changeProfile":
+              console.log('Received changeProfile:', clientMessage.data);
+              if (clientMessage.data.name || clientMessage.data.avatar) {
+                // Use connectionId if provided, otherwise fall back to sender.id
+                const playerId = clientMessage.data.connectionId || sender.id;
+                console.log('Using playerId for profile change:', playerId);
+                
+                // Map this connection to the player ID
+                this.connectionToPlayerMap.set(sender.id, playerId);
+                
+                // Check if player exists
+                const existingPlayer = this.gameState.players.get(playerId);
+                if (existingPlayer) {
+                  let updated = false;
+                  
+                  // Update name if provided
+                  if (clientMessage.data.name) {
+                    const truncatedName = clientMessage.data.name.substring(0, 20);
+                    if (existingPlayer.name !== truncatedName) {
+                      console.log('Updating player name:', existingPlayer.name, '->', truncatedName);
+                      existingPlayer.name = truncatedName;
+                      updated = true;
+                    }
+                  }
+                  
+                  // Update avatar if provided
+                  if (clientMessage.data.avatar) {
+                    if (existingPlayer.avatar !== clientMessage.data.avatar) {
+                      console.log('Updating player avatar:', existingPlayer.avatar, '->', clientMessage.data.avatar);
+                      existingPlayer.avatar = clientMessage.data.avatar;
+                      updated = true;
+                    }
+                  }
+                  
+                  if (updated) {
+                    this.gameState.players.set(playerId, existingPlayer);
+                    // Broadcast updated game state to all connections
+                    this.broadcastGameState();
+                  }
+                } else {
+                  console.log('Creating new player from profile change');
+                  // Create new player if doesn't exist
+                  const name = clientMessage.data.name ? clientMessage.data.name.substring(0, 20) : 'Player';
+                  const avatar = clientMessage.data.avatar || 'robot-1';
+                  const player: Player = {
+                    id: playerId,
+                    name: name,
+                    avatar: avatar,
+                    connectedAt: Date.now(),
+                  };
+                  this.gameState.players.set(playerId, player);
+                  
+                  // Broadcast updated game state to all connections
+                  this.broadcastGameState();
+                }
+              }
+              break;
+
             case "joinAsScreen":
               // this.broadcast({
               //   type: "update",

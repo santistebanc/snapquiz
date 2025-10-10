@@ -28,7 +28,7 @@ export interface ServerMessage {
 }
 
 export interface ClientMessage {
-  type: 'joinAsPlayer' | 'joinAsScreen' | 'changePlayerName' | 'changePlayerAvatar' | 'startGame' | 'resetGame';
+  type: 'joinAsPlayer' | 'joinAsScreen' | 'changePlayerName' | 'changePlayerAvatar' | 'changeProfile' | 'startGame' | 'resetGame';
   data: {
     name?: string;
     avatar?: string;
