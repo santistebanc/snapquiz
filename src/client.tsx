@@ -1,4 +1,6 @@
+import React from "react";
 import ReactDOM from "react-dom/client";
+import { AliveScope } from "react-activation";
 import "./styles.css";
 import { useGameConnection } from "./useGameConnection";
 import { useGameStore } from "./store";
@@ -50,4 +52,8 @@ function App() {
 
 // Initialize React app
 const root = ReactDOM.createRoot(document.getElementById("app") as HTMLElement);
-root.render(<App />);
+root.render(
+  <AliveScope>
+    <App />
+  </AliveScope>
+);
