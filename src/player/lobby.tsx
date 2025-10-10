@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Activity } from "react";
 import { useGameStore, useCurrentPlayerName, useCurrentPlayerAvatar } from "../store";
-import { ProfileDialog } from "../components/ProfileDialog";
+import { ProfileDialog } from "./ProfileDialog";
 
-import { getStoredPlayerName, getStoredPlayerAvatar, getAvailableAvatars, generateAvatarUrl, getPlayerAvatar } from "../utils";
+import { getStoredPlayerName, getStoredPlayerAvatar, generateAvatarUrl, getPlayerAvatar } from "../utils";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
@@ -20,24 +20,8 @@ export default function Lobby() {
   const playerAvatar = useCurrentPlayerAvatar();
   const [isEditingProfile, setIsEditingProfile] = useState(!getStoredPlayerName());
   const [isEditingRoom, setIsEditingRoom] = useState(false);
-  const [editName, setEditName] = useState(
-    playerName || getStoredPlayerName() || ""
-  );
   const [editRoomId, setEditRoomId] = useState(gameState.roomId);
-  const [editAvatar, setEditAvatar] = useState(
-    playerAvatar || getStoredPlayerAvatar() || getPlayerAvatar()
-  );
-  const nameInputRef = useRef<HTMLInputElement>(null);
   const roomInputRef = useRef<HTMLInputElement>(null);
-  const availableAvatars = useMemo(() => getAvailableAvatars(), []);
-
-  // Auto-focus name input if no name exists
-  useEffect(() => {
-    if (isEditingProfile && nameInputRef.current) {
-      nameInputRef.current.focus();
-      nameInputRef.current.select();
-    }
-  }, [isEditingProfile]);
 
   // Auto-focus room input when editing
   useEffect(() => {
@@ -71,38 +55,7 @@ export default function Lobby() {
 
 
   const handleProfileClick = useCallback(() => {
-    // Use playerName from server, or fallback to localStorage if empty
-    const nameToUse = playerName || getStoredPlayerName() || "";
-    const avatarToUse = playerAvatar || getStoredPlayerAvatar() || getPlayerAvatar();
-    setEditName(nameToUse);
-    setEditAvatar(avatarToUse);
     setIsEditingProfile(true);
-  }, [playerName, playerAvatar]);
-
-  const handleProfileCancel = useCallback(() => {
-    setIsEditingProfile(false);
-  }, []);
-
-  const handleProfileSubmit = useCallback((e: React.FormEvent) => {
-    e.preventDefault();
-    if (editName.trim() && editAvatar) {
-      // Send single changeProfile message with both name and avatar
-      sendMessage({
-        type: "changeProfile",
-        data: { 
-          name: editName.trim().toUpperCase(), 
-          avatar: editAvatar, 
-          connectionId 
-        },
-      });
-
-      // Exit edit mode manually
-      setIsEditingProfile(false);
-    }
-  }, [editName, editAvatar, sendMessage, connectionId]);
-
-  const handleAvatarSelect = useCallback((avatar: string) => {
-    setEditAvatar(avatar);
   }, []);
 
   return (
@@ -187,15 +140,6 @@ export default function Lobby() {
                 <ProfileDialog
                   isOpen={isEditingProfile}
                   onOpenChange={setIsEditingProfile}
-                  editName={editName}
-                  setEditName={setEditName}
-                  editAvatar={editAvatar}
-                  setEditAvatar={setEditAvatar}
-                  handleProfileSubmit={handleProfileSubmit}
-                  handleProfileCancel={handleProfileCancel}
-                  handleAvatarSelect={handleAvatarSelect}
-                  availableAvatars={availableAvatars}
-                  nameInputRef={nameInputRef}
                 />
               </Activity>
             </Dialog>

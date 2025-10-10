@@ -1,40 +1,76 @@
-import React from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
-import { Button } from "./ui/button";
-import { Input } from "./ui/input";
-import { Avatar, AvatarImage } from "./ui/avatar";
-import { ScrollArea } from "./ui/scroll-area";
-import { Separator } from "./ui/separator";
-import { Label } from "./ui/label";
-import { generateAvatarUrl } from "../utils";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../components/ui/dialog";
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
+import { Avatar, AvatarImage } from "../components/ui/avatar";
+import { ScrollArea } from "../components/ui/scroll-area";
+import { Separator } from "../components/ui/separator";
+import { Label } from "../components/ui/label";
+import { generateAvatarUrl, getStoredPlayerName, getStoredPlayerAvatar, getAvailableAvatars, getPlayerAvatar } from "../utils";
+import { useGameStore, useCurrentPlayerName, useCurrentPlayerAvatar } from "../store";
 
 interface ProfileDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  editName: string;
-  setEditName: (name: string) => void;
-  editAvatar: string;
-  setEditAvatar: (avatar: string) => void;
-  handleProfileSubmit: (e: React.FormEvent) => void;
-  handleProfileCancel: () => void;
-  handleAvatarSelect: (avatar: string) => void;
-  availableAvatars: string[];
-  nameInputRef: React.RefObject<HTMLInputElement | null>;
 }
 
 export function ProfileDialog({
   isOpen,
   onOpenChange,
-  editName,
-  setEditName,
-  editAvatar,
-  setEditAvatar,
-  handleProfileSubmit,
-  handleProfileCancel,
-  handleAvatarSelect,
-  availableAvatars,
-  nameInputRef,
 }: ProfileDialogProps) {
+  const { sendMessage, connectionId } = useGameStore();
+  const playerName = useCurrentPlayerName();
+  const playerAvatar = useCurrentPlayerAvatar();
+  
+  // Internal state for the dialog
+  const [editName, setEditName] = useState("");
+  const [editAvatar, setEditAvatar] = useState("");
+  const nameInputRef = useRef<HTMLInputElement>(null);
+  const availableAvatars = useMemo(() => getAvailableAvatars(), []);
+
+  // Initialize form values when dialog opens
+  useEffect(() => {
+    if (isOpen) {
+      const nameToUse = playerName || getStoredPlayerName() || "";
+      const avatarToUse = playerAvatar || getStoredPlayerAvatar() || getPlayerAvatar();
+      setEditName(nameToUse);
+      setEditAvatar(avatarToUse);
+    }
+  }, [isOpen, playerName, playerAvatar]);
+
+  // Auto-focus name input when dialog opens
+  useEffect(() => {
+    if (isOpen && nameInputRef.current) {
+      nameInputRef.current.focus();
+      nameInputRef.current.select();
+    }
+  }, [isOpen]);
+
+  const handleProfileSubmit = useCallback((e: React.FormEvent) => {
+    e.preventDefault();
+    if (editName.trim() && editAvatar) {
+      // Send single changeProfile message with both name and avatar
+      sendMessage({
+        type: "changeProfile",
+        data: { 
+          name: editName.trim().toUpperCase(), 
+          avatar: editAvatar, 
+          connectionId 
+        },
+      });
+
+      // Close dialog
+      onOpenChange(false);
+    }
+  }, [editName, editAvatar, sendMessage, connectionId, onOpenChange]);
+
+  const handleProfileCancel = useCallback(() => {
+    onOpenChange(false);
+  }, [onOpenChange]);
+
+  const handleAvatarSelect = useCallback((avatar: string) => {
+    setEditAvatar(avatar);
+  }, []);
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
