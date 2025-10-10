@@ -135,7 +135,7 @@ export default function Lobby() {
         {/* Room and Player Info */}
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-center gap-4">
               <CardTitle>Room:</CardTitle>
               <Dialog open={isEditingRoom} onOpenChange={setIsEditingRoom}>
                 <DialogTrigger asChild>
