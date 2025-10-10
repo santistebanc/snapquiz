@@ -30,14 +30,6 @@ export async function generateQRCode(roomId: string): Promise<string> {
   }
 }
 
-// Parse URL parameters
-export function getUrlParams(): { name?: string; roomId?: string } {
-  const urlParams = new URLSearchParams(window.location.search);
-  return {
-    name: urlParams.get("name") || undefined,
-    roomId: urlParams.get("room") || undefined,
-  };
-}
 
 // LocalStorage utilities
 export function getStoredRoomId(): string | null {
@@ -75,12 +67,13 @@ export function setStoredConnectionId(connectionId: string): void {
 
 // Get room ID with fallback to localStorage
 export function getRoomId(): string {
-  const urlParams = getUrlParams();
+  const urlParams = new URLSearchParams(window.location.search);
+  const roomId = urlParams.get("room");
   const storedRoomId = getStoredRoomId();
 
-  if (urlParams.roomId) {
+  if (roomId) {
     // URL param takes precedence, update localStorage
-    const capitalizedRoomId = urlParams.roomId.toUpperCase();
+    const capitalizedRoomId = roomId.toUpperCase();
     setStoredRoomId(capitalizedRoomId);
     return capitalizedRoomId;
   }

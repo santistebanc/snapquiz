@@ -17,17 +17,15 @@ export default function Lobby() {
   const { gameState, sendMessage, connectionId } = useGameStore();
   const playerName = useCurrentPlayerName();
   const playerAvatar = useCurrentPlayerAvatar();
-  const storedPlayerName = getStoredPlayerName();
-  const storedPlayerAvatar = getStoredPlayerAvatar();
-  const [isEditingName, setIsEditingName] = useState(!storedPlayerName);
+  const [isEditingName, setIsEditingName] = useState(!getStoredPlayerName());
   const [isEditingRoom, setIsEditingRoom] = useState(false);
   const [isEditingAvatar, setIsEditingAvatar] = useState(false);
   const [editName, setEditName] = useState(
-    playerName || storedPlayerName || ""
+    playerName || getStoredPlayerName() || ""
   );
   const [editRoomId, setEditRoomId] = useState(gameState.roomId);
   const [editAvatar, setEditAvatar] = useState(
-    playerAvatar || storedPlayerAvatar || getPlayerAvatar()
+    playerAvatar || getStoredPlayerAvatar() || getPlayerAvatar()
   );
   const nameInputRef = useRef<HTMLInputElement>(null);
   const roomInputRef = useRef<HTMLInputElement>(null);
