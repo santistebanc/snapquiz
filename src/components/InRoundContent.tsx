@@ -2,7 +2,6 @@ import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useGameStore } from "../store";
 import { QuestionDisplay } from "./QuestionDisplay";
-import { TimerBar } from "./TimerBar";
 import { OptionsDisplay } from "./OptionsDisplay";
 import { Phase } from "../types";
 
@@ -93,28 +92,6 @@ export function InRoundContent({ isPlayerMode }: InRoundContentProps) {
         )}
       </AnimatePresence>
 
-      <AnimatePresence mode="wait">
-        {gameState.phase === Phase.WAIT_AFTER_QUESTION && (
-          <motion.div
-            key="timer"
-            variants={itemVariants}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
-            layout
-            transition={{
-              duration: 0.5,
-              ease: "easeOut",
-              layout: {
-                duration: 0.5,
-                ease: "easeInOut"
-              }
-            }}
-          >
-            <TimerBar isPlayerMode={isPlayerMode} />
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       <AnimatePresence mode="wait">
         {gameState.phase >= Phase.SHOWING_OPTIONS && (
