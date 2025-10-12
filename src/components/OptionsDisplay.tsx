@@ -124,7 +124,7 @@ export function OptionsDisplay({ isPlayerMode = false }: OptionsDisplayProps) {
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.2, delay: 0.1 }}
-                className="absolute top--5 left-10 mt-2 z-10 flex items-center gap-1 !bg-white px-2 py-1 rounded-full border border-green-200 shadow-sm"
+                className="absolute -top-8 left-10 z-10 flex items-center gap-1 !bg-white px-2 py-1 rounded-full border border-green-200 shadow-sm"
               >
                 <Avatar className="w-6 h-6">
                   <AvatarImage
