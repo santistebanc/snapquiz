@@ -11,6 +11,7 @@ interface QuestionDisplayProps {
 export function QuestionDisplay({ isPlayerMode = false }: QuestionDisplayProps) {
   const { gameState } = useGameStore();
   const [revealedWords, setRevealedWords] = useState<string[]>([]);
+  const [hasCompletedWordReveal, setHasCompletedWordReveal] = useState(false);
   const phase = gameState.phase;
 
   // Get current round and question
@@ -29,7 +30,14 @@ export function QuestionDisplay({ isPlayerMode = false }: QuestionDisplayProps) 
         const message = JSON.parse(event.data);
 
         if (message.type === "wordReveal") {
-          setRevealedWords((prev) => [...prev, message.data.word]);
+          setRevealedWords((prev) => {
+            const newWords = [...prev, message.data.word];
+            // Check if all words have been revealed
+            if (question && newWords.length === question.text.split(' ').length) {
+              setHasCompletedWordReveal(true);
+            }
+            return newWords;
+          });
         }
       } catch (error) {
         console.error("Error parsing message:", error);
@@ -42,11 +50,12 @@ export function QuestionDisplay({ isPlayerMode = false }: QuestionDisplayProps) 
       socket.addEventListener("message", handleMessage);
       return () => socket.removeEventListener("message", handleMessage);
     }
-  }, []);
+  }, [question]);
 
   // Reset revealed words when round changes
   useEffect(() => {
     setRevealedWords([]);
+    setHasCompletedWordReveal(false);
   }, [gameState.currentRound]);
 
   if (!question) return null;
@@ -58,7 +67,8 @@ export function QuestionDisplay({ isPlayerMode = false }: QuestionDisplayProps) 
     </div>
   );
 
-    if (phase === Phase.QUESTIONING) {
+  // Show word-by-word animation only during QUESTIONING phase and before completion
+  if (phase === Phase.QUESTIONING && !hasCompletedWordReveal) {
     const allWords = question.text.split(' ');
     
     return (
@@ -107,25 +117,19 @@ export function QuestionDisplay({ isPlayerMode = false }: QuestionDisplayProps) 
     );
   }
 
+  // Show static question text after word reveal is complete or in other phases
   return (
     <div className={`space-y-3 ${isPlayerMode ? "" : "space-y-4"}`}>
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: "easeOut" }}
-      >
+      <div>
         {categoryDisplay}
-      </motion.div>
-      <motion.div 
+      </div>
+      <div 
         className={`font-bold text-center leading-tight ${
           isPlayerMode ? "text-2xl" : "text-6xl"
         }`}
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: "easeOut", delay: 0.2 }}
       >
         {question.text}
-      </motion.div>
+      </div>
     </div>
   );
 }

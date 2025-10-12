@@ -11,7 +11,7 @@ interface InRoundContentProps {
 }
 
 export function InRoundContent({ isPlayerMode }: InRoundContentProps) {
-  const { gameState, sendMessage, connectionId } = useGameStore();
+  const { gameState } = useGameStore();
 
   // Get current round and question
   const currentRound =
