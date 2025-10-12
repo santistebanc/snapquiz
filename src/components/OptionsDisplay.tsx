@@ -123,24 +123,24 @@ export function OptionsDisplay({
               
               {/* Show players who selected this option (screen mode only during reveal) */}
               {!isPlayerMode && isRevealingAnswer && playersForOption.length > 0 && (
-                <div className="text-center">
-                  <div className="text-sm text-gray-600 mb-1">
-                    {isCorrectAnswer ? "Correct!" : "Selected by:"}
-                  </div>
-                  <div className="flex flex-wrap justify-center gap-2">
-                    {playersForOption.map((player) => (
-                      <span
-                        key={player.id}
-                        className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          isCorrectAnswer
-                            ? "bg-green-100 text-green-800"
-                            : "bg-red-100 text-red-800"
-                        }`}
-                      >
-                        {player.name}
-                      </span>
-                    ))}
-                  </div>
+                <div className="flex flex-wrap justify-center gap-2 mt-2">
+                  {playersForOption.map((player) => (
+                    <div
+                      key={player.id}
+                      className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+                        isCorrectAnswer
+                          ? "bg-green-100 text-green-800"
+                          : "bg-red-100 text-red-800"
+                      }`}
+                    >
+                      <img
+                        src={`/avatars/${player.avatar}.svg`}
+                        alt={player.name}
+                        className="w-4 h-4 rounded-full"
+                      />
+                      <span>{player.name}</span>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
