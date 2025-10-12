@@ -8,7 +8,6 @@ interface QuestionDisplayProps {
 
 export function QuestionDisplay({ isPlayerMode = false }: QuestionDisplayProps) {
   const { gameState } = useGameStore();
-  const [revealedWords, setRevealedWords] = useState<string[]>([]);
 
   // Get current round and question
   const currentRound =
@@ -19,36 +18,10 @@ export function QuestionDisplay({ isPlayerMode = false }: QuestionDisplayProps) 
     ? gameState.questions.find((q) => q.id === currentRound.questionId)
     : null;
 
-  // Handle server messages for word reveal
-  useEffect(() => {
-    const handleMessage = (event: MessageEvent) => {
-      try {
-        const message = JSON.parse(event.data);
-
-        if (message.type === "wordReveal") {
-          const revealedCount = message.data.revealedCount;
-          if (question) {
-            const allWords = question.text.split(' ');
-            setRevealedWords(allWords.slice(0, revealedCount));
-          }
-        }
-      } catch (error) {
-        console.error("Error parsing message:", error);
-      }
-    };
-
-    // Listen for messages from the game store's socket
-    const socket = (useGameStore.getState() as any).socket;
-    if (socket) {
-      socket.addEventListener("message", handleMessage);
-      return () => socket.removeEventListener("message", handleMessage);
-    }
-  }, [question]);
-
-  // Reset revealed words when round changes
-  useEffect(() => {
-    setRevealedWords([]);
-  }, [gameState.currentRound]);
+  // Derive revealed words from gameState.revealedWordsIndex
+  const revealedWords = question 
+    ? question.text.split(' ').slice(0, gameState.revealedWordsIndex)
+    : [];
 
   if (!question) return null;
   const categoryDisplay = (

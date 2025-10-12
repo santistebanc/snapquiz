@@ -22,6 +22,7 @@ export default class RoomServer implements Party.Server {
       phase: Phase.LOBBY,
       rounds: [],
       currentRound: 0,
+      revealedWordsIndex: 0,
     };
     this.connectionToPlayerMap = new Map();
   }
@@ -150,6 +151,7 @@ export default class RoomServer implements Party.Server {
                 chosenOptions: new Map<string, string>()
               }));
               this.gameState.currentRound = 1;
+              this.gameState.revealedWordsIndex = 0;
               this.gameState.phase = Phase.QUESTIONING;
               this.broadcastGameState();
               
@@ -217,6 +219,7 @@ export default class RoomServer implements Party.Server {
               this.gameState.phase = Phase.LOBBY;
               this.gameState.rounds = [];
               this.gameState.currentRound = 0;
+              this.gameState.revealedWordsIndex = 0;
               this.broadcastGameState();
               break;
           }
@@ -272,17 +275,11 @@ export default class RoomServer implements Party.Server {
         const wordInterval = QUESTION_REVEAL_TIME / words.length;
         const initialDelay = 1000; // 1 second delay before first word
         
-        // Send the count of revealed words so far
+        // Update revealedWordsIndex and broadcast game state
         words.forEach((word, index) => {
           const timeout = setTimeout(() => {
-            this.room.broadcast(JSON.stringify({
-              type: "wordReveal",
-              data: {
-                roundIndex,
-                revealedCount: index + 1,
-                isLastWord: index === words.length - 1
-              }
-            }));
+            this.gameState.revealedWordsIndex = index + 1;
+            this.broadcastGameState();
           }, initialDelay + (index * wordInterval));
           
           this.timeouts.set(`word_${roundIndex}_${index}`, timeout);

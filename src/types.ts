@@ -39,10 +39,11 @@ export interface GameState {
   phase: Phase;
   rounds: Round[];
   currentRound: number;
+  revealedWordsIndex: number;
 }
 
 export interface ServerMessage {
-  type: 'update' | 'wordReveal' | 'timerCountdown';
+  type: 'update' | 'timerCountdown';
   data: any;
 }
 
