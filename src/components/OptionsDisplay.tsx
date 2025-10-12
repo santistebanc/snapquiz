@@ -28,6 +28,7 @@ export function OptionsDisplay({ isPlayerMode = false }: OptionsDisplayProps) {
   const options = currentQuestion.options;
   const correctAnswer = currentQuestion.answer;
   const disabled = gameState.phase === Phase.REVEALING_ANSWER;
+  const isInteractive = isPlayerMode; // Only interactive in player mode
 
   // Get players who selected the correct answer (only for screen mode)
   const correctPlayers =
@@ -98,55 +99,44 @@ export function OptionsDisplay({ isPlayerMode = false }: OptionsDisplayProps) {
             ease: "easeOut",
             delay: index * 0.1,
           }}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
+          whileHover={isInteractive ? { scale: 1.02 } : {}}
+          whileTap={isInteractive ? { scale: 0.98 } : {}}
           className="relative"
         >
           <Button
-            onClick={() => handleOptionSelect(option)}
+            onClick={isInteractive ? () => handleOptionSelect(option) : undefined}
             variant={selectedOption === option ? "default" : "outline"}
             className={`w-full text-lg p-4 h-auto transition-colors duration-300 ${getOptionStyle(
               option
             )}`}
-            disabled={disabled}
+            disabled={isInteractive ? disabled : false}
           >
             {option}
           </Button>
 
           {/* Show correct players under the correct answer (screen mode only) */}
-           {!isPlayerMode &&
-             disabled &&
-             option === correctAnswer &&
-             correctPlayers.length > 0 && (
-               <motion.div
-                 initial={{ opacity: 0, y: 10 }}
-                 animate={{ opacity: 1, y: 0 }}
-                 transition={{ duration: 0.3, delay: 0.2 }}
-                 className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 z-10"
-               >
-                 <div className="flex flex-wrap gap-2 justify-center !bg-white p-2 rounded-lg shadow-lg">
-                   {correctPlayers.map((player) => (
-                     <motion.div
-                       key={player.id}
-                       initial={{ opacity: 0, scale: 0.8 }}
-                       animate={{ opacity: 1, scale: 1 }}
-                       transition={{ duration: 0.2, delay: 0.1 }}
-                       className="flex items-center gap-1 !bg-white px-2 py-1 rounded-full border border-green-200 shadow-sm"
-                     >
-                       <Avatar className="w-6 h-6">
-                         <AvatarImage
-                           src={generateAvatarUrl(player.avatar)}
-                           alt={player.name}
-                         />
-                       </Avatar>
-                       <span className="text-xs font-medium text-green-800 truncate max-w-20">
-                         {player.name}
-                       </span>
-                     </motion.div>
-                   ))}
-                 </div>
-               </motion.div>
-             )}
+          {!isPlayerMode &&
+            option === correctAnswer &&
+            correctPlayers.length > 0 &&
+            correctPlayers.map((player) => (
+              <motion.div
+                key={player.id}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.2, delay: 0.1 }}
+                className="absolute top--5 left-10 mt-2 z-10 flex items-center gap-1 !bg-white px-2 py-1 rounded-full border border-green-200 shadow-sm"
+              >
+                <Avatar className="w-6 h-6">
+                  <AvatarImage
+                    src={generateAvatarUrl(player.avatar)}
+                    alt={player.name}
+                  />
+                </Avatar>
+                <span className="text-xs font-medium text-green-800 truncate max-w-20">
+                  {player.name}
+                </span>
+              </motion.div>
+            ))}
         </motion.div>
       ))}
     </div>
