@@ -11,7 +11,6 @@ interface QuestionDisplayProps {
 export function QuestionDisplay({ isPlayerMode = false }: QuestionDisplayProps) {
   const { gameState } = useGameStore();
   const [revealedWords, setRevealedWords] = useState<string[]>([]);
-  const [hasCompletedWordReveal, setHasCompletedWordReveal] = useState(false);
   const phase = gameState.phase;
 
   // Get current round and question
@@ -30,14 +29,7 @@ export function QuestionDisplay({ isPlayerMode = false }: QuestionDisplayProps) 
         const message = JSON.parse(event.data);
 
         if (message.type === "wordReveal") {
-          setRevealedWords((prev) => {
-            const newWords = [...prev, message.data.word];
-            // Check if all words have been revealed
-            if (question && newWords.length === question.text.split(' ').length) {
-              setHasCompletedWordReveal(true);
-            }
-            return newWords;
-          });
+          setRevealedWords((prev) => [...prev, message.data.word]);
         }
       } catch (error) {
         console.error("Error parsing message:", error);
@@ -55,7 +47,6 @@ export function QuestionDisplay({ isPlayerMode = false }: QuestionDisplayProps) 
   // Reset revealed words when round changes
   useEffect(() => {
     setRevealedWords([]);
-    setHasCompletedWordReveal(false);
   }, [gameState.currentRound]);
 
   if (!question) return null;
@@ -67,8 +58,8 @@ export function QuestionDisplay({ isPlayerMode = false }: QuestionDisplayProps) 
     </div>
   );
 
-  // Show word-by-word animation only during QUESTIONING phase and before completion
-  if (phase === Phase.QUESTIONING && !hasCompletedWordReveal) {
+  // Show word-by-word animation during QUESTIONING phase
+  if (phase === Phase.QUESTIONING) {
     const allWords = question.text.split(' ');
     
     return (
@@ -117,7 +108,7 @@ export function QuestionDisplay({ isPlayerMode = false }: QuestionDisplayProps) 
     );
   }
 
-  // Show static question text after word reveal is complete or in other phases
+  // Show static question text in other phases
   return (
     <div className={`space-y-3 ${isPlayerMode ? "" : "space-y-4"}`}>
       <div>
