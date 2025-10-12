@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { Button } from "./ui/button";
 import { Avatar, AvatarImage } from "./ui/avatar";
 import { Badge } from "./ui/badge";
@@ -7,6 +7,23 @@ import { Card } from "./ui/card";
 import { Menu } from "lucide-react";
 import { generateAvatarUrl } from "../utils";
 import type { Player } from "../types";
+
+// Component for animating counter from previous to current value
+function AnimatedCounter({ from, to }: { from: number; to: number }) {
+  const motionValue = useMotionValue(from);
+  const springValue = useSpring(motionValue, { 
+    stiffness: 100, 
+    damping: 30,
+    duration: 0.8 
+  });
+  const display = useTransform(springValue, (current) => Math.round(current));
+
+  useEffect(() => {
+    motionValue.set(to);
+  }, [to, motionValue]);
+
+  return <motion.span>{display}</motion.span>;
+}
 
 interface PlayerDrawerProps {
   players: Player[];
@@ -26,10 +43,17 @@ export function PlayerDrawer({ players, isPlayerMode = false, open: externalOpen
   useEffect(() => {
     const newPreviousPoints = new Map();
     players.forEach(player => {
-      newPreviousPoints.set(player.id, player.points);
+      const previous = previousPoints.get(player.id) || 0;
+      if (player.points > previous) {
+        // Points increased, keep the previous value for animation
+        newPreviousPoints.set(player.id, previous);
+      } else {
+        // No change, update to current value
+        newPreviousPoints.set(player.id, player.points);
+      }
     });
     setPreviousPoints(newPreviousPoints);
-  }, [players]);
+  }, [players, previousPoints]);
 
   return (
     <>
@@ -83,7 +107,10 @@ export function PlayerDrawer({ players, isPlayerMode = false, open: externalOpen
                 className="flex-shrink-0 ml-2"
               >
                 <Badge variant="secondary" className="text-sm font-bold">
-                  {player.points}
+                  <AnimatedCounter 
+                    from={previousPoints.get(player.id) || 0} 
+                    to={player.points} 
+                  />
                 </Badge>
               </motion.div>
             </div>

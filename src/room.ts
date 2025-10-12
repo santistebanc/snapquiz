@@ -14,6 +14,7 @@ const REVEAL_WORD_SPEED = 100; // 100ms
 const INITIAL_QUESTION_DELAY = 1000; // 1 second delay before first word
 const WAIT_AFTER_QUESTION_TIME = 3000; // 3 seconds after question reveal
 const OPTION_SELECTION_TIMEOUT = 5000; // 5 seconds after options reveal
+const POINTS_PER_CORRECT_ANSWER = 10; // Points awarded for correct answer
 
 export default class RoomServer implements Party.Server {
   private gameState: GameState;
@@ -327,10 +328,20 @@ export default class RoomServer implements Party.Server {
             // Start timeout for GIVING_POINTS transition (3 seconds after reveal)
             const pointsTimeoutKey = `points_timeout_${roundIndex}`;
             const pointsTimeout = setTimeout(() => {
-              console.log('Transitioning to GIVING_POINTS phase');
+              console.log('Transitioning to GIVING_POINTS phase - opening drawer');
               this.gameState.phase = Phase.GIVING_POINTS;
-              this.givePointsToCorrectPlayers(roundIndex);
               this.broadcastGameState();
+              
+              // Wait half a second after opening drawer, then give points
+              const givePointsTimeoutKey = `give_points_${roundIndex}`;
+              const givePointsTimeout = setTimeout(() => {
+                console.log('Giving points to correct players');
+                this.givePointsToCorrectPlayers(roundIndex);
+                this.broadcastGameState();
+                this.timeouts.delete(givePointsTimeoutKey);
+              }, 500); // Half a second delay
+              
+              this.timeouts.set(givePointsTimeoutKey, givePointsTimeout);
               this.timeouts.delete(pointsTimeoutKey);
             }, 3000); // 3 seconds delay to show answer highlighting
             
@@ -353,14 +364,14 @@ export default class RoomServer implements Party.Server {
       if (question) {
         const correctAnswer = question.answer;
         
-        // Give 10 points to all players who selected the correct answer
+        // Give points to all players who selected the correct answer
         this.gameState.players.forEach((player) => {
           const playerChoice = round.chosenOptions instanceof Map
             ? round.chosenOptions.get(player.id)
             : round.chosenOptions[player.id];
           
           if (playerChoice === correctAnswer) {
-            player.points += 10;
+            player.points += POINTS_PER_CORRECT_ANSWER;
             console.log(`Player ${player.name} got correct answer, points: ${player.points}`);
           }
         });
