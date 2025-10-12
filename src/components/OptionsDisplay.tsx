@@ -27,6 +27,7 @@ export function OptionsDisplay({
   const options = currentQuestion.options;
   const correctAnswer = currentQuestion.answer;
   const disabled = gameState.phase === Phase.REVEALING_ANSWER;
+  const isRevealingAnswer = gameState.phase === Phase.REVEALING_ANSWER;
 
   // Get player's selected option from server state (only for player mode)
   const selectedOption =
@@ -35,6 +36,24 @@ export function OptionsDisplay({
         ? currentRound.chosenOptions.get(connectionId)
         : currentRound.chosenOptions[connectionId]
       : null;
+
+  // For screen mode during answer reveal: reorder options and get player selections
+  const displayOptions = isRevealingAnswer && !isPlayerMode
+    ? [correctAnswer, ...options.filter(option => option !== correctAnswer)]
+    : options;
+
+  // Get players who selected each option (for screen mode during reveal)
+  const getPlayersForOption = (option: string) => {
+    if (isPlayerMode || !isRevealingAnswer || !currentRound) return [];
+    
+    const players = Array.from(gameState.players.values());
+    return players.filter(player => {
+      const chosenOptions = currentRound.chosenOptions instanceof Map
+        ? currentRound.chosenOptions
+        : new Map(Object.entries(currentRound.chosenOptions));
+      return chosenOptions.get(player.id) === option;
+    });
+  };
 
   // Handle option selection (only for player mode)
   const handleOptionSelect = (option: string) => {
@@ -75,29 +94,59 @@ export function OptionsDisplay({
 
   return (
     <div className={`space-y-3 ${isPlayerMode ? "" : "space-y-4"}`}>
-      {options.map((option, index) => (
-        <motion.div
-          key={index}
-          initial={{ opacity: 0, y: 20, scale: 0.9 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{
-            duration: 0.5,
-            ease: "easeOut",
-            delay: index * 0.1
-          }}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-        >
-          <Button
-            onClick={() => handleOptionSelect(option)}
-            variant={selectedOption === option ? "default" : "outline"}
-            className={`w-full text-lg p-4 h-auto transition-colors duration-300 ${getOptionStyle(option)}`}
-            disabled={disabled}
+      {displayOptions.map((option, index) => {
+        const playersForOption = getPlayersForOption(option);
+        const isCorrectAnswer = option === correctAnswer;
+        
+        return (
+          <motion.div
+            key={option}
+            initial={{ opacity: 0, y: 20, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{
+              duration: 0.5,
+              ease: "easeOut",
+              delay: index * 0.1
+            }}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
           >
-            {option}
-          </Button>
-        </motion.div>
-      ))}
+            <div className="space-y-2">
+              <Button
+                onClick={() => handleOptionSelect(option)}
+                variant={selectedOption === option ? "default" : "outline"}
+                className={`w-full text-lg p-4 h-auto transition-colors duration-300 ${getOptionStyle(option)}`}
+                disabled={disabled}
+              >
+                {option}
+              </Button>
+              
+              {/* Show players who selected this option (screen mode only during reveal) */}
+              {!isPlayerMode && isRevealingAnswer && playersForOption.length > 0 && (
+                <div className="text-center">
+                  <div className="text-sm text-gray-600 mb-1">
+                    {isCorrectAnswer ? "Correct!" : "Selected by:"}
+                  </div>
+                  <div className="flex flex-wrap justify-center gap-2">
+                    {playersForOption.map((player) => (
+                      <span
+                        key={player.id}
+                        className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          isCorrectAnswer
+                            ? "bg-green-100 text-green-800"
+                            : "bg-red-100 text-red-800"
+                        }`}
+                      >
+                        {player.name}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        );
+      })}
     </div>
   );
 }
