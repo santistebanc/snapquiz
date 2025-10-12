@@ -1,24 +1,58 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { Button } from "./ui/button";
+import { useGameStore } from "../store";
+import { Phase } from "../types";
 
 interface OptionsDisplayProps {
-  options: string[];
-  correctAnswer: string;
-  selectedOption?: string;
-  onOptionSelect?: (option: string) => void;
   isPlayerMode?: boolean;
-  disabled?: boolean;
 }
 
 export function OptionsDisplay({ 
-  options, 
-  correctAnswer, 
-  selectedOption, 
-  onOptionSelect, 
-  isPlayerMode = false,
-  disabled = false 
+  isPlayerMode = false
 }: OptionsDisplayProps) {
+  const { gameState, sendMessage, connectionId } = useGameStore();
+
+  // Get current round and question
+  const currentRound =
+    gameState.rounds && gameState.rounds.length > 0
+      ? gameState.rounds[gameState.currentRound - 1]
+      : null;
+  const currentQuestion = currentRound
+    ? gameState.questions.find((q) => q.id === currentRound.questionId)
+    : null;
+
+  if (!currentQuestion) return null;
+
+  const options = currentQuestion.options;
+  const correctAnswer = currentQuestion.answer;
+  const disabled = gameState.phase === Phase.REVEALING_ANSWER;
+
+  // Get player's selected option from server state (only for player mode)
+  const selectedOption =
+    isPlayerMode && currentRound && connectionId
+      ? currentRound.chosenOptions instanceof Map
+        ? currentRound.chosenOptions.get(connectionId)
+        : currentRound.chosenOptions[connectionId]
+      : null;
+
+  // Handle option selection (only for player mode)
+  const handleOptionSelect = (option: string) => {
+    if (!isPlayerMode) return;
+    
+    console.log("Player selecting option:", option);
+    console.log(
+      "Sending selectOption message with connectionId:",
+      connectionId
+    );
+    sendMessage({
+      type: "selectOption",
+      data: {
+        option: option,
+        connectionId: connectionId,
+      },
+    });
+  };
   const getOptionStyle = (option: string) => {
     if (disabled) {
       // Answer reveal mode
@@ -55,7 +89,7 @@ export function OptionsDisplay({
           whileTap={{ scale: 0.98 }}
         >
           <Button
-            onClick={() => onOptionSelect?.(option)}
+            onClick={() => handleOptionSelect(option)}
             variant={selectedOption === option ? "default" : "outline"}
             className={`w-full text-lg p-4 h-auto transition-colors duration-300 ${getOptionStyle(option)}`}
             disabled={disabled}

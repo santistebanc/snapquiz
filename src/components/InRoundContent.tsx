@@ -22,32 +22,6 @@ export function InRoundContent({ isPlayerMode }: InRoundContentProps) {
     ? gameState.questions.find((q) => q.id === currentRound.questionId)
     : null;
 
-  // Get player's selected option from server state (only for player mode)
-  const playerSelectedOption =
-    isPlayerMode && currentRound && connectionId
-      ? currentRound.chosenOptions instanceof Map
-        ? currentRound.chosenOptions.get(connectionId)
-        : currentRound.chosenOptions[connectionId]
-      : null;
-
-
-  // Handle option selection (only for player mode)
-  const handleOptionSelect = (option: string) => {
-    if (!isPlayerMode) return;
-    
-    console.log("Player selecting option:", option);
-    console.log(
-      "Sending selectOption message with connectionId:",
-      connectionId
-    );
-    sendMessage({
-      type: "selectOption",
-      data: {
-        option: option,
-        connectionId: connectionId,
-      },
-    });
-  };
   if (!currentQuestion) return null;
 
 
@@ -139,12 +113,7 @@ export function InRoundContent({ isPlayerMode }: InRoundContentProps) {
             }}
           >
             <OptionsDisplay
-              options={currentQuestion.options}
-              correctAnswer={currentQuestion.answer}
-              selectedOption={isPlayerMode ? (playerSelectedOption || undefined) : undefined}
-              onOptionSelect={isPlayerMode ? handleOptionSelect : undefined}
               isPlayerMode={isPlayerMode}
-              disabled={gameState.phase === Phase.REVEALING_ANSWER}
             />
           </motion.div>
         )}
