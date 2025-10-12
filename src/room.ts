@@ -12,7 +12,7 @@ import { questions } from "./questions";
 // Timing constants
 const QUESTION_REVEAL_TIME = 2000; // 2 seconds
 const WAIT_AFTER_QUESTION_TIME = 3000; // 3 seconds after question reveal
-const OPTION_SELECTION_TIMEOUT = 3000; // 3 seconds after first selection
+const OPTION_SELECTION_TIMEOUT = 5000; // 5 seconds after options reveal
 
 export default class RoomServer implements Party.Server {
   private gameState: GameState;
@@ -209,8 +209,6 @@ export default class RoomServer implements Party.Server {
                 );
               }
 
-              // Note: REVEALING_ANSWER transition is handled by timeout started when SHOWING_OPTIONS begins
-
               // Broadcast updated game state
               this.broadcastGameState();
             }
@@ -219,13 +217,24 @@ export default class RoomServer implements Party.Server {
 
         case "resetGame":
           console.log("Resetting game");
-          // Clear all timeouts
+          
+          // Clear all active timeouts (word reveal, option selection, etc.)
           this.timeouts.forEach((timeout) => clearTimeout(timeout));
           this.timeouts.clear();
 
+          // Reset game state variables
           this.gameState.phase = Phase.LOBBY;
           this.gameState.rounds = [];
           this.gameState.currentRound = 0;
+          
+          // Reset player points to 0
+          this.gameState.players.forEach((player) => {
+            player.points = 0;
+          });
+          
+          // Note: connectionToPlayerMap is intentionally NOT cleared
+          // to maintain player connections across game resets
+          
           this.broadcastGameState();
           break;
       }
