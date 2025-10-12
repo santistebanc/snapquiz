@@ -62,6 +62,13 @@ export function InRoundContent({ isPlayerMode }: InRoundContentProps) {
       variants={containerVariants}
       initial="hidden"
       animate="visible"
+      layout
+      transition={{
+        layout: {
+          duration: 0.5,
+          ease: "easeInOut"
+        }
+      }}
     >
       <AnimatePresence mode="wait">
         {gameState.phase >= Phase.QUESTIONING && (
@@ -71,9 +78,14 @@ export function InRoundContent({ isPlayerMode }: InRoundContentProps) {
             initial="hidden"
             animate="visible"
             exit="exit"
+            layout
             transition={{
               duration: 0.5,
-              ease: "easeOut"
+              ease: "easeOut",
+              layout: {
+                duration: 0.5,
+                ease: "easeInOut"
+              }
             }}
           >
             <QuestionDisplay isPlayerMode={isPlayerMode} />
@@ -89,9 +101,14 @@ export function InRoundContent({ isPlayerMode }: InRoundContentProps) {
             initial="hidden"
             animate="visible"
             exit="exit"
+            layout
             transition={{
               duration: 0.5,
-              ease: "easeOut"
+              ease: "easeOut",
+              layout: {
+                duration: 0.5,
+                ease: "easeInOut"
+              }
             }}
           >
             <TimerBar isPlayerMode={isPlayerMode} />
@@ -107,9 +124,14 @@ export function InRoundContent({ isPlayerMode }: InRoundContentProps) {
             initial="hidden"
             animate="visible"
             exit="exit"
+            layout
             transition={{
               duration: 0.5,
-              ease: "easeOut"
+              ease: "easeOut",
+              layout: {
+                duration: 0.5,
+                ease: "easeInOut"
+              }
             }}
           >
             <OptionsDisplay
