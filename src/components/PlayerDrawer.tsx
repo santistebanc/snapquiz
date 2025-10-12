@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 import { Button } from "./ui/button";
 import { Avatar, AvatarImage } from "./ui/avatar";
 import { Badge } from "./ui/badge";
@@ -10,11 +11,25 @@ import type { Player } from "../types";
 interface PlayerDrawerProps {
   players: Player[];
   isPlayerMode?: boolean;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export function PlayerDrawer({ players, isPlayerMode = false }: PlayerDrawerProps) {
-  const [open, setOpen] = useState(false);
+export function PlayerDrawer({ players, isPlayerMode = false, open: externalOpen, onOpenChange }: PlayerDrawerProps) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const [previousPoints, setPreviousPoints] = useState<Map<string, number>>(new Map());
+  const open = externalOpen !== undefined ? externalOpen : internalOpen;
+  const setOpen = onOpenChange || setInternalOpen;
   const sortedPlayers = [...players].sort((a, b) => b.points - a.points);
+
+  // Track point changes for animation
+  useEffect(() => {
+    const newPreviousPoints = new Map();
+    players.forEach(player => {
+      newPreviousPoints.set(player.id, player.points);
+    });
+    setPreviousPoints(newPreviousPoints);
+  }, [players]);
 
   return (
     <>
@@ -60,9 +75,17 @@ export function PlayerDrawer({ players, isPlayerMode = false }: PlayerDrawerProp
                   </p>
                 </div>
               </div>
-              <Badge variant="secondary" className="text-sm font-bold flex-shrink-0 ml-2">
-                {player.points}
-              </Badge>
+              <motion.div
+                key={player.points}
+                initial={{ scale: 1.2, color: "#10b981" }}
+                animate={{ scale: 1, color: "#6b7280" }}
+                transition={{ duration: 0.6, ease: "easeOut" }}
+                className="flex-shrink-0 ml-2"
+              >
+                <Badge variant="secondary" className="text-sm font-bold">
+                  {player.points}
+                </Badge>
+              </motion.div>
             </div>
           ))}
           {players.length === 0 && (

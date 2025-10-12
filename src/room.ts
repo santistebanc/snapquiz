@@ -322,12 +322,46 @@ export default class RoomServer implements Party.Server {
             this.gameState.phase = Phase.REVEALING_ANSWER;
             this.broadcastGameState();
             this.timeouts.delete(revealTimeoutKey);
+            
+            // Start timeout for GIVING_POINTS transition (1 second after reveal)
+            const pointsTimeoutKey = `points_timeout_${roundIndex}`;
+            const pointsTimeout = setTimeout(() => {
+              this.gameState.phase = Phase.GIVING_POINTS;
+              this.givePointsToCorrectPlayers(roundIndex);
+              this.broadcastGameState();
+              this.timeouts.delete(pointsTimeoutKey);
+            }, 1000); // 1 second delay
+            
+            this.timeouts.set(pointsTimeoutKey, pointsTimeout);
           }, OPTION_SELECTION_TIMEOUT);
           
           this.timeouts.set(revealTimeoutKey, revealTimeout);
         }, INITIAL_QUESTION_DELAY + (words.length * REVEAL_WORD_SPEED) + WAIT_AFTER_QUESTION_TIME);
 
         this.timeouts.set(`question_end_${roundIndex}`, finalTimeout);
+      }
+    }
+  }
+
+  private givePointsToCorrectPlayers(roundIndex: number) {
+    if (roundIndex >= 0 && roundIndex < this.gameState.rounds.length) {
+      const round = this.gameState.rounds[roundIndex];
+      const question = this.gameState.questions.find(q => q.id === round.questionId);
+      
+      if (question) {
+        const correctAnswer = question.answer;
+        
+        // Give 10 points to all players who selected the correct answer
+        this.gameState.players.forEach((player) => {
+          const playerChoice = round.chosenOptions instanceof Map
+            ? round.chosenOptions.get(player.id)
+            : round.chosenOptions[player.id];
+          
+          if (playerChoice === correctAnswer) {
+            player.points += 10;
+            console.log(`Player ${player.name} got correct answer, points: ${player.points}`);
+          }
+        });
       }
     }
   }

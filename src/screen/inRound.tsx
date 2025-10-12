@@ -1,13 +1,23 @@
 import { motion } from "framer-motion";
+import { useState, useEffect } from "react";
 import { useGameStore } from "../store";
 import { Button } from "../components/ui/button";
 import { Card, CardContent } from "../components/ui/card";
 import { Container } from "../components/ui/container";
 import { PlayerDrawer } from "../components/PlayerDrawer";
 import { InRoundContent } from "../components/InRoundContent";
+import { Phase } from "../types";
 
 export default function InRound() {
   const { gameState, sendMessage } = useGameStore();
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  // Open drawer when GIVING_POINTS phase starts
+  useEffect(() => {
+    if (gameState.phase === Phase.GIVING_POINTS) {
+      setDrawerOpen(true);
+    }
+  }, [gameState.phase]);
 
   const handleResetGame = () => {
     sendMessage({
@@ -18,7 +28,11 @@ export default function InRound() {
 
   return (
     <Container variant="page">
-      <PlayerDrawer players={Array.from(gameState.players.values())} />
+      <PlayerDrawer 
+        players={Array.from(gameState.players.values())} 
+        open={drawerOpen}
+        onOpenChange={setDrawerOpen}
+      />
       <motion.div
         layout
         transition={{

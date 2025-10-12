@@ -104,39 +104,17 @@ export function OptionsDisplay({ isPlayerMode = false }: OptionsDisplayProps) {
           className="relative"
         >
           <Button
-            onClick={isInteractive ? () => handleOptionSelect(option) : undefined}
+            onClick={
+              isInteractive ? () => handleOptionSelect(option) : undefined
+            }
             variant={selectedOption === option ? "default" : "outline"}
             className={`w-full text-lg p-4 h-auto transition-colors duration-300 ${
-              isInteractive ? '' : 'cursor-default pointer-events-none'
+              isInteractive ? "" : "cursor-default pointer-events-none"
             } ${getOptionStyle(option)}`}
             disabled={isInteractive ? disabled : false}
           >
             {option}
           </Button>
-
-          {/* Show correct players under the correct answer (screen mode only) */}
-          {!isPlayerMode &&
-            option === correctAnswer &&
-            correctPlayers.length > 0 &&
-            correctPlayers.map((player) => (
-              <motion.div
-                key={player.id}
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.2, delay: 0.1 }}
-                className="absolute -top-8 left-10 z-10 flex items-center gap-1 !bg-white px-2 py-1 rounded-full border border-green-200 shadow-sm"
-              >
-                <Avatar className="w-6 h-6">
-                  <AvatarImage
-                    src={generateAvatarUrl(player.avatar)}
-                    alt={player.name}
-                  />
-                </Avatar>
-                <span className="text-xs font-medium text-green-800 truncate max-w-20">
-                  {player.name}
-                </span>
-              </motion.div>
-            ))}
         </motion.div>
       ))}
     </div>
