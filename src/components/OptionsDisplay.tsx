@@ -1,6 +1,8 @@
 import React from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { Button } from "./ui/button";
+import { Card, CardContent } from "./ui/card";
+import { Avatar } from "./ui/avatar";
 import { useGameStore } from "../store";
 import { Phase } from "../types";
 
@@ -27,7 +29,16 @@ export function OptionsDisplay({
   const options = currentQuestion.options;
   const correctAnswer = currentQuestion.answer;
   const disabled = gameState.phase === Phase.REVEALING_ANSWER;
-  const isRevealingAnswer = gameState.phase === Phase.REVEALING_ANSWER;
+
+  // Get players who selected the correct answer (only for screen mode)
+  const correctPlayers = !isPlayerMode && currentRound && disabled
+    ? Array.from(gameState.players.values()).filter(player => {
+        const playerChoice = currentRound.chosenOptions instanceof Map
+          ? currentRound.chosenOptions.get(player.id)
+          : currentRound.chosenOptions[player.id];
+        return playerChoice === correctAnswer;
+      })
+    : [];
 
   // Get player's selected option from server state (only for player mode)
   const selectedOption =
@@ -36,24 +47,6 @@ export function OptionsDisplay({
         ? currentRound.chosenOptions.get(connectionId)
         : currentRound.chosenOptions[connectionId]
       : null;
-
-  // For screen mode during answer reveal: reorder options and get player selections
-  const displayOptions = isRevealingAnswer && !isPlayerMode
-    ? [correctAnswer, ...options.filter(option => option !== correctAnswer)]
-    : options;
-
-  // Get players who selected each option (for screen mode during reveal)
-  const getPlayersForOption = (option: string) => {
-    if (isPlayerMode || !isRevealingAnswer || !currentRound) return [];
-    
-    const players = Array.from(gameState.players.values());
-    return players.filter(player => {
-      const chosenOptions = currentRound.chosenOptions instanceof Map
-        ? currentRound.chosenOptions
-        : new Map(Object.entries(currentRound.chosenOptions));
-      return chosenOptions.get(player.id) === option;
-    });
-  };
 
   // Handle option selection (only for player mode)
   const handleOptionSelect = (option: string) => {
@@ -94,77 +87,70 @@ export function OptionsDisplay({
 
   return (
     <div className={`space-y-3 ${isPlayerMode ? "" : "space-y-4"}`}>
-      <AnimatePresence mode="popLayout">
-        {displayOptions.map((option, index) => {
-          const playersForOption = getPlayersForOption(option);
-          const isCorrectAnswer = option === correctAnswer;
+      {options.map((option, index) => (
+        <motion.div
+          key={index}
+          initial={{ opacity: 0, y: 20, scale: 0.9 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{
+            duration: 0.5,
+            ease: "easeOut",
+            delay: index * 0.1
+          }}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          className="relative"
+        >
+          <Button
+            onClick={() => handleOptionSelect(option)}
+            variant={selectedOption === option ? "default" : "outline"}
+            className={`w-full text-lg p-4 h-auto transition-colors duration-300 ${getOptionStyle(option)}`}
+            disabled={disabled}
+          >
+            {option}
+          </Button>
           
-          return (
+          {/* Show correct players under the correct answer (screen mode only) */}
+          {!isPlayerMode && disabled && option === correctAnswer && correctPlayers.length > 0 && (
             <motion.div
-              key={option}
-              layout
-              initial={{ opacity: 0, y: 20, scale: 0.9 }}
-              animate={{ 
-                opacity: 1, 
-                y: 0, 
-                scale: 1
-              }}
-              exit={{ opacity: 0, y: -20, scale: 0.9 }}
-              transition={{
-                duration: 0.5,
-                ease: "easeOut",
-                delay: isRevealingAnswer && !isPlayerMode ? 0 : index * 0.1,
-                layout: {
-                  duration: 0.8,
-                  ease: "easeInOut",
-                  delay: isRevealingAnswer && isCorrectAnswer && !isPlayerMode ? 0.2 : 0
-                }
-              }}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 0.2 }}
+              className="absolute top-full left-0 right-0 mt-2 z-10"
             >
-              <div className="space-y-2">
-                <Button
-                  onClick={() => handleOptionSelect(option)}
-                  variant={selectedOption === option ? "default" : "outline"}
-                  className={`w-full text-lg p-4 h-auto transition-colors duration-300 ${getOptionStyle(option)}`}
-                  disabled={disabled}
-                >
-                  {option}
-                </Button>
-                
-                {/* Show players who selected this option (screen mode only during reveal) */}
-                {!isPlayerMode && isRevealingAnswer && playersForOption.length > 0 && (
-                  <motion.div 
-                    className="flex flex-wrap justify-center gap-2 mt-2"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.4, duration: 0.3 }}
-                  >
-                    {playersForOption.map((player) => (
-                      <div
+              <Card className="bg-white shadow-lg border-2 border-green-500">
+                <CardContent className="p-3">
+                  <div className="text-sm font-medium text-green-700 mb-2 text-center">
+                    Correct Answer!
+                  </div>
+                  <div className="flex flex-wrap gap-2 justify-center">
+                    {correctPlayers.map((player) => (
+                      <motion.div
                         key={player.id}
-                        className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
-                          isCorrectAnswer
-                            ? "bg-green-100 text-green-800"
-                            : "bg-red-100 text-red-800"
-                        }`}
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.2, delay: 0.1 }}
+                        className="flex items-center gap-1 bg-green-50 px-2 py-1 rounded-full border border-green-200"
                       >
-                        <img
-                          src={`/avatars/${player.avatar}.svg`}
-                          alt={player.name}
-                          className="w-4 h-4 rounded-full"
-                        />
-                        <span>{player.name}</span>
-                      </div>
+                        <Avatar className="w-6 h-6">
+                          <img
+                            src={`/avatars/${player.avatar}.svg`}
+                            alt={player.name}
+                            className="w-full h-full"
+                          />
+                        </Avatar>
+                        <span className="text-xs font-medium text-green-800 truncate max-w-20">
+                          {player.name}
+                        </span>
+                      </motion.div>
                     ))}
-                  </motion.div>
-                )}
-              </div>
+                  </div>
+                </CardContent>
+              </Card>
             </motion.div>
-          );
-        })}
-      </AnimatePresence>
+          )}
+        </motion.div>
+      ))}
     </div>
   );
 }
