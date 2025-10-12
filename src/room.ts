@@ -209,30 +209,7 @@ export default class RoomServer implements Party.Server {
                 );
               }
 
-              // If this is the first selection and we're still in showingOptions phase, transition to revealingAnswer
-              const chosenOptionsSize =
-                round.chosenOptions instanceof Map
-                  ? round.chosenOptions.size
-                  : Object.keys(round.chosenOptions).length;
-
-              if (
-                this.gameState.phase === Phase.SHOWING_OPTIONS &&
-                chosenOptionsSize === 1
-              ) {
-                // Transition to revealingAnswer immediately
-                this.gameState.phase = Phase.REVEALING_ANSWER;
-                
-                // Start timeout for next phase transition
-                const timeoutKey = `reveal_timeout_${currentRoundIndex}`;
-                const timeout = setTimeout(() => {
-                  // Transition to next phase after reveal timeout
-                  // For now, just keep it in REVEALING_ANSWER
-                  // TODO: Add next phase transition logic here
-                  this.timeouts.delete(timeoutKey);
-                }, OPTION_SELECTION_TIMEOUT);
-
-                this.timeouts.set(timeoutKey, timeout);
-              }
+              // Note: REVEALING_ANSWER transition is handled by timeout started when SHOWING_OPTIONS begins
 
               // Broadcast updated game state
               this.broadcastGameState();
@@ -330,6 +307,16 @@ export default class RoomServer implements Party.Server {
         const finalTimeout = setTimeout(() => {
           this.gameState.phase = Phase.SHOWING_OPTIONS;
           this.broadcastGameState();
+          
+          // Start timeout for REVEALING_ANSWER transition
+          const revealTimeoutKey = `reveal_timeout_${roundIndex}`;
+          const revealTimeout = setTimeout(() => {
+            this.gameState.phase = Phase.REVEALING_ANSWER;
+            this.broadcastGameState();
+            this.timeouts.delete(revealTimeoutKey);
+          }, OPTION_SELECTION_TIMEOUT);
+          
+          this.timeouts.set(revealTimeoutKey, revealTimeout);
         }, initialDelay + QUESTION_REVEAL_TIME + WAIT_AFTER_QUESTION_TIME);
 
         this.timeouts.set(`question_end_${roundIndex}`, finalTimeout);
