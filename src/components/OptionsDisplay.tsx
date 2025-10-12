@@ -106,9 +106,9 @@ export function OptionsDisplay({ isPlayerMode = false }: OptionsDisplayProps) {
           <Button
             onClick={isInteractive ? () => handleOptionSelect(option) : undefined}
             variant={selectedOption === option ? "default" : "outline"}
-            className={`w-full text-lg p-4 h-auto transition-colors duration-300 ${getOptionStyle(
-              option
-            )}`}
+            className={`w-full text-lg p-4 h-auto transition-colors duration-300 ${
+              isInteractive ? '' : 'cursor-default pointer-events-none'
+            } ${getOptionStyle(option)}`}
             disabled={isInteractive ? disabled : false}
           >
             {option}
