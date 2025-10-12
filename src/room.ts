@@ -11,6 +11,7 @@ import { questions } from "./questions";
 
 // Timing constants
 const QUESTION_REVEAL_TIME = 2000; // 2 seconds
+const WAIT_AFTER_QUESTION_TIME = 3000; // 3 seconds after question reveal
 const OPTION_SELECTION_TIMEOUT = 3000; // 3 seconds after first selection
 
 export default class RoomServer implements Party.Server {
@@ -328,11 +329,11 @@ export default class RoomServer implements Party.Server {
           this.timeouts.set(`word_${roundIndex}_${index}`, timeout);
         });
 
-        // Transition to showingOptions after all words are revealed
+        // Wait 3 seconds after question reveal, then transition to showingOptions
         const finalTimeout = setTimeout(() => {
           this.gameState.phase = Phase.SHOWING_OPTIONS;
           this.broadcastGameState();
-        }, initialDelay + QUESTION_REVEAL_TIME);
+        }, initialDelay + QUESTION_REVEAL_TIME + WAIT_AFTER_QUESTION_TIME);
 
         this.timeouts.set(`question_end_${roundIndex}`, finalTimeout);
       }
