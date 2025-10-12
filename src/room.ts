@@ -1,17 +1,27 @@
 import type * as Party from "partykit/server";
-import type { GameState, Player, ServerMessage, ClientMessage } from "./types";
+import type { GameState, Player, ServerMessage, ClientMessage, Round } from "./types";
+import { Phase } from "./types";
 import { questions } from "./questions";
+
+// Timing constants
+const QUESTION_REVEAL_TIME = 2000; // 2 seconds
+const WAIT_AFTER_QUESTION_TIME = 3000; // 3 seconds
+const TIMER_UPDATE_INTERVAL = 100; // 100ms (tenth of a second)
+const OPTION_SELECTION_TIMEOUT = 3000; // 3 seconds after first selection
 
 export default class RoomServer implements Party.Server {
   private gameState: GameState;
   private connectionToPlayerMap: Map<string, string>; // Maps connection.id to player.id
+  private timeouts: Map<string, NodeJS.Timeout> = new Map(); // Track active timeouts
 
   constructor(readonly room: Party.Room) {
     this.gameState = {
       roomId: room.id,
       players: new Map(),
       questions: questions,
-      gameStatus: 'lobby',
+      phase: Phase.LOBBY,
+      rounds: [],
+      currentRound: 0,
     };
     this.connectionToPlayerMap = new Map();
   }
@@ -61,72 +71,6 @@ export default class RoomServer implements Party.Server {
               }
               break;
 
-            case "changePlayerName":
-              console.log('Received changePlayerName:', clientMessage.data);
-              if (clientMessage.data.name) {
-                // Truncate name to 20 characters
-                const truncatedName = clientMessage.data.name.substring(0, 20);
-
-                // Use connectionId if provided, otherwise fall back to sender.id
-                const playerId = clientMessage.data.connectionId || sender.id;
-                console.log('Using playerId:', playerId);
-                
-                // Map this connection to the player ID
-                this.connectionToPlayerMap.set(sender.id, playerId);
-                
-                // Check if player exists
-                const existingPlayer = this.gameState.players.get(playerId);
-                if (existingPlayer) {
-                  console.log('Updating existing player:', existingPlayer.name, '->', truncatedName);
-                  // Update the player's name
-                  existingPlayer.name = truncatedName;
-                  this.gameState.players.set(playerId, existingPlayer);
-                } else {
-                  console.log('Creating new player:', truncatedName);
-                  // Create new player if doesn't exist
-                  // Use avatar from message if provided, otherwise default to robot-1
-                  const avatar = clientMessage.data.avatar || 'robot-1';
-                  const player: Player = {
-                    id: playerId,
-                    name: truncatedName,
-                    avatar: avatar,
-                    connectedAt: Date.now(),
-                  };
-                  this.gameState.players.set(playerId, player);
-                }
-                
-                console.log('Current players:', Array.from(this.gameState.players.entries()));
-                
-                // Broadcast updated game state to all connections
-                this.broadcastGameState();
-              }
-              break;
-
-            case "changePlayerAvatar":
-              console.log('Received changePlayerAvatar:', clientMessage.data);
-              if (clientMessage.data.avatar) {
-                // Use connectionId if provided, otherwise fall back to sender.id
-                const playerId = clientMessage.data.connectionId || sender.id;
-                console.log('Using playerId for avatar change:', playerId);
-                
-                // Map this connection to the player ID
-                this.connectionToPlayerMap.set(sender.id, playerId);
-                
-                // Check if player exists
-                const existingPlayer = this.gameState.players.get(playerId);
-                if (existingPlayer) {
-                  console.log('Updating player avatar:', existingPlayer.avatar, '->', clientMessage.data.avatar);
-                  // Update the player's avatar
-                  existingPlayer.avatar = clientMessage.data.avatar;
-                  this.gameState.players.set(playerId, existingPlayer);
-                  
-                  // Broadcast updated game state to all connections
-                  this.broadcastGameState();
-                } else {
-                  console.log('Player not found for avatar change');
-                }
-              }
-              break;
 
             case "changeProfile":
               console.log('Received changeProfile:', clientMessage.data);
@@ -198,13 +142,79 @@ export default class RoomServer implements Party.Server {
 
             case "startGame":
               console.log('Starting game');
-              this.gameState.gameStatus = 'inRound';
+              // Create rounds for each question
+              this.gameState.rounds = this.gameState.questions.map(question => ({
+                questionId: question.id,
+                chosenOptions: new Map<string, string>()
+              }));
+              this.gameState.currentRound = 1;
+              this.gameState.phase = Phase.QUESTIONING;
               this.broadcastGameState();
+              
+              // Start the question reveal process for the first round
+              this.startQuestionReveal(0);
+              break;
+
+            case "selectOption":
+              console.log('Received selectOption:', clientMessage.data);
+              if (clientMessage.data.option) {
+                // Use connectionId if provided, otherwise fall back to sender.id
+                const playerId = clientMessage.data.connectionId || sender.id;
+                console.log('Using playerId:', playerId, 'for option:', clientMessage.data.option);
+                
+                // Get current round
+                const currentRoundIndex = this.gameState.currentRound - 1;
+                if (currentRoundIndex >= 0 && currentRoundIndex < this.gameState.rounds.length) {
+                  const round = this.gameState.rounds[currentRoundIndex];
+                  
+                  // Update the chosen option for this player
+                  if (round.chosenOptions instanceof Map) {
+                    round.chosenOptions.set(playerId, clientMessage.data.option);
+                    console.log('Updated Map chosenOptions:', Object.fromEntries(round.chosenOptions));
+                  } else {
+                    round.chosenOptions[playerId] = clientMessage.data.option;
+                    console.log('Updated object chosenOptions:', round.chosenOptions);
+                  }
+                  
+                  // If this is the first selection and we're still in showingOptions phase, start the timeout
+                  const chosenOptionsSize = round.chosenOptions instanceof Map 
+                    ? round.chosenOptions.size 
+                    : Object.keys(round.chosenOptions).length;
+                  
+                  if (this.gameState.phase === Phase.SHOWING_OPTIONS && chosenOptionsSize === 1) {
+                    const timeoutKey = `option_timeout_${currentRoundIndex}`;
+                    
+                    // Clear any existing timeout for this round
+                    const existingTimeout = this.timeouts.get(timeoutKey);
+                    if (existingTimeout) {
+                      clearTimeout(existingTimeout);
+                    }
+                    
+                    // Set new timeout to transition to revealingAnswer
+                    const timeout = setTimeout(() => {
+                      this.gameState.phase = Phase.REVEALING_ANSWER;
+                      this.broadcastGameState();
+                      this.timeouts.delete(timeoutKey);
+                    }, OPTION_SELECTION_TIMEOUT);
+                    
+                    this.timeouts.set(timeoutKey, timeout);
+                  }
+                  
+                  // Broadcast updated game state
+                  this.broadcastGameState();
+                }
+              }
               break;
 
             case "resetGame":
               console.log('Resetting game');
-              this.gameState.gameStatus = 'lobby';
+              // Clear all timeouts
+              this.timeouts.forEach(timeout => clearTimeout(timeout));
+              this.timeouts.clear();
+              
+              this.gameState.phase = Phase.LOBBY;
+              this.gameState.rounds = [];
+              this.gameState.currentRound = 0;
               this.broadcastGameState();
               break;
           }
@@ -240,6 +250,12 @@ export default class RoomServer implements Party.Server {
       data: {
         ...this.gameState,
         players: Array.from(this.gameState.players.values()),
+        rounds: this.gameState.rounds.map(round => ({
+          ...round,
+          chosenOptions: round.chosenOptions instanceof Map 
+            ? Object.fromEntries(round.chosenOptions)
+            : round.chosenOptions
+        }))
       },
     }));
   }
@@ -247,4 +263,77 @@ export default class RoomServer implements Party.Server {
   private broadcast(message: ServerMessage) {
     this.room.broadcast(JSON.stringify(message));
   }
+
+  private startQuestionReveal(roundIndex: number) {
+    if (roundIndex >= 0 && roundIndex < this.gameState.rounds.length) {
+      const round = this.gameState.rounds[roundIndex];
+      const question = this.gameState.questions.find(q => q.id === round.questionId);
+      
+      if (question) {
+        const words = question.text.split(' ');
+        const wordInterval = QUESTION_REVEAL_TIME / words.length;
+        const initialDelay = 1000; // 1 second delay before first word
+        
+        // Send each word with timing (including 1 second initial delay)
+        words.forEach((word, index) => {
+          const timeout = setTimeout(() => {
+            this.room.broadcast(JSON.stringify({
+              type: "wordReveal",
+              data: {
+                roundIndex,
+                wordIndex: index,
+                word: word,
+                isLastWord: index === words.length - 1
+              }
+            }));
+          }, initialDelay + (index * wordInterval));
+          
+          this.timeouts.set(`word_${roundIndex}_${index}`, timeout);
+        });
+        
+        // Transition to waitAfterQuestion after all words are revealed
+        const finalTimeout = setTimeout(() => {
+          this.gameState.phase = Phase.WAIT_AFTER_QUESTION;
+          this.broadcastGameState();
+          this.startWaitAfterQuestion(roundIndex);
+        }, initialDelay + QUESTION_REVEAL_TIME);
+        
+        this.timeouts.set(`question_end_${roundIndex}`, finalTimeout);
+      }
+    }
+  }
+
+  private startWaitAfterQuestion(roundIndex: number) {
+    if (roundIndex >= 0 && roundIndex < this.gameState.rounds.length) {
+      // Send countdown messages every 100ms for smooth animation
+      const totalUpdates = WAIT_AFTER_QUESTION_TIME / TIMER_UPDATE_INTERVAL;
+      
+      for (let i = 0; i < totalUpdates; i++) {
+        const timeout = setTimeout(() => {
+          const timeRemaining = WAIT_AFTER_QUESTION_TIME - (i * TIMER_UPDATE_INTERVAL);
+          const secondsRemaining = Math.ceil(timeRemaining / 1000);
+          
+          this.room.broadcast(JSON.stringify({
+            type: "timerCountdown",
+            data: {
+              roundIndex,
+              secondsRemaining: Math.max(0, secondsRemaining),
+              timeRemaining: Math.max(0, timeRemaining)
+            }
+          }));
+        }, i * TIMER_UPDATE_INTERVAL);
+        
+        this.timeouts.set(`timer_${roundIndex}_${i}`, timeout);
+      }
+      
+        // Transition to showingOptions after countdown
+        const finalTimeout = setTimeout(() => {
+          this.gameState.phase = Phase.SHOWING_OPTIONS;
+          this.broadcastGameState();
+        }, WAIT_AFTER_QUESTION_TIME);
+      
+      this.timeouts.set(`wait_end_${roundIndex}`, finalTimeout);
+    }
+  }
+
 }

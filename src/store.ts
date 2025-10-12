@@ -41,7 +41,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
     roomId: "",
     players: new Map(),
     questions: [],
-    gameStatus: 'lobby',
+    phase: 'lobby',
+    rounds: [],
+    currentRound: 0,
   },
   isConnected: false,
   isPlayer: false,
@@ -126,7 +128,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       socket: null,
       isConnected: false,
       connectionId: "",
-      gameState: { roomId: "", players: new Map(), questions: [], gameStatus: 'lobby' },
+      gameState: { roomId: "", players: new Map(), questions: [], phase: 'lobby', rounds: [], currentRound: 0 },
     });
   },
 
