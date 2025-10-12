@@ -30,6 +30,9 @@ export function OptionsDisplay({ isPlayerMode = false }: OptionsDisplayProps) {
   const disabled = gameState.phase === Phase.REVEALING_ANSWER;
   const isInteractive = isPlayerMode; // Only interactive in player mode
 
+  // Debug logging
+  console.log('OptionsDisplay - Phase:', gameState.phase, 'Disabled:', disabled, 'Correct Answer:', correctAnswer);
+
   // Get players who selected the correct answer (only for screen mode)
   const correctPlayers =
     !isPlayerMode && currentRound && disabled

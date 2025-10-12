@@ -319,18 +319,20 @@ export default class RoomServer implements Party.Server {
           // Start timeout for REVEALING_ANSWER transition
           const revealTimeoutKey = `reveal_timeout_${roundIndex}`;
           const revealTimeout = setTimeout(() => {
+            console.log('Transitioning to REVEALING_ANSWER phase');
             this.gameState.phase = Phase.REVEALING_ANSWER;
             this.broadcastGameState();
             this.timeouts.delete(revealTimeoutKey);
             
-            // Start timeout for GIVING_POINTS transition (1 second after reveal)
+            // Start timeout for GIVING_POINTS transition (3 seconds after reveal)
             const pointsTimeoutKey = `points_timeout_${roundIndex}`;
             const pointsTimeout = setTimeout(() => {
+              console.log('Transitioning to GIVING_POINTS phase');
               this.gameState.phase = Phase.GIVING_POINTS;
               this.givePointsToCorrectPlayers(roundIndex);
               this.broadcastGameState();
               this.timeouts.delete(pointsTimeoutKey);
-            }, 1000); // 1 second delay
+            }, 3000); // 3 seconds delay to show answer highlighting
             
             this.timeouts.set(pointsTimeoutKey, pointsTimeout);
           }, OPTION_SELECTION_TIMEOUT);
