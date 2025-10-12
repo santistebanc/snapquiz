@@ -5,20 +5,22 @@ import { Phase } from "../types";
 import { useGameStore } from "../store";
 
 interface QuestionDisplayProps {
-  question: {
-    text: string;
-    category: string;
-  };
   isPlayerMode?: boolean;
 }
 
-export function QuestionDisplay({ 
-  question, 
-  isPlayerMode = false 
-}: QuestionDisplayProps) {
+export function QuestionDisplay({ isPlayerMode = false }: QuestionDisplayProps) {
   const { gameState } = useGameStore();
   const [revealedWords, setRevealedWords] = useState<string[]>([]);
   const phase = gameState.phase;
+
+  // Get current round and question
+  const currentRound =
+    gameState.rounds && gameState.rounds.length > 0
+      ? gameState.rounds[gameState.currentRound - 1]
+      : null;
+  const question = currentRound
+    ? gameState.questions.find((q) => q.id === currentRound.questionId)
+    : null;
 
   // Handle server messages for word reveal
   useEffect(() => {
@@ -46,6 +48,8 @@ export function QuestionDisplay({
   useEffect(() => {
     setRevealedWords([]);
   }, [gameState.currentRound]);
+
+  if (!question) return null;
   const categoryDisplay = (
     <div className={`text-gray-600 font-medium mb-3 text-center ${
       isPlayerMode ? "text-lg" : "text-2xl"

@@ -50,10 +50,6 @@ export function InRoundContent({ isPlayerMode }: InRoundContentProps) {
   };
   if (!currentQuestion) return null;
 
-  const questionProps = {
-    question: currentQuestion,
-    isPlayerMode,
-  };
 
   // Animation variants
   const containerVariants = {
@@ -106,7 +102,7 @@ export function InRoundContent({ isPlayerMode }: InRoundContentProps) {
               ease: "easeOut"
             }}
           >
-            <QuestionDisplay {...questionProps} />
+            <QuestionDisplay isPlayerMode={isPlayerMode} />
           </motion.div>
         )}
       </AnimatePresence>
