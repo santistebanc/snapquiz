@@ -1,5 +1,5 @@
 import React from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "./ui/button";
 import { useGameStore } from "../store";
 import { Phase } from "../types";
@@ -94,59 +94,77 @@ export function OptionsDisplay({
 
   return (
     <div className={`space-y-3 ${isPlayerMode ? "" : "space-y-4"}`}>
-      {displayOptions.map((option, index) => {
-        const playersForOption = getPlayersForOption(option);
-        const isCorrectAnswer = option === correctAnswer;
-        
-        return (
-          <motion.div
-            key={option}
-            initial={{ opacity: 0, y: 20, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{
-              duration: 0.5,
-              ease: "easeOut",
-              delay: index * 0.1
-            }}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            <div className="space-y-2">
-              <Button
-                onClick={() => handleOptionSelect(option)}
-                variant={selectedOption === option ? "default" : "outline"}
-                className={`w-full text-lg p-4 h-auto transition-colors duration-300 ${getOptionStyle(option)}`}
-                disabled={disabled}
-              >
-                {option}
-              </Button>
-              
-              {/* Show players who selected this option (screen mode only during reveal) */}
-              {!isPlayerMode && isRevealingAnswer && playersForOption.length > 0 && (
-                <div className="flex flex-wrap justify-center gap-2 mt-2">
-                  {playersForOption.map((player) => (
-                    <div
-                      key={player.id}
-                      className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
-                        isCorrectAnswer
-                          ? "bg-green-100 text-green-800"
-                          : "bg-red-100 text-red-800"
-                      }`}
-                    >
-                      <img
-                        src={`/avatars/${player.avatar}.svg`}
-                        alt={player.name}
-                        className="w-4 h-4 rounded-full"
-                      />
-                      <span>{player.name}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </motion.div>
-        );
-      })}
+      <AnimatePresence mode="popLayout">
+        {displayOptions.map((option, index) => {
+          const playersForOption = getPlayersForOption(option);
+          const isCorrectAnswer = option === correctAnswer;
+          
+          return (
+            <motion.div
+              key={option}
+              layout
+              initial={{ opacity: 0, y: 20, scale: 0.9 }}
+              animate={{ 
+                opacity: 1, 
+                y: 0, 
+                scale: 1
+              }}
+              exit={{ opacity: 0, y: -20, scale: 0.9 }}
+              transition={{
+                duration: 0.5,
+                ease: "easeOut",
+                delay: isRevealingAnswer && !isPlayerMode ? 0 : index * 0.1,
+                layout: {
+                  duration: 0.8,
+                  ease: "easeInOut",
+                  delay: isRevealingAnswer && isCorrectAnswer && !isPlayerMode ? 0.2 : 0
+                }
+              }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <div className="space-y-2">
+                <Button
+                  onClick={() => handleOptionSelect(option)}
+                  variant={selectedOption === option ? "default" : "outline"}
+                  className={`w-full text-lg p-4 h-auto transition-colors duration-300 ${getOptionStyle(option)}`}
+                  disabled={disabled}
+                >
+                  {option}
+                </Button>
+                
+                {/* Show players who selected this option (screen mode only during reveal) */}
+                {!isPlayerMode && isRevealingAnswer && playersForOption.length > 0 && (
+                  <motion.div 
+                    className="flex flex-wrap justify-center gap-2 mt-2"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4, duration: 0.3 }}
+                  >
+                    {playersForOption.map((player) => (
+                      <div
+                        key={player.id}
+                        className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+                          isCorrectAnswer
+                            ? "bg-green-100 text-green-800"
+                            : "bg-red-100 text-red-800"
+                        }`}
+                      >
+                        <img
+                          src={`/avatars/${player.avatar}.svg`}
+                          alt={player.name}
+                          className="w-4 h-4 rounded-full"
+                        />
+                        <span>{player.name}</span>
+                      </div>
+                    ))}
+                  </motion.div>
+                )}
+              </div>
+            </motion.div>
+          );
+        })}
+      </AnimatePresence>
     </div>
   );
 }
