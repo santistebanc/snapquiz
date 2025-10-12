@@ -14,6 +14,7 @@ export interface Player {
   name: string;
   avatar: string;
   connectedAt: number;
+  points: number;
 }
 
 export interface Question {

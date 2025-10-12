@@ -61,6 +61,7 @@ export default class RoomServer implements Party.Server {
                   name: truncatedName,
                   avatar: avatar,
                   connectedAt: Date.now(),
+                  points: 0,
                 };
 
                 // Add player to game state using the playerId
@@ -121,6 +122,7 @@ export default class RoomServer implements Party.Server {
                     name: name,
                     avatar: avatar,
                     connectedAt: Date.now(),
+                    points: 0,
                   };
                   this.gameState.players.set(playerId, player);
                   
@@ -258,10 +260,6 @@ export default class RoomServer implements Party.Server {
         }))
       },
     }));
-  }
-
-  private broadcast(message: ServerMessage) {
-    this.room.broadcast(JSON.stringify(message));
   }
 
   private startQuestionReveal(roundIndex: number) {

@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import PartySocket from "partysocket";
 import type { GameState, Player, ServerMessage } from "./types";
+import { Phase } from "./types";
 import { getStoredConnectionId, setStoredConnectionId, setStoredPlayerName, setStoredPlayerAvatar, setStoredRoomId } from "./utils";
 
 // Get PartyKit host from environment variable
@@ -41,7 +42,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     roomId: "",
     players: new Map(),
     questions: [],
-    phase: 'lobby',
+    phase: Phase.LOBBY,
     rounds: [],
     currentRound: 0,
   },
@@ -128,7 +129,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       socket: null,
       isConnected: false,
       connectionId: "",
-      gameState: { roomId: "", players: new Map(), questions: [], phase: 'lobby', rounds: [], currentRound: 0 },
+      gameState: { roomId: "", players: new Map(), questions: [], phase: Phase.LOBBY, rounds: [], currentRound: 0 },
     });
   },
 

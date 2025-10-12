@@ -94,7 +94,7 @@ export function ProfileDialog({ onOpenChange }: ProfileDialogProps) {
               onChange={(e) => setEditName(e.target.value.toUpperCase())}
               placeholder="Your name here..."
               className="text-center uppercase"
-              maxLength={20}
+              maxLength={15}
             />
           </div>
 

@@ -39,7 +39,16 @@ export default function Lobby() {
         {/* Header */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-center text-4xl">SnapQuiz</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-4xl">SnapQuiz</CardTitle>
+              <Button 
+                onClick={handleStartGame} 
+                size="lg" 
+                disabled={gameState.players.size === 0}
+              >
+                {gameState.players.size === 0 ? "Waiting for players..." : "Start Game"}
+              </Button>
+            </div>
           </CardHeader>
         </Card>
 
@@ -48,34 +57,22 @@ export default function Lobby() {
           {/* Left Column - Room ID and QR Code */}
           <div className="space-y-6">
             <Card>
-              <CardHeader>
-                <CardTitle className="text-center">Room Code</CardTitle>
-              </CardHeader>
-              <CardContent className="text-center">
-                <Badge variant="secondary" className="text-2xl font-mono px-4 py-2">
-                  {gameState.roomId}
-                </Badge>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-center">Scan to Join</CardTitle>
-              </CardHeader>
-              <CardContent className="text-center">
+              <CardContent className="text-center p-6 space-y-4">
+                <div className="flex items-center justify-center gap-2 text-lg font-mono">
+                  <span className="text-muted-foreground">Room:</span>
+                  <span className="font-bold">{gameState.roomId}</span>
+                </div>
                 {qrCodeDataUrl ? (
-                  <div className="bg-white p-4 rounded-lg inline-block shadow-lg">
-                    <img
-                      src={qrCodeDataUrl}
-                      alt="QR Code to join game"
-                      className="w-48 h-48"
-                    />
-                  </div>
+                  <img
+                    src={qrCodeDataUrl}
+                    alt="QR Code to join game"
+                    className="w-48 h-48 mx-auto"
+                  />
                 ) : (
                   <div className="w-48 h-48 bg-muted rounded-lg flex items-center justify-center mx-auto">
                     <div className="space-y-2">
-                      <Skeleton className="h-4 w-32 mx-auto" />
-                      <Skeleton className="h-4 w-24 mx-auto" />
+                      <Skeleton className="h-3 w-20 mx-auto" />
+                      <Skeleton className="h-3 w-16 mx-auto" />
                     </div>
                   </div>
                 )}
@@ -85,13 +82,7 @@ export default function Lobby() {
 
           {/* Right Column - Player List */}
           <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>Players</CardTitle>
-                <Badge variant="secondary">{gameState.players.size}</Badge>
-              </div>
-            </CardHeader>
-            <CardContent>
+            <CardContent className="p-4">
               {gameState.players.size === 0 ? (
                 <Centered className="py-8">
                   <div className="space-y-2">
@@ -101,7 +92,7 @@ export default function Lobby() {
                 </Centered>
               ) : (
                 <ScrollArea className="h-64">
-                  <div className="space-y-2 pr-4">
+                  <div className="space-y-3 pr-4">
                     {playersList.map((player: Player) => (
                       <Card key={player.id} className="p-3">
                         <div className="flex items-center justify-between">
@@ -124,20 +115,6 @@ export default function Lobby() {
             </CardContent>
           </Card>
         </div>
-
-        <Separator />
-
-        {/* Start Game Button */}
-        <Centered>
-          <Button 
-            onClick={handleStartGame} 
-            size="lg" 
-            className="w-full max-w-xs"
-            disabled={gameState.players.size === 0}
-          >
-            {gameState.players.size === 0 ? "Waiting for players..." : "Start Game"}
-          </Button>
-        </Centered>
       </Container>
     </Container>
   );

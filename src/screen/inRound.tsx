@@ -6,6 +6,7 @@ import { Container } from "../components/ui/container";
 import { QuestionDisplay } from "../components/QuestionDisplay";
 import { TimerBar } from "../components/TimerBar";
 import { OptionsDisplay } from "../components/OptionsDisplay";
+import { PlayerDrawer } from "../components/PlayerDrawer";
 import { Phase } from "../types";
 
 export default function InRound() {
@@ -114,6 +115,7 @@ export default function InRound() {
 
   return (
     <Container variant="page">
+      <PlayerDrawer players={Array.from(gameState.players.values())} />
       <Card className="w-full max-w-6xl">
         <CardContent className="text-center p-8 space-y-6">
           {renderContent()}
