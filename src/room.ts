@@ -10,7 +10,8 @@ import { Phase } from "./types";
 import { questions } from "./questions";
 
 // Timing constants
-const QUESTION_REVEAL_TIME = 2000; // 2 seconds
+const REVEAL_WORD_SPEED = 100; // 100ms
+const INITIAL_QUESTION_DELAY = 1000; // 1 second delay before first word
 const WAIT_AFTER_QUESTION_TIME = 3000; // 3 seconds after question reveal
 const OPTION_SELECTION_TIMEOUT = 5000; // 5 seconds after options reveal
 
@@ -292,10 +293,8 @@ export default class RoomServer implements Party.Server {
         (q) => q.id === round.questionId
       );
 
-      if (question) {
-        const words = question.text.split(" ");
-        const wordInterval = QUESTION_REVEAL_TIME / words.length;
-        const initialDelay = 1000; // 1 second delay before first word
+        if (question) {
+          const words = question.text.split(" ");
 
         // Update current round's revealedWordsIndex and broadcast game state
         words.forEach((_, index) => {
@@ -307,7 +306,7 @@ export default class RoomServer implements Party.Server {
               );
               this.broadcastGameState();
             }
-          }, initialDelay + index * wordInterval);
+          }, INITIAL_QUESTION_DELAY + index * REVEAL_WORD_SPEED);
 
           this.timeouts.set(`word_${roundIndex}_${index}`, timeout);
         });
@@ -326,7 +325,7 @@ export default class RoomServer implements Party.Server {
           }, OPTION_SELECTION_TIMEOUT);
           
           this.timeouts.set(revealTimeoutKey, revealTimeout);
-        }, initialDelay + QUESTION_REVEAL_TIME + WAIT_AFTER_QUESTION_TIME);
+        }, INITIAL_QUESTION_DELAY + (words.length * REVEAL_WORD_SPEED) + WAIT_AFTER_QUESTION_TIME);
 
         this.timeouts.set(`question_end_${roundIndex}`, finalTimeout);
       }
