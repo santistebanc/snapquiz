@@ -209,7 +209,7 @@ export default class RoomServer implements Party.Server {
                 );
               }
 
-              // If this is the first selection and we're still in showingOptions phase, start the timeout
+              // If this is the first selection and we're still in showingOptions phase, transition to revealingAnswer
               const chosenOptionsSize =
                 round.chosenOptions instanceof Map
                   ? round.chosenOptions.size
@@ -219,18 +219,15 @@ export default class RoomServer implements Party.Server {
                 this.gameState.phase === Phase.SHOWING_OPTIONS &&
                 chosenOptionsSize === 1
               ) {
-                const timeoutKey = `option_timeout_${currentRoundIndex}`;
-
-                // Clear any existing timeout for this round
-                const existingTimeout = this.timeouts.get(timeoutKey);
-                if (existingTimeout) {
-                  clearTimeout(existingTimeout);
-                }
-
-                // Set new timeout to transition to revealingAnswer
+                // Transition to revealingAnswer immediately
+                this.gameState.phase = Phase.REVEALING_ANSWER;
+                
+                // Start timeout for next phase transition
+                const timeoutKey = `reveal_timeout_${currentRoundIndex}`;
                 const timeout = setTimeout(() => {
-                  this.gameState.phase = Phase.REVEALING_ANSWER;
-                  this.broadcastGameState();
+                  // Transition to next phase after reveal timeout
+                  // For now, just keep it in REVEALING_ANSWER
+                  // TODO: Add next phase transition logic here
                   this.timeouts.delete(timeoutKey);
                 }, OPTION_SELECTION_TIMEOUT);
 
