@@ -58,68 +58,49 @@ export function QuestionDisplay({ isPlayerMode = false }: QuestionDisplayProps) 
     </div>
   );
 
-  // Show word-by-word animation during QUESTIONING phase
-  if (phase === Phase.QUESTIONING) {
-    const allWords = question.text.split(' ');
-    
-    return (
-      <div className={`space-y-3 ${isPlayerMode ? "" : "space-y-4"}`}>
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, ease: "easeOut" }}
-        >
-          {categoryDisplay}
-        </motion.div>
-        <div className={`font-bold text-center leading-tight ${
-          isPlayerMode ? "text-2xl" : "text-6xl"
-        }`}>
-          <div className="inline-block">
-            {allWords.map((word, index) => {
-              const isRevealed = index < revealedWords.length;
-              
-              return (
-                <motion.span 
-                  key={`word-${index}`}
-                  className="inline-block mr-2"
-                  initial={{ opacity: 0, y: 20, scale: 0.8 }}
-                  animate={isRevealed ? { 
-                    opacity: 1, 
-                    y: 0, 
-                    scale: 1 
-                  } : { 
-                    opacity: 0, 
-                    y: 20, 
-                    scale: 0.8 
-                  }}
-                  transition={{
-                    duration: 0.6,
-                    ease: "easeOut",
-                    delay: isRevealed ? index * 0.1 : 0
-                  }}
-                >
-                  {word}
-                </motion.span>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Show static question text in other phases
+  const allWords = question.text.split(' ');
+  
   return (
     <div className={`space-y-3 ${isPlayerMode ? "" : "space-y-4"}`}>
-      <div>
-        {categoryDisplay}
-      </div>
-      <div 
-        className={`font-bold text-center leading-tight ${
-          isPlayerMode ? "text-2xl" : "text-6xl"
-        }`}
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
       >
-        {question.text}
+        {categoryDisplay}
+      </motion.div>
+      <div className={`font-bold text-center leading-tight ${
+        isPlayerMode ? "text-2xl" : "text-6xl"
+      }`}>
+        <div className="inline-block">
+          {allWords.map((word, index) => {
+            const isRevealed = index < revealedWords.length;
+            
+            return (
+              <motion.span 
+                key={`word-${index}`}
+                className="inline-block mr-2"
+                initial={{ opacity: 0, y: 20, scale: 0.8 }}
+                animate={isRevealed ? { 
+                  opacity: 1, 
+                  y: 0, 
+                  scale: 1 
+                } : { 
+                  opacity: 0, 
+                  y: 20, 
+                  scale: 0.8 
+                }}
+                transition={{
+                  duration: 0.6,
+                  ease: "easeOut",
+                  delay: isRevealed ? index * 0.1 : 0
+                }}
+              >
+                {word}
+              </motion.span>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
