@@ -30,6 +30,7 @@ export interface Question {
 export interface Round {
   questionId: string;
   chosenOptions: Map<string, string> | Record<string, string>;
+  revealedWordsIndex: number;
 }
 
 export interface GameState {
@@ -39,7 +40,6 @@ export interface GameState {
   phase: Phase;
   rounds: Round[];
   currentRound: number;
-  revealedWordsIndex: number;
 }
 
 export interface ServerMessage {

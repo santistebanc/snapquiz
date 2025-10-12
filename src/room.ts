@@ -22,7 +22,6 @@ export default class RoomServer implements Party.Server {
       phase: Phase.LOBBY,
       rounds: [],
       currentRound: 0,
-      revealedWordsIndex: 0,
     };
     this.connectionToPlayerMap = new Map();
   }
@@ -148,10 +147,10 @@ export default class RoomServer implements Party.Server {
               // Create rounds for each question
               this.gameState.rounds = this.gameState.questions.map(question => ({
                 questionId: question.id,
-                chosenOptions: new Map<string, string>()
+                chosenOptions: new Map<string, string>(),
+                revealedWordsIndex: 0
               }));
               this.gameState.currentRound = 1;
-              this.gameState.revealedWordsIndex = 0;
               this.gameState.phase = Phase.QUESTIONING;
               this.broadcastGameState();
               
@@ -219,7 +218,6 @@ export default class RoomServer implements Party.Server {
               this.gameState.phase = Phase.LOBBY;
               this.gameState.rounds = [];
               this.gameState.currentRound = 0;
-              this.gameState.revealedWordsIndex = 0;
               this.broadcastGameState();
               break;
           }
@@ -275,11 +273,13 @@ export default class RoomServer implements Party.Server {
         const wordInterval = QUESTION_REVEAL_TIME / words.length;
         const initialDelay = 1000; // 1 second delay before first word
         
-        // Update revealedWordsIndex and broadcast game state
+        // Update current round's revealedWordsIndex and broadcast game state
         words.forEach((word, index) => {
           const timeout = setTimeout(() => {
-            this.gameState.revealedWordsIndex = index + 1;
-            this.broadcastGameState();
+            if (this.gameState.rounds[roundIndex]) {
+              this.gameState.rounds[roundIndex].revealedWordsIndex = index + 1;
+              this.broadcastGameState();
+            }
           }, initialDelay + (index * wordInterval));
           
           this.timeouts.set(`word_${roundIndex}_${index}`, timeout);

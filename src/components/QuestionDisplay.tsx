@@ -18,9 +18,9 @@ export function QuestionDisplay({ isPlayerMode = false }: QuestionDisplayProps) 
     ? gameState.questions.find((q) => q.id === currentRound.questionId)
     : null;
 
-  // Derive revealed words from gameState.revealedWordsIndex
-  const revealedWords = question 
-    ? question.text.split(' ').slice(0, gameState.revealedWordsIndex)
+  // Derive revealed words from current round's revealedWordsIndex
+  const revealedWords = question && currentRound
+    ? question.text.split(' ').slice(0, currentRound.revealedWordsIndex)
     : [];
 
   if (!question) return null;
