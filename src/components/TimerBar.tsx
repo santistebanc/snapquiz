@@ -1,12 +1,42 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import { useGameStore } from "../store";
 
 interface TimerBarProps {
-  timeRemaining: number;
   isPlayerMode?: boolean;
 }
 
-export function TimerBar({ timeRemaining, isPlayerMode = false }: TimerBarProps) {
+export function TimerBar({ isPlayerMode = false }: TimerBarProps) {
+  const { gameState } = useGameStore();
+  const [timeRemaining, setTimeRemaining] = useState<number>(3000);
+
+  // Handle server messages for timer
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      try {
+        const message = JSON.parse(event.data);
+
+        if (message.type === "timerCountdown") {
+          setTimeRemaining(message.data.timeRemaining);
+        }
+      } catch (error) {
+        console.error("Error parsing message:", error);
+      }
+    };
+
+    // Listen for messages from the game store's socket
+    const socket = (useGameStore.getState() as any).socket;
+    if (socket) {
+      socket.addEventListener("message", handleMessage);
+      return () => socket.removeEventListener("message", handleMessage);
+    }
+  }, []);
+
+  // Reset timer when round changes
+  useEffect(() => {
+    setTimeRemaining(3000);
+  }, [gameState.currentRound]);
+
   const progress = ((3000 - timeRemaining) / 3000) * 100;
   
   return (

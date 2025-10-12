@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useGameStore } from "../store";
 import { QuestionDisplay } from "./QuestionDisplay";
@@ -12,7 +12,6 @@ interface InRoundContentProps {
 
 export function InRoundContent({ isPlayerMode }: InRoundContentProps) {
   const { gameState, sendMessage, connectionId } = useGameStore();
-  const [timeRemaining, setTimeRemaining] = useState<number>(3000);
 
   // Get current round and question
   const currentRound =
@@ -31,32 +30,6 @@ export function InRoundContent({ isPlayerMode }: InRoundContentProps) {
         : currentRound.chosenOptions[connectionId]
       : null;
 
-  // Handle server messages for timer
-  useEffect(() => {
-    const handleMessage = (event: MessageEvent) => {
-      try {
-        const message = JSON.parse(event.data);
-
-        if (message.type === "timerCountdown") {
-          setTimeRemaining(message.data.timeRemaining);
-        }
-      } catch (error) {
-        console.error("Error parsing message:", error);
-      }
-    };
-
-    // Listen for messages from the game store's socket
-    const socket = (useGameStore.getState() as any).socket;
-    if (socket) {
-      socket.addEventListener("message", handleMessage);
-      return () => socket.removeEventListener("message", handleMessage);
-    }
-  }, []);
-
-  // Reset timer when round changes
-  useEffect(() => {
-    setTimeRemaining(3000);
-  }, [gameState.currentRound]);
 
   // Handle option selection (only for player mode)
   const handleOptionSelect = (option: string) => {
@@ -152,7 +125,7 @@ export function InRoundContent({ isPlayerMode }: InRoundContentProps) {
               ease: "easeOut"
             }}
           >
-            <TimerBar timeRemaining={timeRemaining} isPlayerMode={isPlayerMode} />
+            <TimerBar isPlayerMode={isPlayerMode} />
           </motion.div>
         )}
       </AnimatePresence>
