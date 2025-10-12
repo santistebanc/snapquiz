@@ -2,9 +2,10 @@ import React from "react";
 import { motion } from "framer-motion";
 import { Button } from "./ui/button";
 import { Card, CardContent } from "./ui/card";
-import { Avatar } from "./ui/avatar";
+import { Avatar, AvatarImage } from "./ui/avatar";
 import { useGameStore } from "../store";
 import { Phase } from "../types";
+import { generateAvatarUrl } from "../utils";
 
 interface OptionsDisplayProps {
   isPlayerMode?: boolean;
@@ -133,10 +134,9 @@ export function OptionsDisplay({
                         className="flex items-center gap-1 bg-green-50 px-2 py-1 rounded-full border border-green-200"
                       >
                         <Avatar className="w-6 h-6">
-                          <img
-                            src={`/avatars/${player.avatar}.svg`}
+                          <AvatarImage
+                            src={generateAvatarUrl(player.avatar)}
                             alt={player.name}
-                            className="w-full h-full"
                           />
                         </Avatar>
                         <span className="text-xs font-medium text-green-800 truncate max-w-20">
