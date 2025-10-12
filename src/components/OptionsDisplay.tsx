@@ -124,14 +124,14 @@ export function OptionsDisplay({ isPlayerMode = false }: OptionsDisplayProps) {
                  transition={{ duration: 0.3, delay: 0.2 }}
                  className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 z-10"
                >
-                 <div className="flex flex-wrap gap-2 justify-center">
+                 <div className="flex flex-wrap gap-2 justify-center !bg-white p-2 rounded-lg shadow-lg">
                    {correctPlayers.map((player) => (
                      <motion.div
                        key={player.id}
                        initial={{ opacity: 0, scale: 0.8 }}
                        animate={{ opacity: 1, scale: 1 }}
                        transition={{ duration: 0.2, delay: 0.1 }}
-                       className="flex items-center gap-1 bg-white px-2 py-1 rounded-full border border-green-200 shadow-sm"
+                       className="flex items-center gap-1 !bg-white px-2 py-1 rounded-full border border-green-200 shadow-sm"
                      >
                        <Avatar className="w-6 h-6">
                          <AvatarImage
