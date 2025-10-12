@@ -1,12 +1,11 @@
 export enum Phase {
   LOBBY = 0,
   QUESTIONING = 1,
-  WAIT_AFTER_QUESTION = 2,
-  SHOWING_OPTIONS = 3,
-  REVEALING_ANSWER = 4,
-  GIVING_POINTS = 5,
-  FINISHED = 6,
-  GAME_OVER = 7
+  SHOWING_OPTIONS = 2,
+  REVEALING_ANSWER = 3,
+  GIVING_POINTS = 4,
+  FINISHED = 5,
+  GAME_OVER = 6
 }
 
 export interface Player {
@@ -43,7 +42,7 @@ export interface GameState {
 }
 
 export interface ServerMessage {
-  type: 'update' | 'timerCountdown';
+  type: 'update';
   data: any;
 }
 

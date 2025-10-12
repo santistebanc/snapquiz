@@ -11,8 +11,6 @@ import { questions } from "./questions";
 
 // Timing constants
 const QUESTION_REVEAL_TIME = 2000; // 2 seconds
-const WAIT_AFTER_QUESTION_TIME = 3000; // 3 seconds
-const TIMER_UPDATE_INTERVAL = 100; // 100ms (tenth of a second)
 const OPTION_SELECTION_TIMEOUT = 3000; // 3 seconds after first selection
 
 export default class RoomServer implements Party.Server {
@@ -330,11 +328,10 @@ export default class RoomServer implements Party.Server {
           this.timeouts.set(`word_${roundIndex}_${index}`, timeout);
         });
 
-        // Transition to waitAfterQuestion after all words are revealed
+        // Transition to showingOptions after all words are revealed
         const finalTimeout = setTimeout(() => {
-          this.gameState.phase = Phase.WAIT_AFTER_QUESTION;
+          this.gameState.phase = Phase.SHOWING_OPTIONS;
           this.broadcastGameState();
-          this.startWaitAfterQuestion(roundIndex);
         }, initialDelay + QUESTION_REVEAL_TIME);
 
         this.timeouts.set(`question_end_${roundIndex}`, finalTimeout);
@@ -342,39 +339,4 @@ export default class RoomServer implements Party.Server {
     }
   }
 
-  private startWaitAfterQuestion(roundIndex: number) {
-    if (roundIndex >= 0 && roundIndex < this.gameState.rounds.length) {
-      // Send countdown messages every 100ms for smooth animation
-      const totalUpdates = WAIT_AFTER_QUESTION_TIME / TIMER_UPDATE_INTERVAL;
-
-      for (let i = 0; i < totalUpdates; i++) {
-        const timeout = setTimeout(() => {
-          const timeRemaining =
-            WAIT_AFTER_QUESTION_TIME - i * TIMER_UPDATE_INTERVAL;
-          const secondsRemaining = Math.ceil(timeRemaining / 1000);
-
-          this.room.broadcast(
-            JSON.stringify({
-              type: "timerCountdown",
-              data: {
-                roundIndex,
-                secondsRemaining: Math.max(0, secondsRemaining),
-                timeRemaining: Math.max(0, timeRemaining),
-              },
-            })
-          );
-        }, i * TIMER_UPDATE_INTERVAL);
-
-        this.timeouts.set(`timer_${roundIndex}_${i}`, timeout);
-      }
-
-      // Transition to showingOptions after countdown
-      const finalTimeout = setTimeout(() => {
-        this.gameState.phase = Phase.SHOWING_OPTIONS;
-        this.broadcastGameState();
-      }, WAIT_AFTER_QUESTION_TIME);
-
-      this.timeouts.set(`wait_end_${roundIndex}`, finalTimeout);
-    }
-  }
 }
