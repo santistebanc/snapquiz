@@ -272,15 +272,14 @@ export default class RoomServer implements Party.Server {
         const wordInterval = QUESTION_REVEAL_TIME / words.length;
         const initialDelay = 1000; // 1 second delay before first word
         
-        // Send the entire list of revealed words so far
+        // Send the count of revealed words so far
         words.forEach((word, index) => {
           const timeout = setTimeout(() => {
-            const revealedWords = words.slice(0, index + 1);
             this.room.broadcast(JSON.stringify({
               type: "wordReveal",
               data: {
                 roundIndex,
-                revealedWords: revealedWords,
+                revealedCount: index + 1,
                 isLastWord: index === words.length - 1
               }
             }));

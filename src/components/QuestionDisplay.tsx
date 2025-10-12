@@ -26,7 +26,11 @@ export function QuestionDisplay({ isPlayerMode = false }: QuestionDisplayProps) 
         const message = JSON.parse(event.data);
 
         if (message.type === "wordReveal") {
-          setRevealedWords(message.data.revealedWords);
+          const revealedCount = message.data.revealedCount;
+          if (question) {
+            const allWords = question.text.split(' ');
+            setRevealedWords(allWords.slice(0, revealedCount));
+          }
         }
       } catch (error) {
         console.error("Error parsing message:", error);
