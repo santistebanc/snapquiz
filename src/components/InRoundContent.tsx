@@ -12,7 +12,6 @@ interface InRoundContentProps {
 
 export function InRoundContent({ isPlayerMode }: InRoundContentProps) {
   const { gameState, sendMessage, connectionId } = useGameStore();
-  const [revealedWords, setRevealedWords] = useState<string[]>([]);
   const [timeRemaining, setTimeRemaining] = useState<number>(3000);
 
   // Get current round and question
@@ -32,15 +31,13 @@ export function InRoundContent({ isPlayerMode }: InRoundContentProps) {
         : currentRound.chosenOptions[connectionId]
       : null;
 
-  // Handle server messages for word reveal and timer
+  // Handle server messages for timer
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
       try {
         const message = JSON.parse(event.data);
 
-        if (message.type === "wordReveal") {
-          setRevealedWords((prev) => [...prev, message.data.word]);
-        } else if (message.type === "timerCountdown") {
+        if (message.type === "timerCountdown") {
           setTimeRemaining(message.data.timeRemaining);
         }
       } catch (error) {
@@ -56,9 +53,8 @@ export function InRoundContent({ isPlayerMode }: InRoundContentProps) {
     }
   }, []);
 
-  // Reset revealed words when round changes
+  // Reset timer when round changes
   useEffect(() => {
-    setRevealedWords([]);
     setTimeRemaining(3000);
   }, [gameState.currentRound]);
 
@@ -83,7 +79,6 @@ export function InRoundContent({ isPlayerMode }: InRoundContentProps) {
 
   const questionProps = {
     question: currentQuestion,
-    revealedWords,
     phase: gameState.phase,
     isPlayerMode,
   };

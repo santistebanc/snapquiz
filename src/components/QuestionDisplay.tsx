@@ -1,24 +1,52 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Text } from "./ui/text";
 import { Phase } from "../types";
+import { useGameStore } from "../store";
 
 interface QuestionDisplayProps {
   question: {
     text: string;
     category: string;
   };
-  revealedWords: string[];
   phase: Phase;
   isPlayerMode?: boolean;
 }
 
 export function QuestionDisplay({ 
   question, 
-  revealedWords, 
   phase, 
   isPlayerMode = false 
 }: QuestionDisplayProps) {
+  const { gameState } = useGameStore();
+  const [revealedWords, setRevealedWords] = useState<string[]>([]);
+
+  // Handle server messages for word reveal
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      try {
+        const message = JSON.parse(event.data);
+
+        if (message.type === "wordReveal") {
+          setRevealedWords((prev) => [...prev, message.data.word]);
+        }
+      } catch (error) {
+        console.error("Error parsing message:", error);
+      }
+    };
+
+    // Listen for messages from the game store's socket
+    const socket = (useGameStore.getState() as any).socket;
+    if (socket) {
+      socket.addEventListener("message", handleMessage);
+      return () => socket.removeEventListener("message", handleMessage);
+    }
+  }, []);
+
+  // Reset revealed words when round changes
+  useEffect(() => {
+    setRevealedWords([]);
+  }, [gameState.currentRound]);
   const categoryDisplay = (
     <div className={`text-gray-600 font-medium mb-3 text-center ${
       isPlayerMode ? "text-lg" : "text-2xl"
