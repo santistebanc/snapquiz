@@ -1,7 +1,5 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Text } from "./ui/text";
-import { Phase } from "../types";
 import { useGameStore } from "../store";
 
 interface QuestionDisplayProps {
@@ -11,7 +9,6 @@ interface QuestionDisplayProps {
 export function QuestionDisplay({ isPlayerMode = false }: QuestionDisplayProps) {
   const { gameState } = useGameStore();
   const [revealedWords, setRevealedWords] = useState<string[]>([]);
-  const phase = gameState.phase;
 
   // Get current round and question
   const currentRound =
@@ -29,7 +26,7 @@ export function QuestionDisplay({ isPlayerMode = false }: QuestionDisplayProps) 
         const message = JSON.parse(event.data);
 
         if (message.type === "wordReveal") {
-          setRevealedWords((prev) => [...prev, message.data.word]);
+          setRevealedWords(message.data.revealedWords);
         }
       } catch (error) {
         console.error("Error parsing message:", error);
