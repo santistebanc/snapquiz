@@ -9,17 +9,16 @@ interface QuestionDisplayProps {
     text: string;
     category: string;
   };
-  phase: Phase;
   isPlayerMode?: boolean;
 }
 
 export function QuestionDisplay({ 
   question, 
-  phase, 
   isPlayerMode = false 
 }: QuestionDisplayProps) {
   const { gameState } = useGameStore();
   const [revealedWords, setRevealedWords] = useState<string[]>([]);
+  const phase = gameState.phase;
 
   // Handle server messages for word reveal
   useEffect(() => {

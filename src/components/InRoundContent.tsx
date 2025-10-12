@@ -52,7 +52,6 @@ export function InRoundContent({ isPlayerMode }: InRoundContentProps) {
 
   const questionProps = {
     question: currentQuestion,
-    phase: gameState.phase,
     isPlayerMode,
   };
 
