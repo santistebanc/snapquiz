@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useGameStore } from "../store";
 import { QuestionDisplay } from "./QuestionDisplay";
 import { TimerBar } from "./TimerBar";
@@ -87,25 +88,104 @@ export function InRoundContent({ isPlayerMode }: InRoundContentProps) {
     isPlayerMode,
   };
 
+  // Animation variants
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.2,
+        delayChildren: 0.1
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { 
+      opacity: 0, 
+      y: 20,
+      scale: 0.95
+    },
+    visible: { 
+      opacity: 1, 
+      y: 0,
+      scale: 1
+    },
+    exit: {
+      opacity: 0,
+      y: -20,
+      scale: 0.95
+    }
+  };
+
   // Use unified layout for both screen and player modes
   return (
-    <div className="space-y-8">
-      {gameState.phase >= Phase.QUESTIONING && (
-        <QuestionDisplay {...questionProps} />
-      )}
-      {gameState.phase === Phase.WAIT_AFTER_QUESTION && (
-        <TimerBar timeRemaining={timeRemaining} isPlayerMode={isPlayerMode} />
-      )}
-      {gameState.phase >= Phase.SHOWING_OPTIONS && (
-        <OptionsDisplay
-          options={currentQuestion.options}
-          correctAnswer={currentQuestion.answer}
-          selectedOption={isPlayerMode ? (playerSelectedOption || undefined) : undefined}
-          onOptionSelect={isPlayerMode ? handleOptionSelect : undefined}
-          isPlayerMode={isPlayerMode}
-          disabled={gameState.phase === Phase.REVEALING_ANSWER}
-        />
-      )}
-    </div>
+    <motion.div 
+      className="space-y-8"
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+    >
+      <AnimatePresence mode="wait">
+        {gameState.phase >= Phase.QUESTIONING && (
+          <motion.div
+            key="question"
+            variants={itemVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            transition={{
+              duration: 0.5,
+              ease: "easeOut"
+            }}
+          >
+            <QuestionDisplay {...questionProps} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence mode="wait">
+        {gameState.phase === Phase.WAIT_AFTER_QUESTION && (
+          <motion.div
+            key="timer"
+            variants={itemVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            transition={{
+              duration: 0.5,
+              ease: "easeOut"
+            }}
+          >
+            <TimerBar timeRemaining={timeRemaining} isPlayerMode={isPlayerMode} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence mode="wait">
+        {gameState.phase >= Phase.SHOWING_OPTIONS && (
+          <motion.div
+            key="options"
+            variants={itemVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            transition={{
+              duration: 0.5,
+              ease: "easeOut"
+            }}
+          >
+            <OptionsDisplay
+              options={currentQuestion.options}
+              correctAnswer={currentQuestion.answer}
+              selectedOption={isPlayerMode ? (playerSelectedOption || undefined) : undefined}
+              onOptionSelect={isPlayerMode ? handleOptionSelect : undefined}
+              isPlayerMode={isPlayerMode}
+              disabled={gameState.phase === Phase.REVEALING_ANSWER}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 }

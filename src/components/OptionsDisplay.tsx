@@ -1,4 +1,5 @@
 import React from "react";
+import { motion } from "framer-motion";
 import { Button } from "./ui/button";
 
 interface OptionsDisplayProps {
@@ -41,15 +42,27 @@ export function OptionsDisplay({
   return (
     <div className={`space-y-3 ${isPlayerMode ? "" : "space-y-4"}`}>
       {options.map((option, index) => (
-        <Button
+        <motion.div
           key={index}
-          onClick={() => onOptionSelect?.(option)}
-          variant={selectedOption === option ? "default" : "outline"}
-          className={`w-full text-lg p-4 h-auto ${getOptionStyle(option)}`}
-          disabled={disabled}
+          initial={{ opacity: 0, y: 20, scale: 0.9 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{
+            duration: 0.5,
+            ease: "easeOut",
+            delay: index * 0.1
+          }}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
         >
-          {option}
-        </Button>
+          <Button
+            onClick={() => onOptionSelect?.(option)}
+            variant={selectedOption === option ? "default" : "outline"}
+            className={`w-full text-lg p-4 h-auto transition-colors duration-300 ${getOptionStyle(option)}`}
+            disabled={disabled}
+          >
+            {option}
+          </Button>
+        </motion.div>
       ))}
     </div>
   );

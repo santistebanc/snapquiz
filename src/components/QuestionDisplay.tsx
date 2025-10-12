@@ -1,4 +1,5 @@
 import React from "react";
+import { motion } from "framer-motion";
 import { Text } from "./ui/text";
 import { Phase } from "../types";
 
@@ -27,17 +28,49 @@ export function QuestionDisplay({
   );
 
     if (phase === Phase.QUESTIONING) {
+    const allWords = question.text.split(' ');
+    
     return (
       <div className={`space-y-3 ${isPlayerMode ? "" : "space-y-4"}`}>
-        {categoryDisplay}
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
+        >
+          {categoryDisplay}
+        </motion.div>
         <div className={`font-bold text-center leading-tight ${
           isPlayerMode ? "text-2xl" : "text-6xl"
         }`}>
-          {revealedWords.map((word, index) => (
-            <span key={index} className="inline-block mr-2">
-              {word}
-            </span>
-          ))}
+          <div className="inline-block">
+            {allWords.map((word, index) => {
+              const isRevealed = index < revealedWords.length;
+              
+              return (
+                <motion.span 
+                  key={`word-${index}`}
+                  className="inline-block mr-2"
+                  initial={{ opacity: 0, y: 20, scale: 0.8 }}
+                  animate={isRevealed ? { 
+                    opacity: 1, 
+                    y: 0, 
+                    scale: 1 
+                  } : { 
+                    opacity: 0, 
+                    y: 20, 
+                    scale: 0.8 
+                  }}
+                  transition={{
+                    duration: 0.6,
+                    ease: "easeOut",
+                    delay: isRevealed ? index * 0.1 : 0
+                  }}
+                >
+                  {word}
+                </motion.span>
+              );
+            })}
+          </div>
         </div>
       </div>
     );
@@ -45,12 +78,23 @@ export function QuestionDisplay({
 
   return (
     <div className={`space-y-3 ${isPlayerMode ? "" : "space-y-4"}`}>
-      {categoryDisplay}
-      <div className={`font-bold text-center leading-tight ${
-        isPlayerMode ? "text-2xl" : "text-6xl"
-      }`}>
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+      >
+        {categoryDisplay}
+      </motion.div>
+      <motion.div 
+        className={`font-bold text-center leading-tight ${
+          isPlayerMode ? "text-2xl" : "text-6xl"
+        }`}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: "easeOut", delay: 0.2 }}
+      >
         {question.text}
-      </div>
+      </motion.div>
     </div>
   );
 }
