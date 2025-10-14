@@ -78,7 +78,7 @@ export function Profile({ onEditChange }: ProfileProps) {
   }, []);
   return (
      <div className="space-y-3 bg-background pb-4">
-       <div className="flex items-start gap-4 sticky top-0 p-4 bg-background z-20">
+       <div className={`flex items-start gap-4 p-4 bg-background z-20 ${isEditingName ? 'fixed top-0 left-0 right-0' : ''}`}>
         {/* Avatar */}
         <div className="flex flex-col items-center space-y-2 flex-shrink-0">
           <Avatar className="w-12 h-12">
@@ -98,14 +98,6 @@ export function Profile({ onEditChange }: ProfileProps) {
                value={editName}
                onChange={(e) => setEditName(e.target.value.toUpperCase())}
                onFocus={() => setIsEditingName(true)}
-               onBlur={(e) => {
-                 // Only exit edit mode if focus is not moving to an avatar button
-                 const relatedTarget = e.relatedTarget as HTMLElement;
-                 if (!relatedTarget || !relatedTarget.closest('[data-avatar-button]')) {
-                   // Delay to allow submit to complete
-                   setTimeout(() => setIsEditingName(false), 150);
-                 }
-               }}
                placeholder="Your name here..."
                className="text-center font-mono uppercase h-12 flex-1 cursor-pointer transition-all duration-200"
                maxLength={15}
@@ -132,10 +124,9 @@ export function Profile({ onEditChange }: ProfileProps) {
 
        {/* Avatar Selection - Only show when editing name */}
        {isEditingName && (
-         <div className="space-y-2 flex-1 relative z-10">
-           <Separator />
+         <div className="space-y-2 flex-1 pt-20">
            <ScrollArea>
-             <div className="grid grid-cols-5 gap-2 p-2">
+             <div className="grid grid-cols-3 min-[300px]:grid-cols-4 min-[400px]:grid-cols-5 min-[500px]:grid-cols-6 min-[600px]:grid-cols-7 min-[700px]:grid-cols-8 min-[800px]:grid-cols-9 gap-2 p-2">
                {availableAvatars.map((avatar) => (
                  <Button
                    key={avatar}
