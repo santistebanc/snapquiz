@@ -11,7 +11,7 @@ const Container = React.forwardRef<HTMLDivElement, ContainerProps>(
     const baseClasses = "bg-background";
     
     const variantClasses = {
-      page: "min-h-screen flex flex-col items-center justify-center p-4",
+      page: "flex flex-col items-center justify-center",
       section: "w-full space-y-6",
       centered: "flex items-center justify-center"
     };

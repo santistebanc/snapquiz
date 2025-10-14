@@ -1,11 +1,7 @@
-import React from "react";
 import { motion } from "framer-motion";
 import { Button } from "./ui/button";
-import { Card, CardContent } from "./ui/card";
-import { Avatar, AvatarImage } from "./ui/avatar";
 import { useGameStore } from "../store";
 import { Phase } from "../types";
-import { generateAvatarUrl } from "../utils";
 
 interface OptionsDisplayProps {
   isPlayerMode?: boolean;

@@ -1,13 +1,8 @@
 import type * as Party from "partykit/server";
-import type {
-  GameState,
-  Player,
-  ServerMessage,
-  ClientMessage,
-  Round,
-} from "./types";
+import type { GameState, Player, ClientMessage } from "./types";
 import { Phase } from "./types";
 import { questions } from "./questions";
+import { run, type Machine, cleanup, wait } from "./machine";
 
 // Timing constants
 const REVEAL_WORD_SPEED = 100; // 100ms
@@ -17,11 +12,43 @@ const OPTION_SELECTION_TIMEOUT = 5000; // 5 seconds after options reveal
 const POINTS_PER_CORRECT_ANSWER = 10; // Points awarded for correct answer
 
 export default class RoomServer implements Party.Server {
+  private app: Machine;
   private gameState: GameState;
   private connectionToPlayerMap: Map<string, string>; // Maps connection.id to player.id
   private timeouts: Map<string, NodeJS.Timeout> = new Map(); // Track active timeouts
 
+  private commonControls = {
+    resetGame: () => {
+      return this.atLobby;
+    },
+  };
+
+  atLobby() {
+    return {
+      startGame: () => {
+        return this.atQuestioning;
+      },
+    };
+  }
+
+  atPreQuestioning() {
+    wait(INITIAL_QUESTION_DELAY, this.app.showQuestion);
+    return {
+      showQuestion: () => {
+        return this.atQuestioning;
+      },
+      ...this.commonControls,
+    };
+  }
+
+  atQuestioning() {
+    return {
+      ...this.commonControls,
+    };
+  }
+
   constructor(readonly room: Party.Room) {
+    this.app = run(this.atLobby);
     this.gameState = {
       roomId: room.id,
       players: new Map(),
@@ -219,7 +246,7 @@ export default class RoomServer implements Party.Server {
 
         case "resetGame":
           console.log("Resetting game");
-          
+
           // Clear all active timeouts (word reveal, option selection, etc.)
           this.timeouts.forEach((timeout) => clearTimeout(timeout));
           this.timeouts.clear();
@@ -228,15 +255,15 @@ export default class RoomServer implements Party.Server {
           this.gameState.phase = Phase.LOBBY;
           this.gameState.rounds = [];
           this.gameState.currentRound = 0;
-          
+
           // Reset player points to 0
           this.gameState.players.forEach((player) => {
             player.points = 0;
           });
-          
+
           // Note: connectionToPlayerMap is intentionally NOT cleared
           // to maintain player connections across game resets
-          
+
           this.broadcastGameState();
           break;
       }
@@ -294,8 +321,8 @@ export default class RoomServer implements Party.Server {
         (q) => q.id === round.questionId
       );
 
-        if (question) {
-          const words = question.text.split(" ");
+      if (question) {
+        const words = question.text.split(" ");
 
         // Update current round's revealedWordsIndex and broadcast game state
         words.forEach((_, index) => {
@@ -316,40 +343,42 @@ export default class RoomServer implements Party.Server {
         const finalTimeout = setTimeout(() => {
           this.gameState.phase = Phase.SHOWING_OPTIONS;
           this.broadcastGameState();
-          
+
           // Start timeout for REVEALING_ANSWER transition
           const revealTimeoutKey = `reveal_timeout_${roundIndex}`;
           const revealTimeout = setTimeout(() => {
-            console.log('Transitioning to REVEALING_ANSWER phase');
+            console.log("Transitioning to REVEALING_ANSWER phase");
             this.gameState.phase = Phase.REVEALING_ANSWER;
             this.broadcastGameState();
             this.timeouts.delete(revealTimeoutKey);
-            
+
             // Start timeout for GIVING_POINTS transition (3 seconds after reveal)
             const pointsTimeoutKey = `points_timeout_${roundIndex}`;
             const pointsTimeout = setTimeout(() => {
-              console.log('Transitioning to GIVING_POINTS phase - opening drawer');
+              console.log(
+                "Transitioning to GIVING_POINTS phase - opening drawer"
+              );
               this.gameState.phase = Phase.GIVING_POINTS;
               this.broadcastGameState();
-              
+
               // Wait half a second after opening drawer, then give points
               const givePointsTimeoutKey = `give_points_${roundIndex}`;
               const givePointsTimeout = setTimeout(() => {
-                console.log('Giving points to correct players');
+                console.log("Giving points to correct players");
                 this.givePointsToCorrectPlayers(roundIndex);
                 this.broadcastGameState();
                 this.timeouts.delete(givePointsTimeoutKey);
               }, 500); // Half a second delay
-              
+
               this.timeouts.set(givePointsTimeoutKey, givePointsTimeout);
               this.timeouts.delete(pointsTimeoutKey);
             }, 3000); // 3 seconds delay to show answer highlighting
-            
+
             this.timeouts.set(pointsTimeoutKey, pointsTimeout);
           }, OPTION_SELECTION_TIMEOUT);
-          
+
           this.timeouts.set(revealTimeoutKey, revealTimeout);
-        }, INITIAL_QUESTION_DELAY + (words.length * REVEAL_WORD_SPEED) + WAIT_AFTER_QUESTION_TIME);
+        }, INITIAL_QUESTION_DELAY + words.length * REVEAL_WORD_SPEED + WAIT_AFTER_QUESTION_TIME);
 
         this.timeouts.set(`question_end_${roundIndex}`, finalTimeout);
       }
@@ -359,24 +388,28 @@ export default class RoomServer implements Party.Server {
   private givePointsToCorrectPlayers(roundIndex: number) {
     if (roundIndex >= 0 && roundIndex < this.gameState.rounds.length) {
       const round = this.gameState.rounds[roundIndex];
-      const question = this.gameState.questions.find(q => q.id === round.questionId);
-      
+      const question = this.gameState.questions.find(
+        (q) => q.id === round.questionId
+      );
+
       if (question) {
         const correctAnswer = question.answer;
-        
+
         // Give points to all players who selected the correct answer
         this.gameState.players.forEach((player) => {
-          const playerChoice = round.chosenOptions instanceof Map
-            ? round.chosenOptions.get(player.id)
-            : round.chosenOptions[player.id];
-          
+          const playerChoice =
+            round.chosenOptions instanceof Map
+              ? round.chosenOptions.get(player.id)
+              : round.chosenOptions[player.id];
+
           if (playerChoice === correctAnswer) {
             player.points += POINTS_PER_CORRECT_ANSWER;
-            console.log(`Player ${player.name} got correct answer, points: ${player.points}`);
+            console.log(
+              `Player ${player.name} got correct answer, points: ${player.points}`
+            );
           }
         });
       }
     }
   }
-
 }
