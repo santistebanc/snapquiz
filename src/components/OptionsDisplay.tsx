@@ -9,49 +9,30 @@ interface OptionsDisplayProps {
 export function OptionsDisplay({ isPlayerMode = false }: OptionsDisplayProps) {
   const { gameState, sendMessage, connectionId } = useGameStore();
 
-  // Get current round and question
-  const currentRound =
-    gameState.rounds && gameState.rounds.length > 0
-      ? gameState.rounds[gameState.currentRound - 1]
-      : null;
-  const currentQuestion = currentRound
-    ? gameState.questions.find((q) => q.id === currentRound.questionId)
-    : null;
-
+  const currentRound = gameState.rounds[gameState.currentRound - 1];
+  const currentQuestion = currentRound ? gameState.questions.find(q => q.id === currentRound.questionId) : null;
+  
   if (!currentQuestion) return null;
 
-  const options = currentQuestion.options;
-  const correctAnswer = currentQuestion.answer;
+  const { options, answer: correctAnswer } = currentQuestion;
   const disabled = ['revealingAnswer', 'givingPoints', 'finishingRound'].includes(gameState.phase);
-  const isInteractive = isPlayerMode; // Only interactive in player mode
+  const isInteractive = isPlayerMode;
+  
+  // Get correct players (screen mode only)
+  const correctPlayers = !isPlayerMode && currentRound && disabled
+    ? Object.values(gameState.players).filter(player => 
+        currentRound.chosenOptions[player.id] === correctAnswer
+      )
+    : [];
 
+  // Get selected option (player mode only)
+  const selectedOption = isPlayerMode && currentRound && connectionId
+    ? currentRound.chosenOptions[connectionId]
+    : null;
 
-  // Get players who selected the correct answer (only for screen mode)
-  const correctPlayers =
-    !isPlayerMode && currentRound && disabled
-      ? Object.values(gameState.players).filter((player) => {
-        const playerChoice = currentRound.chosenOptions[player.id];
-        return playerChoice === correctAnswer;
-      })
-      : [];
-
-  // Get player's selected option from server state (only for player mode)
-  const selectedOption =
-    isPlayerMode && currentRound && connectionId
-      ? currentRound.chosenOptions[connectionId]
-      : null;
-
-  // Handle option selection (only for player mode)
   const handleOptionSelect = (option: string) => {
     if (!isPlayerMode) return;
-
-    sendMessage({
-      type: "selectOption",
-      data: {
-        option: option,
-        connectionId: connectionId,
-      },
-    });
+    sendMessage({ type: "selectOption", data: { option, connectionId } });
   };
   const getOptionStyle = (option: string) => {
     if (disabled) {

@@ -30,23 +30,14 @@ function App() {
     );
   }
 
-  // Player mode
+  const isInGame = gameState.phase !== 'lobby';
+  const isPlayerInGame = isPlayer && isInGame && connectionId && gameState.players[connectionId];
+
   if (isPlayer) {
-    // InRound screen for players (only if connection is in players state)
-    if (gameState.phase !== 'lobby' && connectionId && gameState.players[connectionId]) {
-      return <PlayerInRound />;
-    }
-    // Lobby screen (default)
-    return <PlayerLobby />;
+    return isPlayerInGame ? <PlayerInRound /> : <PlayerLobby />;
   }
 
-  // Screen mode
-  // InRound screen
-  if (gameState.phase !== 'lobby') {
-    return <ScreenInRound />;
-  }
-  // Lobby screen (default)
-  return <ScreenLobby />;
+  return isInGame ? <ScreenInRound /> : <ScreenLobby />;
 }
 
 // Initialize React app

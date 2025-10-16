@@ -42,15 +42,34 @@ const onClose = (connection: Party.Connection) => {
     }
 }
 
+// Helper function to create/update player
+const createOrUpdatePlayer = (playerId: string, name?: string, avatar?: string) => {
+    const existingPlayer = gameState.players[playerId];
+    const truncatedName = name ? name.substring(0, 20) : existingPlayer?.name || "Player";
+    const playerAvatar = avatar || existingPlayer?.avatar || "robot-1";
+    
+    const player: Player = {
+        id: playerId,
+        name: truncatedName,
+        avatar: playerAvatar,
+        connectedAt: existingPlayer?.connectedAt || Date.now(),
+        points: existingPlayer?.points || 0,
+    };
+    
+    gameState.players[playerId] = player;
+    return player;
+};
+
 const onMessage = (message: string, sender: any) => {
     try {
         const clientMessage: ClientMessage = JSON.parse(message);
+        const playerId = gameState.connections[sender.id] || sender.id;
+        
         switch (clientMessage.type) {
             case "startGame":
                 app.startGame();
                 break;
             case "selectOption":
-                const playerId = gameState.connections[sender.id] || sender.id;
                 app.selectOption(clientMessage.data.option, playerId);
                 break;
             case "resetGame":
@@ -58,64 +77,18 @@ const onMessage = (message: string, sender: any) => {
                 break;
             case "joinAsPlayer":
                 if (clientMessage.data.name) {
-                    const truncatedName = clientMessage.data.name.substring(0, 20);
-                    const avatar = clientMessage.data.avatar || "robot-1";
-
-                    const playerId = clientMessage.data.connectionId || sender.id;
-                    gameState.connections[sender.id] = playerId;
-
-                    const player: Player = {
-                        id: playerId,
-                        name: truncatedName,
-                        avatar: avatar,
-                        connectedAt: Date.now(),
-                        points: 0,
-                    };
-                    gameState.players[playerId] = player;
+                    gameState.connections[sender.id] = clientMessage.data.connectionId || sender.id;
+                    createOrUpdatePlayer(
+                        clientMessage.data.connectionId || sender.id,
+                        clientMessage.data.name,
+                        clientMessage.data.avatar
+                    );
                 }
                 break;
             case "changeProfile":
                 if (clientMessage.data.name || clientMessage.data.avatar) {
-                    const playerId = clientMessage.data.connectionId || sender.id;
-
                     gameState.connections[sender.id] = playerId;
-
-                    const existingPlayer = gameState.players[playerId];
-                    if (existingPlayer) {
-                        let updated = false;
-
-                        if (clientMessage.data.name) {
-                            const truncatedName = clientMessage.data.name.substring(0, 20);
-                            if (existingPlayer.name !== truncatedName) {
-                                existingPlayer.name = truncatedName;
-                                updated = true;
-                            }
-                        }
-
-                        if (clientMessage.data.avatar) {
-                            if (existingPlayer.avatar !== clientMessage.data.avatar) {
-                                existingPlayer.avatar = clientMessage.data.avatar;
-                                updated = true;
-                            }
-                        }
-
-                        if (updated) {
-                            gameState.players[playerId] = existingPlayer;
-                        }
-                    } else {
-                        const name = clientMessage.data.name
-                            ? clientMessage.data.name.substring(0, 20)
-                            : "Player";
-                        const avatar = clientMessage.data.avatar || "robot-1";
-                        const player: Player = {
-                            id: playerId,
-                            name: name,
-                            avatar: avatar,
-                            connectedAt: Date.now(),
-                            points: 0,
-                        };
-                        gameState.players[playerId] = player;
-                    }
+                    createOrUpdatePlayer(playerId, clientMessage.data.name, clientMessage.data.avatar);
                 }
                 break;
         }
@@ -127,22 +100,19 @@ const onMessage = (message: string, sender: any) => {
 const resetGame = () => {
     gameState.rounds = [];
     gameState.currentRound = 0;
-
-    Object.values(gameState.players).forEach((player) => {
-        player.points = 0;
-    });
-    app.toLobby()
-}
+    Object.values(gameState.players).forEach(player => player.points = 0);
+    app.toLobby();
+};
 
 const startGame = () => {
-    gameState.rounds = gameState.questions.map((question) => ({
-        questionId: question.id,
+    gameState.rounds = gameState.questions.map(q => ({
+        questionId: q.id,
         chosenOptions: {},
         revealedWordsIndex: 0,
     }));
     gameState.currentRound = 1;
-    app.toPreQuestioning()
-}
+    app.toPreQuestioning();
+};
 
 const preQuestioningInit = () => {
     timeout(INITIAL_QUESTION_DELAY, () => {
@@ -152,21 +122,20 @@ const preQuestioningInit = () => {
 
 const questioningInit = () => {
     const round = gameState.rounds[gameState.currentRound - 1];
-    const question = gameState.questions.find(
-        (q) => q.id === round.questionId
-    );
-    if (question) {
-        const words = question.text.split(" ");
-        words.forEach((_, index) => {
-            timeout(index * REVEAL_WORD_SPEED, () => {
-                round.revealedWordsIndex = Math.max(round.revealedWordsIndex, index + 1);
-                if (round.revealedWordsIndex === words.length) {
-                    app.toAfterQuestioning();
-                }
-            });
+    const question = gameState.questions.find(q => q.id === round.questionId);
+    
+    if (!question) return;
+    
+    const words = question.text.split(" ");
+    words.forEach((_, index) => {
+        timeout(index * REVEAL_WORD_SPEED, () => {
+            round.revealedWordsIndex = Math.max(round.revealedWordsIndex, index + 1);
+            if (round.revealedWordsIndex === words.length) {
+                app.toAfterQuestioning();
+            }
         });
-    }
-}
+    });
+};
 
 const afterQuestioningInit = () => {
     timeout(WAIT_AFTER_QUESTION_TIME, () => {
@@ -175,48 +144,32 @@ const afterQuestioningInit = () => {
 }
 
 const showingOptionsInit = () => {
-    console.log('heeeeere');
-    timeout(OPTION_SELECTION_TIMEOUT, () => {
-        app.toRevealingAnswer();
-    })
-}
+    timeout(OPTION_SELECTION_TIMEOUT, () => app.toRevealingAnswer());
+};
 
 const selectOption = (option: string, playerId: string) => {
-    const currentRoundIndex = gameState.currentRound - 1;
-    const round = gameState.rounds[currentRoundIndex];
-
-    if (round) {
-        round.chosenOptions[playerId] = option;
-    }
-}
+    const round = gameState.rounds[gameState.currentRound - 1];
+    if (round) round.chosenOptions[playerId] = option;
+};
 
 const revealingAnswerInit = () => {
-    timeout(REVEAL_ANSWER_TIME, () => {
-        app.toGivingPoints();
-    })
-}
+    timeout(REVEAL_ANSWER_TIME, () => app.toGivingPoints());
+};
 
 const givingPointsInit = () => {
     const round = gameState.rounds[gameState.currentRound - 1];
-    const question = gameState.questions.find(
-        (q) => q.id === round.questionId
-    );
-
+    const question = gameState.questions.find(q => q.id === round.questionId);
+    
     if (question) {
         const correctAnswer = question.answer;
-
-        // Give points to all players who selected the correct answer
-        Object.values(gameState.players).forEach((player) => {
-            const playerChoice =
-                round.chosenOptions[player.id];
-
-            if (playerChoice === correctAnswer) {
+        Object.values(gameState.players).forEach(player => {
+            if (round.chosenOptions[player.id] === correctAnswer) {
                 player.points += POINTS_PER_CORRECT_ANSWER;
             }
         });
     }
     timeout(GIVE_POINTS_TIME, app.toFinishingRound);
-}
+};
 
 const common = { onConnect, onClose, onMessage, resetGame }
 

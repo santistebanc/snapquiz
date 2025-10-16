@@ -61,20 +61,15 @@ export const useGameStore = create<GameStore>((set, get) => ({
   // Connection actions
   connect: (roomId, isPlayer, name, avatar) => {
     const { socket } = get();
-
+    
     // Close existing connection
-    if (socket) {
-      socket.close();
-    }
+    socket?.close();
 
-    // Get stored connectionId or generate new one
+    // Get or generate connectionId
     const storedConnectionId = getStoredConnectionId();
     const connectionId = storedConnectionId || `conn_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-
-    // Store the connectionId if it's new
-    if (!storedConnectionId) {
-      setStoredConnectionId(connectionId);
-    }
+    
+    if (!storedConnectionId) setStoredConnectionId(connectionId);
 
     // Create new connection
     const newSocket = new PartySocket({
@@ -83,46 +78,31 @@ export const useGameStore = create<GameStore>((set, get) => ({
       party: "room",
     });
 
+    // Set up event listeners
     newSocket.addEventListener("open", () => {
       set({ isConnected: true, connectionId });
-
-      // Send join message with connectionId
-      const message = {
+      newSocket.send(JSON.stringify({
         type: isPlayer ? "joinAsPlayer" : "joinAsScreen",
         data: isPlayer ? { name, avatar, connectionId } : { connectionId },
-      };
-      newSocket.send(JSON.stringify(message));
+      }));
     });
 
     newSocket.addEventListener("message", (event) => {
       try {
-        const message: ServerMessage = JSON.parse(event.data);
-        get().handleServerMessage(message);
+        get().handleServerMessage(JSON.parse(event.data));
       } catch (error) {
         console.error("Error parsing message:", error);
       }
     });
 
-    newSocket.addEventListener("close", () => {
-      set({ isConnected: false });
-    });
+    newSocket.addEventListener("close", () => set({ isConnected: false }));
+    newSocket.addEventListener("error", (event) => console.error("WebSocket error:", event));
 
-    newSocket.addEventListener("error", (event) => {
-      console.error("WebSocket error:", event);
-    });
-
-    set({
-      socket: newSocket,
-      gameState: { ...get().gameState, roomId },
-      isPlayer: isPlayer,
-    });
+    set({ socket: newSocket, gameState: { ...get().gameState, roomId }, isPlayer });
   },
 
   disconnect: () => {
-    const { socket } = get();
-    if (socket) {
-      socket.close();
-    }
+    get().socket?.close();
     set({
       socket: null,
       isConnected: false,
@@ -133,62 +113,40 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   sendMessage: (message) => {
     const { socket } = get();
-    if (socket && socket.readyState === WebSocket.OPEN) {
+    if (socket?.readyState === WebSocket.OPEN) {
       socket.send(JSON.stringify(message));
     }
   },
 
   // Message handlers
   handleServerMessage: (message) => {
-    switch (message.type) {
-      case "update":
-        const newGameState = message.data
-
-        // Update localStorage when game state changes
-        if (newGameState.roomId) {
-          setStoredRoomId(newGameState.roomId);
-        }
-
-        // Update player name and avatar in localStorage if this is a player connection
-        const { isPlayer, connectionId } = get();
-        if (isPlayer && connectionId) {
-          const currentPlayer = newGameState.players[connectionId];
-          if (currentPlayer?.name) {
-            setStoredPlayerName(currentPlayer.name);
-          }
-          if (currentPlayer?.avatar) {
-            setStoredPlayerAvatar(currentPlayer.avatar);
-          }
-        }
-
-        set({
-          gameState: newGameState,
-        });
-        break;
+    if (message.type === "update") {
+      const newGameState = message.data;
+      
+      // Update localStorage
+      if (newGameState.roomId) setStoredRoomId(newGameState.roomId);
+      
+      const { isPlayer, connectionId } = get();
+      if (isPlayer && connectionId) {
+        const currentPlayer = newGameState.players[connectionId];
+        if (currentPlayer?.name) setStoredPlayerName(currentPlayer.name);
+        if (currentPlayer?.avatar) setStoredPlayerAvatar(currentPlayer.avatar);
+      }
+      
+      set({ gameState: newGameState });
     }
   },
 }));
 
-// Selector to get current player name
-export const useCurrentPlayerName = () => {
+// Helper to get current player
+const useCurrentPlayer = () => {
   const { gameState, isPlayer, connectionId } = useGameStore();
-
-  if (!isPlayer || !connectionId) return "";
-
-  // Find the player that matches our connection ID
-  const currentPlayer = gameState.players[connectionId];
-
-  return currentPlayer?.name || "";
+  if (!isPlayer || !connectionId) return null;
+  return gameState.players[connectionId] || null;
 };
+
+// Selector to get current player name
+export const useCurrentPlayerName = () => useCurrentPlayer()?.name || "";
 
 // Selector to get current player avatar
-export const useCurrentPlayerAvatar = () => {
-  const { gameState, isPlayer, connectionId } = useGameStore();
-
-  if (!isPlayer || !connectionId) return "";
-
-  // Find the player that matches our connection ID
-  const currentPlayer = gameState.players[connectionId];
-
-  return currentPlayer?.avatar || "";
-};
+export const useCurrentPlayerAvatar = () => useCurrentPlayer()?.avatar || "";

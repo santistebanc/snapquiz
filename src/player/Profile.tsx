@@ -54,28 +54,18 @@ export function Profile({ onEditChange }: ProfileProps) {
     onEditChange?.(isEditingName);
   }, [isEditingName, onEditChange]);
 
-  const handleNameSubmit = useCallback(
-    (e: React.FormEvent) => {
-      e.preventDefault();
-      if (editName.trim()) {
-        // Send single changeProfile message with both name and avatar
-        sendMessage({
-          type: "changeProfile",
-          data: {
-            name: editName.trim().toUpperCase(),
-            avatar: editAvatar,
-            connectionId,
-          },
-        });
-        setIsEditingName(false);
-      }
-    },
-    [editName, editAvatar, sendMessage, connectionId]
-  );
+  const handleNameSubmit = useCallback((e: React.FormEvent) => {
+    e.preventDefault();
+    if (editName.trim()) {
+      sendMessage({
+        type: "changeProfile",
+        data: { name: editName.trim().toUpperCase(), avatar: editAvatar, connectionId },
+      });
+      setIsEditingName(false);
+    }
+  }, [editName, editAvatar, sendMessage, connectionId]);
 
-  const handleAvatarSelect = useCallback((avatar: string) => {
-    setEditAvatar(avatar);
-  }, []);
+  const handleAvatarSelect = useCallback((avatar: string) => setEditAvatar(avatar), []);
   return (
      <div className="space-y-3 bg-background pb-4">
        <div className={`flex items-start gap-4 p-4 bg-background z-20 ${isEditingName ? 'fixed top-0 left-0 right-0' : ''}`}>

@@ -13,17 +13,10 @@ export default function InRound() {
 
   // Open drawer when GIVING_POINTS phase starts
   useEffect(() => {
-    if (gameState.phase === 'givingPoints') {
-      setDrawerOpen(true);
-    }
+    if (gameState.phase === 'givingPoints') setDrawerOpen(true);
   }, [gameState.phase]);
 
-  const handleResetGame = () => {
-    sendMessage({
-      type: "resetGame",
-      data: {},
-    });
-  };
+  const handleResetGame = () => sendMessage({ type: "resetGame", data: {} });
 
   return (
     <Container variant="page">

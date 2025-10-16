@@ -44,13 +44,7 @@ export function PlayerDrawer({ players, isPlayerMode = false, open: externalOpen
     const newPreviousPoints: Record<string, number> = {};
     players.forEach(player => {
       const previous = previousPoints[player.id] || 0;
-      if (player.points > previous) {
-        // Points increased, keep the previous value for animation
-        newPreviousPoints[player.id] = previous;
-      } else {
-        // No change, update to current value
-        newPreviousPoints[player.id] = player.points;
-      }
+      newPreviousPoints[player.id] = player.points > previous ? previous : player.points;
     });
     setPreviousPoints(newPreviousPoints);
   }, [players, previousPoints]);
