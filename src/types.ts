@@ -1,13 +1,3 @@
-export enum Phase {
-  LOBBY = 0,
-  QUESTIONING = 1,
-  SHOWING_OPTIONS = 2,
-  REVEALING_ANSWER = 3,
-  GIVING_POINTS = 4,
-  FINISHED = 5,
-  GAME_OVER = 6
-}
-
 export interface Player {
   id: string;
   name: string;
@@ -36,7 +26,7 @@ export interface GameState {
   roomId: string;
   players: Map<string, Player>;
   questions: Question[];
-  phase: Phase;
+  phase: string;
   rounds: Round[];
   currentRound: number;
 }

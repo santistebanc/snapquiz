@@ -11,7 +11,6 @@ import { Card, CardContent } from "./components/ui/card";
 import { Container } from "./components/ui/container";
 import { Spinner } from "./components/ui/spinner";
 import { Text } from "./components/ui/text";
-import { Phase } from "./types";
 
 function App() {
   const { isConnected, isPlayer } = useGameConnection();
@@ -34,7 +33,7 @@ function App() {
   // Player mode
   if (isPlayer) {
     // InRound screen for players (only if connection is in players state)
-    if (gameState.phase !== Phase.LOBBY && connectionId && gameState.players.has(connectionId)) {
+    if (gameState.phase !== 'lobby' && connectionId && gameState.players.has(connectionId)) {
       return <PlayerInRound />;
     }
     // Lobby screen (default)
@@ -43,7 +42,7 @@ function App() {
 
   // Screen mode
   // InRound screen
-  if (gameState.phase !== Phase.LOBBY) {
+  if (gameState.phase !== 'lobby') {
     return <ScreenInRound />;
   }
   // Lobby screen (default)

@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useGameStore } from "../store";
 import { QuestionDisplay } from "./QuestionDisplay";
 import { OptionsDisplay } from "./OptionsDisplay";
-import { Phase } from "../types";
 
 interface InRoundContentProps {
   isPlayerMode: boolean;
@@ -37,13 +36,13 @@ export function InRoundContent({ isPlayerMode }: InRoundContentProps) {
   };
 
   const itemVariants = {
-    hidden: { 
-      opacity: 0, 
+    hidden: {
+      opacity: 0,
       y: 20,
       scale: 0.95
     },
-    visible: { 
-      opacity: 1, 
+    visible: {
+      opacity: 1,
       y: 0,
       scale: 1
     },
@@ -56,7 +55,7 @@ export function InRoundContent({ isPlayerMode }: InRoundContentProps) {
 
   // Use unified layout for both screen and player modes
   return (
-    <motion.div 
+    <motion.div
       className="space-y-8"
       variants={containerVariants}
       initial="hidden"
@@ -70,7 +69,7 @@ export function InRoundContent({ isPlayerMode }: InRoundContentProps) {
       }}
     >
       <AnimatePresence mode="wait">
-        {gameState.phase >= Phase.QUESTIONING && (
+        {!['preQuestioning'].includes(gameState.phase) && (
           <motion.div
             key="question"
             variants={itemVariants}
@@ -94,7 +93,7 @@ export function InRoundContent({ isPlayerMode }: InRoundContentProps) {
 
 
       <AnimatePresence mode="wait">
-        {gameState.phase >= Phase.SHOWING_OPTIONS && (
+        {!['preQuestioning', 'questioning', 'afterQuestioning'].includes(gameState.phase) && (
           <motion.div
             key="options"
             variants={itemVariants}

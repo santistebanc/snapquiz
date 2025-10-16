@@ -6,7 +6,6 @@ import { Card, CardContent } from "../components/ui/card";
 import { Container } from "../components/ui/container";
 import { PlayerDrawer } from "../components/PlayerDrawer";
 import { InRoundContent } from "../components/InRoundContent";
-import { Phase } from "../types";
 
 export default function InRound() {
   const { gameState, sendMessage } = useGameStore();
@@ -14,7 +13,7 @@ export default function InRound() {
 
   // Open drawer when GIVING_POINTS phase starts
   useEffect(() => {
-    if (gameState.phase === Phase.GIVING_POINTS) {
+    if (gameState.phase === 'givingPoints') {
       setDrawerOpen(true);
     }
   }, [gameState.phase]);

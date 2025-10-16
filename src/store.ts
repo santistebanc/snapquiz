@@ -1,7 +1,6 @@
 import { create } from "zustand";
 import PartySocket from "partysocket";
 import type { GameState, Player, ServerMessage } from "./types";
-import { Phase } from "./types";
 import { getStoredConnectionId, setStoredConnectionId, setStoredPlayerName, setStoredPlayerAvatar, setStoredRoomId } from "./utils";
 
 // Get PartyKit host from environment variable
@@ -42,7 +41,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     roomId: "",
     players: new Map(),
     questions: [],
-    phase: Phase.LOBBY,
+    phase: 'lobby',
     rounds: [],
     currentRound: 0,
   },
@@ -59,65 +58,65 @@ export const useGameStore = create<GameStore>((set, get) => ({
     })),
 
   // Connection actions
-      connect: (roomId, isPlayer, name, avatar) => {
-        const { socket } = get();
+  connect: (roomId, isPlayer, name, avatar) => {
+    const { socket } = get();
 
-        // Close existing connection
-        if (socket) {
-          socket.close();
-        }
+    // Close existing connection
+    if (socket) {
+      socket.close();
+    }
 
-        // Get stored connectionId or generate new one
-        const storedConnectionId = getStoredConnectionId();
-        const connectionId = storedConnectionId || `conn_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        
-        // Store the connectionId if it's new
-        if (!storedConnectionId) {
-          setStoredConnectionId(connectionId);
-        }
+    // Get stored connectionId or generate new one
+    const storedConnectionId = getStoredConnectionId();
+    const connectionId = storedConnectionId || `conn_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-        // Create new connection
-        const newSocket = new PartySocket({
-          host: getPartyKitHost(),
-          room: roomId,
-          party: "room",
-        });
+    // Store the connectionId if it's new
+    if (!storedConnectionId) {
+      setStoredConnectionId(connectionId);
+    }
 
-        newSocket.addEventListener("open", () => {
-          set({ isConnected: true, connectionId });
-          console.log("Connected to room:", roomId, "with connectionId:", connectionId);
+    // Create new connection
+    const newSocket = new PartySocket({
+      host: getPartyKitHost(),
+      room: roomId,
+      party: "room",
+    });
 
-          // Send join message with connectionId
-          const message = {
-            type: isPlayer ? "joinAsPlayer" : "joinAsScreen",
-            data: isPlayer ? { name, avatar, connectionId } : { connectionId },
-          };
-          newSocket.send(JSON.stringify(message));
-        });
+    newSocket.addEventListener("open", () => {
+      set({ isConnected: true, connectionId });
+      console.log("Connected to room:", roomId, "with connectionId:", connectionId);
 
-        newSocket.addEventListener("message", (event) => {
-          try {
-            const message: ServerMessage = JSON.parse(event.data);
-            get().handleServerMessage(message);
-          } catch (error) {
-            console.error("Error parsing message:", error);
-          }
-        });
+      // Send join message with connectionId
+      const message = {
+        type: isPlayer ? "joinAsPlayer" : "joinAsScreen",
+        data: isPlayer ? { name, avatar, connectionId } : { connectionId },
+      };
+      newSocket.send(JSON.stringify(message));
+    });
 
-        newSocket.addEventListener("close", () => {
-          set({ isConnected: false });
-          console.log("Disconnected from room");
-        });
+    newSocket.addEventListener("message", (event) => {
+      try {
+        const message: ServerMessage = JSON.parse(event.data);
+        get().handleServerMessage(message);
+      } catch (error) {
+        console.error("Error parsing message:", error);
+      }
+    });
 
-        newSocket.addEventListener("error", (event) => {
-          console.error("WebSocket error:", event);
-        });
+    newSocket.addEventListener("close", () => {
+      set({ isConnected: false });
+      console.log("Disconnected from room");
+    });
 
-        set({
-          socket: newSocket,
-          gameState: { ...get().gameState, roomId },
-          isPlayer: isPlayer,
-        });
+    newSocket.addEventListener("error", (event) => {
+      console.error("WebSocket error:", event);
+    });
+
+    set({
+      socket: newSocket,
+      gameState: { ...get().gameState, roomId },
+      isPlayer: isPlayer,
+    });
   },
 
   disconnect: () => {
@@ -129,7 +128,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       socket: null,
       isConnected: false,
       connectionId: "",
-      gameState: { roomId: "", players: new Map(), questions: [], phase: Phase.LOBBY, rounds: [], currentRound: 0 },
+      gameState: { roomId: "", players: new Map(), questions: [], phase: 'lobby', rounds: [], currentRound: 0 },
     });
   },
 
@@ -155,12 +154,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
             message.data.players.map((player: Player) => [player.id, player])
           ),
         };
-        
+
         // Update localStorage when game state changes
         if (newGameState.roomId) {
           setStoredRoomId(newGameState.roomId);
         }
-        
+
         // Update player name and avatar in localStorage if this is a player connection
         const { isPlayer, connectionId } = get();
         if (isPlayer && connectionId) {
@@ -172,7 +171,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
             setStoredPlayerAvatar(currentPlayer.avatar);
           }
         }
-        
+
         set({
           gameState: newGameState,
         });

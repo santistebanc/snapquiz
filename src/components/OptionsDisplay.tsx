@@ -1,7 +1,6 @@
 import { motion } from "framer-motion";
 import { Button } from "./ui/button";
 import { useGameStore } from "../store";
-import { Phase } from "../types";
 
 interface OptionsDisplayProps {
   isPlayerMode?: boolean;
@@ -23,7 +22,7 @@ export function OptionsDisplay({ isPlayerMode = false }: OptionsDisplayProps) {
 
   const options = currentQuestion.options;
   const correctAnswer = currentQuestion.answer;
-  const disabled = gameState.phase === Phase.REVEALING_ANSWER;
+  const disabled = ['revealingAnswer', 'givingPoints', 'finishingRound'].includes(gameState.phase);
   const isInteractive = isPlayerMode; // Only interactive in player mode
 
   // Debug logging
