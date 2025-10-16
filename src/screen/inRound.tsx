@@ -28,7 +28,7 @@ export default function InRound() {
   return (
     <Container variant="page">
       <PlayerDrawer 
-        players={Array.from(gameState.players.values())} 
+        players={Object.values(gameState.players)} 
         open={drawerOpen}
         onOpenChange={setDrawerOpen}
       />

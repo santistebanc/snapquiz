@@ -39,11 +39,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
   // Initial state
   gameState: {
     roomId: "",
-    players: new Map(),
+    players: {},
     questions: [],
     phase: 'lobby',
     rounds: [],
     currentRound: 0,
+    connections: {},
   },
   isConnected: false,
   isPlayer: false,
@@ -84,7 +85,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     newSocket.addEventListener("open", () => {
       set({ isConnected: true, connectionId });
-      console.log("Connected to room:", roomId, "with connectionId:", connectionId);
 
       // Send join message with connectionId
       const message = {
@@ -105,7 +105,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     newSocket.addEventListener("close", () => {
       set({ isConnected: false });
-      console.log("Disconnected from room");
     });
 
     newSocket.addEventListener("error", (event) => {
@@ -128,19 +127,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
       socket: null,
       isConnected: false,
       connectionId: "",
-      gameState: { roomId: "", players: new Map(), questions: [], phase: 'lobby', rounds: [], currentRound: 0 },
+      gameState: { roomId: "", players: {}, questions: [], phase: 'lobby', rounds: [], currentRound: 0, connections: {} },
     });
   },
 
   sendMessage: (message) => {
     const { socket } = get();
-    console.log('sendMessage called with:', message);
-    console.log('socket readyState:', socket?.readyState);
     if (socket && socket.readyState === WebSocket.OPEN) {
-      console.log('Sending message to server:', JSON.stringify(message));
       socket.send(JSON.stringify(message));
-    } else {
-      console.log('Socket not ready, message not sent');
     }
   },
 
@@ -148,12 +142,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   handleServerMessage: (message) => {
     switch (message.type) {
       case "update":
-        const newGameState = {
-          ...message.data,
-          players: new Map(
-            message.data.players.map((player: Player) => [player.id, player])
-          ),
-        };
+        const newGameState = message.data
 
         // Update localStorage when game state changes
         if (newGameState.roomId) {
@@ -163,7 +152,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         // Update player name and avatar in localStorage if this is a player connection
         const { isPlayer, connectionId } = get();
         if (isPlayer && connectionId) {
-          const currentPlayer = newGameState.players.get(connectionId);
+          const currentPlayer = newGameState.players[connectionId];
           if (currentPlayer?.name) {
             setStoredPlayerName(currentPlayer.name);
           }
@@ -187,7 +176,7 @@ export const useCurrentPlayerName = () => {
   if (!isPlayer || !connectionId) return "";
 
   // Find the player that matches our connection ID
-  const currentPlayer = gameState.players.get(connectionId);
+  const currentPlayer = gameState.players[connectionId];
 
   return currentPlayer?.name || "";
 };
@@ -199,7 +188,7 @@ export const useCurrentPlayerAvatar = () => {
   if (!isPlayer || !connectionId) return "";
 
   // Find the player that matches our connection ID
-  const currentPlayer = gameState.players.get(connectionId);
+  const currentPlayer = gameState.players[connectionId];
 
   return currentPlayer?.avatar || "";
 };

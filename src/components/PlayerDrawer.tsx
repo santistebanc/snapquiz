@@ -34,22 +34,22 @@ interface PlayerDrawerProps {
 
 export function PlayerDrawer({ players, isPlayerMode = false, open: externalOpen, onOpenChange }: PlayerDrawerProps) {
   const [internalOpen, setInternalOpen] = useState(false);
-  const [previousPoints, setPreviousPoints] = useState<Map<string, number>>(new Map());
+  const [previousPoints, setPreviousPoints] = useState<Record<string, number>>({});
   const open = externalOpen !== undefined ? externalOpen : internalOpen;
   const setOpen = onOpenChange || setInternalOpen;
   const sortedPlayers = [...players].sort((a, b) => b.points - a.points);
 
   // Track point changes for animation
   useEffect(() => {
-    const newPreviousPoints = new Map();
+    const newPreviousPoints: Record<string, number> = {};
     players.forEach(player => {
-      const previous = previousPoints.get(player.id) || 0;
+      const previous = previousPoints[player.id] || 0;
       if (player.points > previous) {
         // Points increased, keep the previous value for animation
-        newPreviousPoints.set(player.id, previous);
+        newPreviousPoints[player.id] = previous;
       } else {
         // No change, update to current value
-        newPreviousPoints.set(player.id, player.points);
+        newPreviousPoints[player.id] = player.points;
       }
     });
     setPreviousPoints(newPreviousPoints);
@@ -108,7 +108,7 @@ export function PlayerDrawer({ players, isPlayerMode = false, open: externalOpen
               >
                 <Badge variant="secondary" className="text-sm font-bold">
                   <AnimatedCounter 
-                    from={previousPoints.get(player.id) || 0} 
+                    from={previousPoints[player.id] || 0} 
                     to={player.points} 
                   />
                 </Badge>

@@ -18,17 +18,18 @@ export interface Question {
 
 export interface Round {
   questionId: string;
-  chosenOptions: Map<string, string> | Record<string, string>;
+  chosenOptions: Record<string, string>;
   revealedWordsIndex: number;
 }
 
 export interface GameState {
   roomId: string;
-  players: Map<string, Player>;
+  players: Record<string, Player>;
   questions: Question[];
   phase: string;
   rounds: Round[];
   currentRound: number;
+  connections: Record<string, string>;
 }
 
 export interface ServerMessage {

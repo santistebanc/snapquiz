@@ -25,38 +25,26 @@ export function OptionsDisplay({ isPlayerMode = false }: OptionsDisplayProps) {
   const disabled = ['revealingAnswer', 'givingPoints', 'finishingRound'].includes(gameState.phase);
   const isInteractive = isPlayerMode; // Only interactive in player mode
 
-  // Debug logging
-  console.log('OptionsDisplay - Phase:', gameState.phase, 'Disabled:', disabled, 'Correct Answer:', correctAnswer);
 
   // Get players who selected the correct answer (only for screen mode)
   const correctPlayers =
     !isPlayerMode && currentRound && disabled
-      ? Array.from(gameState.players.values()).filter((player) => {
-          const playerChoice =
-            currentRound.chosenOptions instanceof Map
-              ? currentRound.chosenOptions.get(player.id)
-              : currentRound.chosenOptions[player.id];
-          return playerChoice === correctAnswer;
-        })
+      ? Object.values(gameState.players).filter((player) => {
+        const playerChoice = currentRound.chosenOptions[player.id];
+        return playerChoice === correctAnswer;
+      })
       : [];
 
   // Get player's selected option from server state (only for player mode)
   const selectedOption =
     isPlayerMode && currentRound && connectionId
-      ? currentRound.chosenOptions instanceof Map
-        ? currentRound.chosenOptions.get(connectionId)
-        : currentRound.chosenOptions[connectionId]
+      ? currentRound.chosenOptions[connectionId]
       : null;
 
   // Handle option selection (only for player mode)
   const handleOptionSelect = (option: string) => {
     if (!isPlayerMode) return;
 
-    console.log("Player selecting option:", option);
-    console.log(
-      "Sending selectOption message with connectionId:",
-      connectionId
-    );
     sendMessage({
       type: "selectOption",
       data: {
@@ -106,9 +94,8 @@ export function OptionsDisplay({ isPlayerMode = false }: OptionsDisplayProps) {
               isInteractive ? () => handleOptionSelect(option) : undefined
             }
             variant={selectedOption === option ? "default" : "outline"}
-            className={`w-full text-lg p-4 h-auto transition-colors duration-300 ${
-              isInteractive ? "" : "cursor-default pointer-events-none"
-            } ${getOptionStyle(option)}`}
+            className={`w-full text-lg p-4 h-auto transition-colors duration-300 ${isInteractive ? "" : "cursor-default pointer-events-none"
+              } ${getOptionStyle(option)}`}
             disabled={isInteractive ? disabled : false}
           >
             {option}

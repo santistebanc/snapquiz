@@ -55,3 +55,50 @@ export const timeout = (ms: number, fn: Function) => {
 
 
 export type StateFrom<M> = M extends { config: infer C } ? keyof C : never
+
+export const store = <I extends Record<string | symbol, any>>(initial: I, onChange?: Function) => {
+    let handleChange: Function = onChange ?? (() => { });
+    let timeout: any = null
+    const scheduleChange = () => {
+        if (!timeout) {
+            timeout = setTimeout(() => {
+                handleChange?.()
+                clearTimeout(timeout)
+                timeout = null
+            }, 0)
+        }
+    }
+    const memo = new Proxy(initial, {
+        get: (target, prop) => {
+            if (prop === Symbol.toPrimitive) {
+                return () => initial
+            }
+            if (!onChange && prop === 'onChange') {
+                return (handler: Function) => {
+                    handleChange = handler
+                    return memo
+                }
+            }
+            const res = target[prop]
+            if (typeof res === 'object' && res !== null) {
+                return store(res, handleChange)
+            }
+            return res
+        },
+        set: (target, prop, value) => {
+            if (typeof value === 'object' && value !== null) {
+                (target as any)[prop] = store(value, handleChange)
+            } else {
+                (target as any)[prop] = value
+            }
+            scheduleChange()
+            return true
+        },
+        deleteProperty(target, prop) {
+            scheduleChange()
+            return delete target[prop];
+        }
+    })
+    type Res = I & { onChange: (handler: Function) => Res }
+    return memo as Res
+}

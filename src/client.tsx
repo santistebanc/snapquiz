@@ -33,7 +33,7 @@ function App() {
   // Player mode
   if (isPlayer) {
     // InRound screen for players (only if connection is in players state)
-    if (gameState.phase !== 'lobby' && connectionId && gameState.players.has(connectionId)) {
+    if (gameState.phase !== 'lobby' && connectionId && gameState.players[connectionId]) {
       return <PlayerInRound />;
     }
     // Lobby screen (default)

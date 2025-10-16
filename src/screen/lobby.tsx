@@ -30,7 +30,7 @@ export default function Lobby() {
   }, [sendMessage]);
 
   const playersList = useMemo(() => {
-    return Array.from(gameState.players.values());
+    return Object.values(gameState.players);
   }, [gameState.players]);
 
   return (
@@ -44,9 +44,9 @@ export default function Lobby() {
               <Button 
                 onClick={handleStartGame} 
                 size="lg" 
-                disabled={gameState.players.size === 0}
+                disabled={Object.keys(gameState.players).length === 0}
               >
-                {gameState.players.size === 0 ? "Waiting for players..." : "Start Game"}
+                {Object.keys(gameState.players).length === 0 ? "Waiting for players..." : "Start Game"}
               </Button>
             </div>
           </CardHeader>
@@ -83,7 +83,7 @@ export default function Lobby() {
           {/* Right Column - Player List */}
           <Card>
             <CardContent className="p-4">
-              {gameState.players.size === 0 ? (
+              {Object.keys(gameState.players).length === 0 ? (
                 <Centered className="py-8">
                   <div className="space-y-2">
                     <Text variant="large">No players joined yet</Text>
