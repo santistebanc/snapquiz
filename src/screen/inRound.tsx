@@ -2,7 +2,6 @@ import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import { useGameStore } from "../store";
 import { Button } from "../components/ui/button";
-import { Card, CardContent } from "../components/ui/card";
 import { Container } from "../components/ui/container";
 import { PlayerDrawer } from "../components/PlayerDrawer";
 import { InRoundContent } from "../components/InRoundContent";
@@ -31,17 +30,14 @@ export default function InRound() {
           duration: 0.5,
           ease: "easeInOut"
         }}
+        className="w-full max-w-6xl text-center space-y-6"
       >
-        <Card className="w-full max-w-6xl">
-          <CardContent className="text-center p-8 space-y-6">
-            <InRoundContent isPlayerMode={false} />
-            <div className="pt-8">
-              <Button onClick={handleResetGame} size="lg">
-                Reset Game
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        <InRoundContent isPlayerMode={false} />
+        <div className="pt-8">
+          <Button onClick={handleResetGame} size="lg">
+            Reset Game
+          </Button>
+        </div>
       </motion.div>
     </Container>
   );

@@ -1,6 +1,7 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useGameStore } from "../store";
+import { CategoryDisplay } from "./CategoryDisplay";
 import { QuestionDisplay } from "./QuestionDisplay";
 import { OptionsDisplay } from "./OptionsDisplay";
 
@@ -68,6 +69,23 @@ export function InRoundContent({ isPlayerMode }: InRoundContentProps) {
         }
       }}
     >
+      <motion.div
+        variants={itemVariants}
+        initial="hidden"
+        animate="visible"
+        layout
+        transition={{
+          duration: 0.5,
+          ease: "easeOut",
+          layout: {
+            duration: 0.5,
+            ease: "easeInOut"
+          }
+        }}
+      >
+        <CategoryDisplay isPlayerMode={isPlayerMode} />
+      </motion.div>
+
       <AnimatePresence mode="wait">
         {!['preQuestioning'].includes(gameState.phase) && (
           <motion.div
