@@ -19,7 +19,7 @@ export function NextRoundButton({ isPlayerMode = false }: NextRoundButtonProps) 
     <Button 
       onClick={handleNextRound} 
       size={isPlayerMode ? "default" : "lg"}
-      className="bg-green-600 hover:bg-green-700 text-white font-semibold px-8 py-3 rounded-lg transition-colors duration-200"
+      className="bg-[#c75d37] hover:bg-[#c75d37]/90 text-white font-semibold px-8 py-3 rounded-lg transition-colors duration-200"
     >
       {buttonText}
     </Button>

@@ -53,9 +53,8 @@ export function PlayerDrawer({ players, isPlayerMode = false, open: externalOpen
     <>
       {/* Toggle Button */}
       <Button
-        variant="outline"
         size="icon"
-        className={`fixed top-4 left-4 z-50 transition-transform duration-200 ${
+        className={`fixed top-4 left-4 z-50 transition-transform duration-200 bg-[#4e5d5b]/20 text-[#feecba] border-[#6f817e]/30 hover:bg-[#4e5d5b]/30 ${
           open ? "translate-x-80" : "translate-x-0"
         }`}
         onClick={() => setOpen(!open)}
@@ -67,17 +66,17 @@ export function PlayerDrawer({ players, isPlayerMode = false, open: externalOpen
       <Card
         className={`fixed top-0 left-0 w-80 z-40 transition-transform duration-300 ease-in-out ${
           open ? "translate-x-0" : "-translate-x-full"
-        } shadow-xl border-r bg-white/90 backdrop-blur-sm`}
+        } shadow-xl border-r bg-[#2d3a3b]/60 backdrop-blur-sm border-[#6f817e]/30`}
       >
         <div className="p-4 space-y-3">
           {sortedPlayers.map((player, index) => (
             <div
               key={player.id}
-              className="flex items-center justify-between p-3 rounded-lg border bg-white/80 backdrop-blur-sm"
+              className="flex items-center justify-between p-3 rounded-lg border bg-[#2d3a3b]/40 backdrop-blur-sm border-[#6f817e]/20"
             >
               <div className="flex items-center space-x-3 min-w-0 flex-1">
                 <div className="flex items-center space-x-2 flex-shrink-0">
-                  <span className="text-sm font-medium text-muted-foreground">
+                  <span className="text-sm font-medium text-[#feecba]/80">
                     #{index + 1}
                   </span>
                   <Avatar className="h-8 w-8">
@@ -88,7 +87,7 @@ export function PlayerDrawer({ players, isPlayerMode = false, open: externalOpen
                   </Avatar>
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="font-medium text-sm truncate" title={player.name}>
+                  <p className="font-medium text-sm truncate text-[#feecba]" title={player.name}>
                     {player.name}
                   </p>
                 </div>
@@ -100,7 +99,7 @@ export function PlayerDrawer({ players, isPlayerMode = false, open: externalOpen
                 transition={{ duration: 0.6, ease: "easeOut" }}
                 className="flex-shrink-0 ml-2"
               >
-                <Badge variant="secondary" className="text-sm font-bold">
+                <Badge className="bg-[#2d7a85] text-white hover:bg-[#2d7a85]/80 text-sm font-bold">
                   <AnimatedCounter 
                     from={previousPoints[player.id] || 0} 
                     to={player.points} 

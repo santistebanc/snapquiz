@@ -19,9 +19,13 @@ function App() {
   if (!isConnected) {
     return (
       <Container variant="page">
-        <Spinner size="md" className="mx-auto mb-4" />
-        <Text variant="large" className="mb-4">Connecting to game...</Text>
-        <Spinner variant="dots" />
+        <Card className="bg-[#2d3a3b]/60 backdrop-blur-sm border-[#6f817e]/30">
+          <CardContent className="text-center p-8">
+            <Spinner size="md" className="mx-auto mb-4" />
+            <Text variant="large" className="mb-4 text-[#feecba]">Connecting to game...</Text>
+            <Spinner variant="dots" />
+          </CardContent>
+        </Card>
       </Container>
     );
   }

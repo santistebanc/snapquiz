@@ -38,24 +38,25 @@ export function OptionsDisplay({ isPlayerMode = false }: OptionsDisplayProps) {
     if (disabled) {
       // Answer reveal mode
       if (option === correctAnswer) {
-        return "bg-green-500 text-white border-green-500";
+        return "bg-[#5a7a5c] text-white border-[#5a7a5c]";
       } else if (selectedOption === option) {
-        return "bg-red-500 text-white border-red-500";
+        return "bg-[#a05552] text-white border-[#a05552]";
       } else {
-        return "bg-gray-100 text-gray-900";
+        return "bg-[#2d3a3b]/60 text-[#feecba] border-[#6f817e]/30";
       }
     } else {
       // Selection mode
       if (selectedOption === option) {
-        return "bg-blue-600 text-white border-blue-600";
+        return "bg-[#c75d37] text-white border-[#c75d37]";
       } else {
-        return "bg-gray-100 text-gray-900 hover:bg-gray-200";
+        return "bg-[#2d3a3b]/60 text-[#feecba] border-[#6f817e]/30 hover:bg-[#2d3a3b]/80";
       }
     }
   };
 
-  // Calculate the width needed for the longest option
-  const maxWidth = Math.max(...options.map(option => option.length * 8 + 48)); // rough calculation
+  // Calculate the width needed for the longest option with minimum width constraint
+  const minWidth = 250; // minimum width in pixels
+  const maxWidth = Math.max(minWidth, ...options.map(option => option.length * 8 + 48)); // rough calculation
 
   return (
     <div className={`flex flex-col items-center gap-3 ${isPlayerMode ? "" : "gap-4"}`}>

@@ -21,7 +21,10 @@ export default class RoomServer implements Party.Server {
   }
 
   async onConnect(conn: Party.Connection) {
-    app.onConnect(conn.send.bind(conn));
+    const sendMessage = (message: string | ArrayBuffer | ArrayBufferView) => {
+      conn.send(message);
+    };
+    app.onConnect(sendMessage);
   }
 
   async onClose(connection: Party.Connection) {

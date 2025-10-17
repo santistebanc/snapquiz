@@ -28,7 +28,7 @@ export function QuestionDisplay({ isPlayerMode = false }: QuestionDisplayProps) 
   const allWords = question.text.split(' ');
 
   return (
-    <div className={`font-bold text-center leading-tight ${isPlayerMode ? "text-2xl" : "text-6xl"
+    <div className={`font-bold text-center leading-tight text-white drop-shadow-lg ${isPlayerMode ? "text-2xl" : "text-6xl"
       }`}>
       <div className="inline-block">
         {allWords.map((word, index) => {

@@ -64,21 +64,20 @@ export function Profile({ onEditChange }: ProfileProps) {
 
   const handleAvatarSelect = useCallback((avatar: string) => setEditAvatar(avatar), []);
   return (
-    <div className="space-y-3 bg-background pb-4">
-      <div className={`flex items-start gap-4 p-4 bg-background z-20 ${isEditingName ? 'fixed top-0 left-0 right-0' : ''}`}>
-        {/* Avatar */}
-        <div className="flex flex-col items-center space-y-2 flex-shrink-0">
-          <Avatar className="w-12 h-12">
-            <AvatarImage
-              src={generateAvatarUrl(editAvatar)}
-              alt="Current avatar"
-            />
-          </Avatar>
-        </div>
-
+    <div className="space-y-3 bg-transparent pb-4">
+      <div className={`flex items-start gap-4 p-4 bg-transparent z-20 ${isEditingName ? 'sm:relative fixed top-0 left-0 right-0' : ''}`}>
         {/* Player Name */}
         <div className="flex-1 space-y-2 min-w-0 p-1">
-          <form onSubmit={handleNameSubmit} className="flex items-center gap-2">
+          <form onSubmit={handleNameSubmit} className={`flex items-center gap-2 ${isEditingName ? 'justify-center' : ''}`}>
+            {/* Avatar */}
+            <div className="flex flex-col items-center space-y-2 flex-shrink-0">
+              <Avatar className="w-12 h-12">
+                <AvatarImage
+                  src={generateAvatarUrl(editAvatar)}
+                  alt="Current avatar"
+                />
+              </Avatar>
+            </div>
             <Input
               ref={nameInputRef}
               type="text"
@@ -86,7 +85,10 @@ export function Profile({ onEditChange }: ProfileProps) {
               onChange={(e) => setEditName(e.target.value.toUpperCase())}
               onFocus={() => setIsEditingName(true)}
               placeholder="Your name here..."
-              className="text-center font-mono uppercase h-12 flex-1 cursor-pointer transition-all duration-200"
+              className={`text-center font-mono uppercase h-12 cursor-pointer transition-all duration-200 bg-[#2d3a3b]/60 text-[#feecba] border-[#6f817e]/30 ${
+                isEditingName ? 'max-w-xs' : 'flex-1'
+              }`}
+              style={{ fontSize: '1.5rem' }}
               maxLength={15}
               readOnly={!isEditingName}
             />
@@ -110,17 +112,20 @@ export function Profile({ onEditChange }: ProfileProps) {
 
       {/* Avatar Selection - Only show when editing name */}
       {isEditingName && (
-        <div className="space-y-2 flex-1 pt-20">
+        <div className="space-y-2 flex-1 pt-4">
           <ScrollArea>
             <div className="grid grid-cols-3 min-[300px]:grid-cols-4 min-[400px]:grid-cols-5 min-[500px]:grid-cols-6 min-[600px]:grid-cols-7 min-[700px]:grid-cols-8 min-[800px]:grid-cols-9 gap-2 p-2">
               {availableAvatars.map((avatar) => (
                 <Button
                   key={avatar}
                   type="button"
-                  variant={editAvatar === avatar ? "default" : "outline"}
                   size="icon"
                   onClick={() => handleAvatarSelect(avatar)}
-                  className="h-16 w-16 transition-all duration-200 hover:scale-105"
+                  className={`h-16 w-16 transition-all duration-200 hover:scale-105 ${
+                    editAvatar === avatar 
+                      ? "bg-[#c75d37] text-white border-[#c75d37] hover:bg-[#c75d37] hover:border-[#c75d37]" 
+                      : "bg-[#2d3a3b]/60 text-[#feecba] border-[#6f817e]/30 hover:bg-[#2d3a3b]/80"
+                  }`}
                   data-avatar-button
                 >
                   <Avatar className="w-12 h-12">

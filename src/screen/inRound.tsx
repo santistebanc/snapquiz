@@ -35,7 +35,7 @@ export default function InRound() {
             exit={{ opacity: 0, x: 20, scale: 0.8 }}
             transition={{ duration: 0.5, ease: "easeOut" }}
           >
-            <Button onClick={handleNextRound} size="sm" className="bg-green-600 hover:bg-green-700">
+            <Button onClick={handleNextRound} size="sm" className="bg-[#c75d37] hover:bg-[#c75d37]/90 text-white">
               Next Round
             </Button>
           </motion.div>
@@ -47,7 +47,7 @@ export default function InRound() {
           exit={{ opacity: 0, x: 20, scale: 0.8 }}
           transition={{ duration: 0.5, ease: "easeOut" }}
         >
-          <Button onClick={handleResetGame} size="sm" variant="outline">
+          <Button onClick={handleResetGame} size="sm" className="bg-[#c75d37] hover:bg-[#c75d37]/90 text-white">
             Reset
           </Button>
         </motion.div>

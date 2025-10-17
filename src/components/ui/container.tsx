@@ -8,7 +8,7 @@ interface ContainerProps extends React.HTMLAttributes<HTMLDivElement> {
 
 const Container = React.forwardRef<HTMLDivElement, ContainerProps>(
   ({ className, variant = "page", children, ...props }, ref) => {
-    const baseClasses = "bg-background";
+    const baseClasses = "bg-transparent";
     
     const variantClasses = {
       page: "flex flex-col items-center justify-center min-w-dvw min-h-dvh p-2",
