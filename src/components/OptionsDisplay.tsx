@@ -54,8 +54,11 @@ export function OptionsDisplay({ isPlayerMode = false }: OptionsDisplayProps) {
     }
   };
 
+  // Calculate the width needed for the longest option
+  const maxWidth = Math.max(...options.map(option => option.length * 8 + 48)); // rough calculation
+
   return (
-    <div className={`grid grid-cols-1 gap-3 ${isPlayerMode ? "" : "gap-4"} justify-items-center`}>
+    <div className={`flex flex-col items-center gap-3 ${isPlayerMode ? "" : "gap-4"}`}>
       {options.map((option, index) => (
         <motion.div
           key={index}
@@ -68,7 +71,8 @@ export function OptionsDisplay({ isPlayerMode = false }: OptionsDisplayProps) {
           }}
           whileHover={isInteractive ? { scale: 1.02 } : {}}
           whileTap={isInteractive ? { scale: 0.98 } : {}}
-          className="relative w-full max-w-fit"
+          className="relative"
+          style={{ width: `${maxWidth}px` }}
         >
           <Button
             onClick={
