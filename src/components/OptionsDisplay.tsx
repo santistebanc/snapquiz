@@ -7,22 +7,22 @@ interface OptionsDisplayProps {
 }
 
 export function OptionsDisplay({ isPlayerMode = false }: OptionsDisplayProps) {
-  const { gameState, sendMessage, connectionId } = useGameStore();
+  const { gameState, serverAction, connectionId } = useGameStore();
 
-  const currentRound = gameState.rounds[gameState.currentRound - 1];
+  const currentRound = gameState.rounds[gameState.currentRound - 1]
   const currentQuestion = currentRound ? gameState.questions.find(q => q.id === currentRound.questionId) : null;
-  
+
   if (!currentQuestion) return null;
 
   const { options, answer: correctAnswer } = currentQuestion;
-  const disabled = ['revealingAnswer', 'givingPoints', 'finishingRound'].includes(gameState.phase);
+  const disabled = ['revealingAnswer', 'givingPoints', 'finishingRound', 'transitioningNextRound'].includes(gameState.phase);
   const isInteractive = isPlayerMode;
-  
+
   // Get correct players (screen mode only)
   const correctPlayers = !isPlayerMode && currentRound && disabled
-    ? Object.values(gameState.players).filter(player => 
-        currentRound.chosenOptions[player.id] === correctAnswer
-      )
+    ? Object.values(gameState.players).filter(player =>
+      currentRound.chosenOptions[player.id] === correctAnswer
+    )
     : [];
 
   // Get selected option (player mode only)
@@ -32,7 +32,7 @@ export function OptionsDisplay({ isPlayerMode = false }: OptionsDisplayProps) {
 
   const handleOptionSelect = (option: string) => {
     if (!isPlayerMode) return;
-    sendMessage({ type: "selectOption", data: { option, connectionId } });
+    serverAction("selectOption", option, connectionId);
   };
   const getOptionStyle = (option: string) => {
     if (disabled) {
@@ -55,7 +55,7 @@ export function OptionsDisplay({ isPlayerMode = false }: OptionsDisplayProps) {
   };
 
   return (
-    <div className={`space-y-3 ${isPlayerMode ? "" : "space-y-4"}`}>
+    <div className={`grid grid-cols-1 gap-3 ${isPlayerMode ? "" : "gap-4"} justify-items-center`}>
       {options.map((option, index) => (
         <motion.div
           key={index}
@@ -68,14 +68,14 @@ export function OptionsDisplay({ isPlayerMode = false }: OptionsDisplayProps) {
           }}
           whileHover={isInteractive ? { scale: 1.02 } : {}}
           whileTap={isInteractive ? { scale: 0.98 } : {}}
-          className="relative"
+          className="relative w-full max-w-fit"
         >
           <Button
             onClick={
               isInteractive ? () => handleOptionSelect(option) : undefined
             }
             variant={selectedOption === option ? "default" : "outline"}
-            className={`w-full text-lg p-4 h-auto transition-colors duration-300 ${isInteractive ? "" : "cursor-default pointer-events-none"
+            className={`w-full text-lg px-6 py-3 h-auto transition-colors duration-300 whitespace-nowrap ${isInteractive ? "" : "cursor-default pointer-events-none"
               } ${getOptionStyle(option)}`}
             disabled={isInteractive ? disabled : false}
           >

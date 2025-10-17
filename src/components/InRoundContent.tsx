@@ -12,18 +12,6 @@ interface InRoundContentProps {
 export function InRoundContent({ isPlayerMode }: InRoundContentProps) {
   const { gameState } = useGameStore();
 
-  // Get current round and question
-  const currentRound =
-    gameState.rounds && gameState.rounds.length > 0
-      ? gameState.rounds[gameState.currentRound - 1]
-      : null;
-  const currentQuestion = currentRound
-    ? gameState.questions.find((q) => q.id === currentRound.questionId)
-    : null;
-
-  if (!currentQuestion) return null;
-
-
   // Animation variants
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -87,7 +75,7 @@ export function InRoundContent({ isPlayerMode }: InRoundContentProps) {
       </motion.div>
 
       <AnimatePresence mode="wait">
-        {!['preQuestioning'].includes(gameState.phase) && (
+        {!['preQuestioning', 'transitioningNextRound'].includes(gameState.phase) && (
           <motion.div
             key="question"
             variants={itemVariants}
@@ -111,7 +99,7 @@ export function InRoundContent({ isPlayerMode }: InRoundContentProps) {
 
 
       <AnimatePresence mode="wait">
-        {!['preQuestioning', 'questioning', 'afterQuestioning'].includes(gameState.phase) && (
+        {!['preQuestioning', 'questioning', 'afterQuestioning', 'transitioningNextRound'].includes(gameState.phase) && (
           <motion.div
             key="options"
             variants={itemVariants}
@@ -134,6 +122,7 @@ export function InRoundContent({ isPlayerMode }: InRoundContentProps) {
           </motion.div>
         )}
       </AnimatePresence>
+
     </motion.div>
   );
 }

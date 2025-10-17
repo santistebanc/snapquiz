@@ -1,7 +1,8 @@
 import { create } from "zustand";
 import PartySocket from "partysocket";
-import type { GameState, Player, ServerMessage } from "./types";
+import type { GameState, ServerMessage } from "./types";
 import { getStoredConnectionId, setStoredConnectionId, setStoredPlayerName, setStoredPlayerAvatar, setStoredRoomId } from "./utils";
+import { initialState } from "./gameState";
 
 // Get PartyKit host from environment variable
 function getPartyKitHost(): string {
@@ -31,21 +32,13 @@ interface GameStore {
   updateGameState: (updates: Partial<GameState>) => void;
   connect: (roomId: string, isPlayer: boolean, name?: string, avatar?: string) => void;
   disconnect: () => void;
-  sendMessage: (message: any) => void;
+  serverAction: (action: string, ...args: any[]) => void;
   handleServerMessage: (message: ServerMessage) => void;
 }
 
 export const useGameStore = create<GameStore>((set, get) => ({
   // Initial state
-  gameState: {
-    roomId: "",
-    players: {},
-    questions: [],
-    phase: 'lobby',
-    rounds: [],
-    currentRound: 0,
-    connections: {},
-  },
+  gameState: initialState,
   isConnected: false,
   isPlayer: false,
   socket: null,
@@ -61,14 +54,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
   // Connection actions
   connect: (roomId, isPlayer, name, avatar) => {
     const { socket } = get();
-    
+
     // Close existing connection
     socket?.close();
 
     // Get or generate connectionId
     const storedConnectionId = getStoredConnectionId();
     const connectionId = storedConnectionId || `conn_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
+
     if (!storedConnectionId) setStoredConnectionId(connectionId);
 
     // Create new connection
@@ -82,8 +75,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
     newSocket.addEventListener("open", () => {
       set({ isConnected: true, connectionId });
       newSocket.send(JSON.stringify({
-        type: isPlayer ? "joinAsPlayer" : "joinAsScreen",
-        data: isPlayer ? { name, avatar, connectionId } : { connectionId },
+        type: 'action',
+        data: isPlayer ? { action: isPlayer ? "joinAsPlayer" : "joinAsScreen", args: [connectionId, name, avatar] } : { action: "joinAsScreen", args: [connectionId] },
       }));
     });
 
@@ -107,14 +100,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
       socket: null,
       isConnected: false,
       connectionId: "",
-      gameState: { roomId: "", players: {}, questions: [], phase: 'lobby', rounds: [], currentRound: 0, connections: {} },
+      gameState: initialState,
     });
   },
 
-  sendMessage: (message) => {
+  serverAction: (action, ...args) => {
     const { socket } = get();
     if (socket?.readyState === WebSocket.OPEN) {
-      socket.send(JSON.stringify(message));
+      socket.send(JSON.stringify({ type: 'action', data: { action, args } }));
     }
   },
 
@@ -122,17 +115,17 @@ export const useGameStore = create<GameStore>((set, get) => ({
   handleServerMessage: (message) => {
     if (message.type === "update") {
       const newGameState = message.data;
-      
+
       // Update localStorage
       if (newGameState.roomId) setStoredRoomId(newGameState.roomId);
-      
+
       const { isPlayer, connectionId } = get();
       if (isPlayer && connectionId) {
         const currentPlayer = newGameState.players[connectionId];
         if (currentPlayer?.name) setStoredPlayerName(currentPlayer.name);
         if (currentPlayer?.avatar) setStoredPlayerAvatar(currentPlayer.avatar);
       }
-      
+
       set({ gameState: newGameState });
     }
   },

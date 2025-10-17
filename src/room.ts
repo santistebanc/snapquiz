@@ -20,16 +20,16 @@ export default class RoomServer implements Party.Server {
     });
   }
 
-  async onConnect(conn: Party.Connection, ctx: Party.ConnectionContext) {
-    app.onConnect(conn, ctx);
+  async onConnect(conn: Party.Connection) {
+    app.onConnect(conn.send.bind(conn));
   }
 
   async onClose(connection: Party.Connection) {
-    app.onClose(connection);
+    app.onClose(connection.id);
   }
 
   async onMessage(message: string, sender: Party.Connection) {
-    app.onMessage(message, sender);
+    app.onMessage(message, sender.id);
   }
 
 }

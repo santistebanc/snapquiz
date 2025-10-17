@@ -1,44 +1,42 @@
-import type * as Party from "partykit/server";
-import { machine, timeout } from "./machine";
-import type { ClientMessage, Player } from "./types";
+import { router, timeout } from "./machine";
+import type { Player } from "./types";
 import { gameState } from "./gameState";
 
 // Timing constants
 const REVEAL_WORD_SPEED = 100; // 100ms
-const INITIAL_QUESTION_DELAY = 1000; // 1 second delay before first word
+const INITIAL_QUESTION_DELAY = 2000; // 2 seconds delay before first word
 const WAIT_AFTER_QUESTION_TIME = 3000; // 3 seconds after question reveal
 const OPTION_SELECTION_TIMEOUT = 5000; // 5 seconds after options reveal
 const REVEAL_ANSWER_TIME = 3000; // 3 seconds after answer reveal
 const GIVE_POINTS_TIME = 500; // 0.5 seconds after points given
 const POINTS_PER_CORRECT_ANSWER = 10; // Points awarded for correct answer
+const TRANSITIONING_NEXT_ROUND_TIME = 1000; // 1 second transition time
 
-const onConnect = (conn: Party.Connection, ctx: Party.ConnectionContext) => {
-    // Send current game state to the new connection
-    conn.send(
-        JSON.stringify({
-            type: "update",
-            data: {
-                ...gameState,
-            },
-        })
-    );
+const onConnect = (send: (message: (ArrayBuffer | ArrayBufferView) | string) => void) => {
+    send(JSON.stringify({
+        type: "update", data: { ...gameState },
+    }));
 }
 
-const onClose = (connection: Party.Connection) => {
-    // Get the player ID for this connection
-    const playerId = gameState.connections[connection.id];
+const onClose = (connectionId: string) => {
+    const playerId = gameState.connections[connectionId];
 
     if (playerId) {
-        // Remove the mapping
-        delete gameState.connections[connection.id];
+        delete gameState.connections[connectionId];
 
-        // Check if there are any other connections for this player
         const hasOtherConnections = Object.values(gameState.connections).includes(playerId);
-
         if (!hasOtherConnections) {
-            // No other connections for this player, remove from game state
             delete gameState.players[playerId];
         }
+    }
+}
+
+const onMessage = (message: string, senderId: string) => {
+    const clientMessage: any = JSON.parse(message);
+    const playerId = gameState.connections[senderId] || senderId;
+
+    if (clientMessage.type === 'action') {
+        (app as any)[clientMessage.data.action]?.(...clientMessage.data.args);
     }
 }
 
@@ -47,7 +45,7 @@ const createOrUpdatePlayer = (playerId: string, name?: string, avatar?: string) 
     const existingPlayer = gameState.players[playerId];
     const truncatedName = name ? name.substring(0, 20) : existingPlayer?.name || "Player";
     const playerAvatar = avatar || existingPlayer?.avatar || "robot-1";
-    
+
     const player: Player = {
         id: playerId,
         name: truncatedName,
@@ -55,57 +53,38 @@ const createOrUpdatePlayer = (playerId: string, name?: string, avatar?: string) 
         connectedAt: existingPlayer?.connectedAt || Date.now(),
         points: existingPlayer?.points || 0,
     };
-    
+
     gameState.players[playerId] = player;
     return player;
 };
 
-const onMessage = (message: string, sender: any) => {
-    try {
-        const clientMessage: ClientMessage = JSON.parse(message);
-        const playerId = gameState.connections[sender.id] || sender.id;
-        
-        switch (clientMessage.type) {
-            case "startGame":
-                app.startGame();
-                break;
-            case "selectOption":
-                app.selectOption(clientMessage.data.option, playerId);
-                break;
-            case "resetGame":
-                app.resetGame();
-                break;
-            case "joinAsPlayer":
-                if (clientMessage.data.name) {
-                    gameState.connections[sender.id] = clientMessage.data.connectionId || sender.id;
-                    createOrUpdatePlayer(
-                        clientMessage.data.connectionId || sender.id,
-                        clientMessage.data.name,
-                        clientMessage.data.avatar
-                    );
-                }
-                break;
-            case "changeProfile":
-                if (clientMessage.data.name || clientMessage.data.avatar) {
-                    gameState.connections[sender.id] = playerId;
-                    createOrUpdatePlayer(playerId, clientMessage.data.name, clientMessage.data.avatar);
-                }
-                break;
-        }
-    } catch (error) {
-        console.error("Error processing message:", error);
+const joinAsPlayer = (senderId: string, name?: string, avatar?: string) => {
+    if (name) {
+        gameState.connections[senderId] = senderId;
+        createOrUpdatePlayer(
+            senderId,
+            name,
+            avatar
+        );
+    }
+}
+
+const changeProfile = (senderId: string, name?: string, avatar?: string) => {
+    if (name || avatar) {
+        gameState.connections[senderId] = senderId;
+        createOrUpdatePlayer(senderId, name, avatar);
     }
 }
 
 const resetGame = () => {
     gameState.rounds = [];
     gameState.currentRound = 0;
-    Object.values(gameState.players).forEach(player => player.points = 0);
+    (Object.values(gameState.players) as Player[]).forEach((player: Player) => player.points = 0);
     app.toLobby();
 };
 
 const startGame = () => {
-    gameState.rounds = gameState.questions.map(q => ({
+    gameState.rounds = gameState.questions.map((q: any) => ({
         questionId: q.id,
         chosenOptions: {},
         revealedWordsIndex: 0,
@@ -122,12 +101,12 @@ const preQuestioningInit = () => {
 
 const questioningInit = () => {
     const round = gameState.rounds[gameState.currentRound - 1];
-    const question = gameState.questions.find(q => q.id === round.questionId);
-    
+    const question = gameState.questions.find((q: any) => q.id === round.questionId);
+
     if (!question) return;
-    
+
     const words = question.text.split(" ");
-    words.forEach((_, index) => {
+    words.forEach((_: any, index: number) => {
         timeout(index * REVEAL_WORD_SPEED, () => {
             round.revealedWordsIndex = Math.max(round.revealedWordsIndex, index + 1);
             if (round.revealedWordsIndex === words.length) {
@@ -158,11 +137,11 @@ const revealingAnswerInit = () => {
 
 const givingPointsInit = () => {
     const round = gameState.rounds[gameState.currentRound - 1];
-    const question = gameState.questions.find(q => q.id === round.questionId);
-    
+    const question = gameState.questions.find((q: any) => q.id === round.questionId);
+
     if (question) {
         const correctAnswer = question.answer;
-        Object.values(gameState.players).forEach(player => {
+        (Object.values(gameState.players) as Player[]).forEach((player: Player) => {
             if (round.chosenOptions[player.id] === correctAnswer) {
                 player.points += POINTS_PER_CORRECT_ANSWER;
             }
@@ -171,9 +150,25 @@ const givingPointsInit = () => {
     timeout(GIVE_POINTS_TIME, app.toFinishingRound);
 };
 
-const common = { onConnect, onClose, onMessage, resetGame }
+const transitioningNextRoundInit = () => {
+    timeout(TRANSITIONING_NEXT_ROUND_TIME, () => {
+        if (gameState.currentRound < gameState.rounds.length) {
+            gameState.currentRound++;
+            app.toPreQuestioning();
+        } else {
+            // All rounds completed, go back to lobby
+            app.toLobby();
+        }
+    });
+};
 
-export const app = machine({
+const nextRound = () => {
+    app.toTransitioningNextRound()
+};
+
+const common = { onConnect, onClose, onMessage, joinAsPlayer, changeProfile, resetGame, nextRound }
+
+export const app = router({
     lobby: { startGame, ...common },
     preQuestioning: { init: preQuestioningInit, ...common },
     questioning: { init: questioningInit, ...common },
@@ -182,4 +177,5 @@ export const app = machine({
     revealingAnswer: { init: revealingAnswerInit, ...common },
     givingPoints: { init: givingPointsInit, ...common },
     finishingRound: { ...common },
+    transitioningNextRound: { init: transitioningNextRoundInit, ...common },
 }, "lobby", () => { gameState.phase = app.state })

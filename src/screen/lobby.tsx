@@ -1,12 +1,11 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { motion } from "framer-motion";
 import { useGameStore } from "../store";
 import { generateQRCode, generateAvatarUrl } from "../utils";
 import type { Player } from "../types";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Avatar, AvatarImage } from "../components/ui/avatar";
-import { Badge } from "../components/ui/badge";
-import { Separator } from "../components/ui/separator";
 import { ScrollArea } from "../components/ui/scroll-area";
 import { Skeleton } from "../components/ui/skeleton";
 import { Container } from "../components/ui/container";
@@ -15,7 +14,7 @@ import { StatusIndicator } from "../components/ui/status-indicator";
 import { Centered } from "../components/ui/centered";
 
 export default function Lobby() {
-  const { gameState, sendMessage } = useGameStore();
+  const { gameState, serverAction } = useGameStore();
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>("");
 
   useEffect(() => {
@@ -23,11 +22,12 @@ export default function Lobby() {
   }, [gameState.roomId]);
 
   const handleStartGame = useCallback(() => {
-    sendMessage({
-      type: "startGame",
-      data: {},
-    });
-  }, [sendMessage]);
+    serverAction("startGame");
+  }, [serverAction]);
+
+  const handleResetGame = useCallback(() => {
+    serverAction("resetGame");
+  }, [serverAction]);
 
   const playersList = useMemo(() => {
     return Object.values(gameState.players);
@@ -35,15 +35,29 @@ export default function Lobby() {
 
   return (
     <Container variant="page">
+      {/* Top right corner reset button */}
+      <div className="fixed top-4 right-4 z-50">
+        <motion.div
+          initial={{ opacity: 0, x: 20, scale: 0.8 }}
+          animate={{ opacity: 1, x: 0, scale: 1 }}
+          exit={{ opacity: 0, x: 20, scale: 0.8 }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
+        >
+          <Button onClick={handleResetGame} size="sm" variant="outline">
+            Reset
+          </Button>
+        </motion.div>
+      </div>
+
       <Container variant="section" className="w-full max-w-6xl">
         {/* Header */}
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="text-4xl">SnapQuiz</CardTitle>
-              <Button 
-                onClick={handleStartGame} 
-                size="lg" 
+              <Button
+                onClick={handleStartGame}
+                size="lg"
                 disabled={Object.keys(gameState.players).length === 0}
               >
                 {Object.keys(gameState.players).length === 0 ? "Waiting for players..." : "Start Game"}
@@ -98,7 +112,7 @@ export default function Lobby() {
                         <div className="flex items-center justify-between">
                           <div className="flex items-center space-x-3">
                             <Avatar className="w-8 h-8">
-                              <AvatarImage 
+                              <AvatarImage
                                 src={generateAvatarUrl(player.avatar || 'robot-1')}
                                 alt={`${player.name} avatar`}
                               />

@@ -38,11 +38,9 @@ export interface ServerMessage {
 }
 
 export interface ClientMessage {
-  type: 'joinAsPlayer' | 'joinAsScreen' | 'changeProfile' | 'startGame' | 'resetGame' | 'selectOption';
+  type: 'action'
   data: {
-    name?: string;
-    avatar?: string;
-    connectionId?: string;
-    option?: string;
+    action: string;
+    args: any[];
   };
 }

@@ -3,7 +3,7 @@ export type Config = Record<string, StateConfig>
 
 type AllKeys<T> = T extends Record<string, infer U> ? U extends Record<string, any> ? keyof U : never : never
 
-export type Machine<C extends Config> = {
+export type Router<C extends Config> = {
     [K in AllKeys<C>]: (...args: any[]) => void
 } & {
     [K in keyof C as `to${Capitalize<string & K>}`]: () => void
@@ -13,38 +13,38 @@ export type Machine<C extends Config> = {
     config: C
 }
 
-let currentMachine: any = null;
+let currentRouter: any = null;
 
-export const machine = <C extends Config = {}>(config: C, initial: keyof C, onTransition?: (res: Machine<C>) => void) => {
+export const router = <C extends Config = {}>(config: C, initial: keyof C, onTransition?: (res: Router<C>) => void) => {
 
     const res = {
         state: initial,
         cleanups: [] as Function[],
         config,
-    } as Machine<C>
+    } as Router<C>
 
     Object.entries(config).forEach(([state, action]) => {
         (res as any)[`to${state.charAt(0).toUpperCase() + state.slice(1)}`] = () => {
             res.cleanups.forEach((cleanup) => cleanup())
             res.state = state
-            currentMachine = res
+            currentRouter = res
             res.config[state].init?.()
-            currentMachine = null
+            currentRouter = null
             onTransition?.(res)
         }
         Object.keys(action).forEach((key) => {
             (res as any)[key] = (...args: any[]) => { config[res.state][key](...args) }
         })
     })
-    currentMachine = res
+    currentRouter = res
     res.config[initial].init?.()
-    currentMachine = null
+    currentRouter = null
     return res
 }
 
 export const cleanup = (func: Function) => {
-    if (!currentMachine) throw "you can only run cleanup inside a state";
-    currentMachine.cleanups.push(func);
+    if (!currentRouter) throw "you can only run cleanup inside a state";
+    currentRouter.cleanups.push(func);
 };
 
 export const timeout = (ms: number, fn: Function) => {

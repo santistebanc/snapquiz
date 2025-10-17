@@ -7,7 +7,7 @@ import { PlayerDrawer } from "../components/PlayerDrawer";
 import { InRoundContent } from "../components/InRoundContent";
 
 export default function InRound() {
-  const { gameState, sendMessage } = useGameStore();
+  const { gameState, serverAction } = useGameStore();
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   // Open drawer when GIVING_POINTS phase starts
@@ -15,29 +15,53 @@ export default function InRound() {
     if (gameState.phase === 'givingPoints') setDrawerOpen(true);
   }, [gameState.phase]);
 
-  const handleResetGame = () => sendMessage({ type: "resetGame", data: {} });
+  const handleResetGame = () => serverAction("resetGame");
+  const handleNextRound = () => serverAction("nextRound");
 
   return (
     <Container variant="page">
-      <PlayerDrawer 
-        players={Object.values(gameState.players)} 
+      <PlayerDrawer
+        players={Object.values(gameState.players)}
         open={drawerOpen}
         onOpenChange={setDrawerOpen}
       />
+      
+      {/* Top right corner buttons */}
+      <div className="fixed top-4 right-4 z-50 flex gap-2">
+        {gameState.phase === 'finishingRound' && (
+          <motion.div
+            initial={{ opacity: 0, x: 20, scale: 0.8 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: 20, scale: 0.8 }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+          >
+            <Button onClick={handleNextRound} size="sm" className="bg-green-600 hover:bg-green-700">
+              Next Round
+            </Button>
+          </motion.div>
+        )}
+        
+        <motion.div
+          initial={{ opacity: 0, x: 20, scale: 0.8 }}
+          animate={{ opacity: 1, x: 0, scale: 1 }}
+          exit={{ opacity: 0, x: 20, scale: 0.8 }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
+        >
+          <Button onClick={handleResetGame} size="sm" variant="outline">
+            Reset
+          </Button>
+        </motion.div>
+      </div>
+
       <motion.div
         layout
         transition={{
           duration: 0.5,
           ease: "easeInOut"
         }}
-        className="w-full max-w-6xl text-center space-y-6"
+        className="w-full max-w-4xl text-center space-y-6"
       >
         <InRoundContent isPlayerMode={false} />
-        <div className="pt-8">
-          <Button onClick={handleResetGame} size="lg">
-            Reset Game
-          </Button>
-        </div>
       </motion.div>
     </Container>
   );
