@@ -20,6 +20,7 @@
     "clsx": "^2.1.1",
     "framer-motion": "^12.23.24",
     "lucide-react": "^0.536.0",
+    "particles.js": "^2.0.0",
     "partysocket": "^1.0.2",
     "qrcode": "^1.5.4",
     "react": "^19.2.0",

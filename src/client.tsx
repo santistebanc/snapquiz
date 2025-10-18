@@ -3,6 +3,7 @@ import ReactDOM from "react-dom/client";
 import "./styles.css";
 import { useGameConnection } from "./useGameConnection";
 import { useGameStore } from "./store";
+import { useParticles } from "./hooks/useParticles";
 import ScreenLobby from "./screen/lobby";
 import ScreenInRound from "./screen/inRound";
 import PlayerLobby from "./player/lobby";
@@ -15,6 +16,9 @@ import { Text } from "./components/ui/text";
 function App() {
   const { isConnected, isPlayer } = useGameConnection();
   const { gameState, connectionId } = useGameStore();
+  
+  // Initialize particles background
+  useParticles();
 
   if (!isConnected) {
     return (
