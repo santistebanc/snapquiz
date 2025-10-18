@@ -29,7 +29,7 @@ export function Room() {
   return (
     <div className="flex items-center justify-center gap-2 p-4">
       <form onSubmit={handleRoomSubmit} className="flex items-center gap-2">
-        <span className="text-[#eebe6b] font-medium text-xl">Room:</span>
+        <span className="text-warm-yellow font-medium text-xl">Room:</span>
         <Input
           ref={roomInputRef}
           type="text"
@@ -41,7 +41,7 @@ export function Room() {
             setTimeout(() => setIsEditingRoom(false), 150);
           }}
           placeholder="Enter room code..."
-          className="text-center font-mono uppercase h-12 cursor-pointer transition-all duration-200 bg-[#2d3a3b]/60 text-[#feecba] border-[#6f817e]/30"
+          className="text-center font-mono uppercase h-12 cursor-pointer transition-all duration-200 bg-card-dark/60 text-warm-cream border-border-muted/30"
           style={{ fontSize: '1.5rem' }}
           maxLength={4}
           readOnly={!isEditingRoom}

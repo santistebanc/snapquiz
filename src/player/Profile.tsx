@@ -85,7 +85,7 @@ export function Profile({ onEditChange }: ProfileProps) {
               onChange={(e) => setEditName(e.target.value.toUpperCase())}
               onFocus={() => setIsEditingName(true)}
               placeholder="Your name here..."
-              className={`text-center font-mono uppercase h-12 cursor-pointer transition-all duration-200 bg-[#2d3a3b]/60 text-[#feecba] border-[#6f817e]/30 ${
+              className={`text-center font-mono uppercase h-12 cursor-pointer transition-all duration-200 bg-card-dark/60 text-warm-cream border-border-muted/30 ${
                 isEditingName ? 'max-w-xs' : 'flex-1'
               }`}
               style={{ fontSize: '1.5rem' }}
@@ -123,8 +123,8 @@ export function Profile({ onEditChange }: ProfileProps) {
                   onClick={() => handleAvatarSelect(avatar)}
                   className={`h-16 w-16 transition-all duration-200 hover:scale-105 ${
                     editAvatar === avatar 
-                      ? "bg-[#c75d37] text-white border-[#c75d37] hover:bg-[#c75d37] hover:border-[#c75d37]" 
-                      : "bg-[#2d3a3b]/60 text-[#feecba] border-[#6f817e]/30 hover:bg-[#2d3a3b]/80"
+                      ? "bg-warm-orange text-white border-warm-orange hover:bg-warm-orange hover:border-warm-orange" 
+                      : "bg-card-dark/60 text-warm-cream border-border-muted/30 hover:bg-card-dark/80"
                   }`}
                   data-avatar-button
                 >

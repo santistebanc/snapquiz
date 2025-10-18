@@ -43,7 +43,7 @@ export default function Lobby() {
           <Button
             onClick={handleStartGame}
             size="sm"
-            className="bg-[#c75d37] hover:bg-[#c75d37]/90 text-white"
+            className="bg-warm-orange hover:bg-warm-orange/90 text-white"
             disabled={Object.keys(gameState.players).length === 0}
           >
             {Object.keys(gameState.players).length === 0 ? "Waiting for players..." : "Start Game"}
@@ -59,13 +59,9 @@ export default function Lobby() {
           <div className="flex flex-col items-center justify-center space-y-8">
             <div className="text-center space-y-4">
               <div className="flex items-center justify-center gap-3 text-4xl font-mono">
-                <span className="text-[#eebe6b]">Room:</span>
+                <span className="text-warm-yellow">Room:</span>
                 <div 
-                  className="text-[#feecba] px-4 py-2 rounded-lg font-bold border"
-                  style={{
-                    backgroundColor: 'rgba(45, 58, 59, 0.6)',
-                    borderColor: 'rgba(111, 129, 126, 0.3)'
-                  }}
+                  className="text-warm-cream px-4 py-2 rounded-lg font-bold border bg-card-dark/60 border-border-muted/30"
                 >
                   {gameState.roomId}
                 </div>
@@ -92,8 +88,8 @@ export default function Lobby() {
           <div className="flex flex-col justify-center">
             <div className="text-center mb-8">
               <div className="flex items-center justify-center gap-3 mb-2">
-                <h2 className="text-4xl font-bold text-[#feecba]">Players</h2>
-                <Badge className="bg-[#2d7a85] text-white text-lg font-bold px-3 py-1">
+                <h2 className="text-4xl font-bold text-warm-cream">Players</h2>
+                <Badge className="bg-teal-secondary text-white text-lg font-bold px-3 py-1">
                   {Object.keys(gameState.players).length}
                 </Badge>
               </div>
@@ -102,7 +98,7 @@ export default function Lobby() {
             {Object.keys(gameState.players).length > 0 && (
               <div className="space-y-4 max-h-96 overflow-y-auto pr-4">
                 {playersList.map((player: Player) => (
-                  <div key={player.id} className="flex items-center justify-between p-4 rounded-lg border border-[#6f817e]/30 bg-[#2d3a3b]/60">
+                  <div key={player.id} className="flex items-center justify-between p-4 rounded-lg border border-border-muted/30 bg-card-dark/60">
                     <div className="flex items-center space-x-4">
                       <Avatar className="w-12 h-12">
                         <AvatarImage
@@ -110,7 +106,7 @@ export default function Lobby() {
                           alt={`${player.name} avatar`}
                         />
                       </Avatar>
-                      <Text variant="large" className="text-[#feecba] text-xl">{player.name}</Text>
+                      <Text variant="large" className="text-warm-cream text-xl">{player.name}</Text>
                     </div>
                     <StatusIndicator status="online" />
                   </div>

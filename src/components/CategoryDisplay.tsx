@@ -21,7 +21,7 @@ export function CategoryDisplay({ isPlayerMode = false }: CategoryDisplayProps) 
 
   return (
     <motion.div
-      className={`text-[#eebe6b] font-bold mb-3 text-center drop-shadow-lg ${
+      className={`text-warm-yellow font-bold mb-3 text-center drop-shadow-lg ${
         isPlayerMode ? "text-lg" : "text-2xl"
       }`}
       initial={{ opacity: 0, y: -20, scale: 0.9 }}

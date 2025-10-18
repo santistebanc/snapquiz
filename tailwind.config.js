@@ -57,7 +57,19 @@ module.exports = {
   				'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
   				border: 'hsl(var(--sidebar-border))',
   				ring: 'hsl(var(--sidebar-ring))'
-  			}
+  			},
+  			// Custom color palette
+  			'warm-cream': 'hsl(var(--warm-cream))',
+  			'warm-yellow': 'hsl(var(--warm-yellow))',
+  			'warm-orange': 'hsl(var(--warm-orange))',
+  			'dark-green': 'hsl(var(--dark-green))',
+  			'card-dark': 'hsl(var(--card-dark))',
+  			'border-muted': 'hsl(var(--border-muted))',
+  			'teal-primary': 'hsl(var(--teal-primary))',
+  			'teal-secondary': 'hsl(var(--teal-secondary))',
+  			'selected-blue': 'hsl(var(--selected-blue))',
+  			'correct-green': 'hsl(var(--correct-green))',
+  			'wrong-red': 'hsl(var(--wrong-red))'
   		},
   		borderRadius: {
   			lg: 'var(--radius)',

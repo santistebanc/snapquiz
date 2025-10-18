@@ -34,6 +34,19 @@
     --sidebar-accent-foreground: 195 8% 25%;
     --sidebar-border: 195 8% 85%;
     --sidebar-ring: 185 50% 45%; /* #3ea0ad - teal */
+    
+    /* Custom color palette */
+    --warm-cream: 45 85% 85%; /* #feecba */
+    --warm-yellow: 45 70% 70%; /* #eebe6b */
+    --warm-orange: 20 60% 55%; /* #c75d37 */
+    --dark-green: 195 8% 25%; /* #4e5d5b - background */
+    --card-dark: 195 8% 20%; /* #2d3a3b - darker cards */
+    --border-muted: 195 8% 50%; /* #6f817e - muted borders */
+    --teal-primary: 185 50% 45%; /* #3ea0ad */
+    --teal-secondary: 185 50% 35%; /* #2d7a85 */
+    --selected-blue: 195 50% 55%; /* #54A7B0 */
+    --correct-green: 120 25% 45%; /* #5a7a5c */
+    --wrong-red: 0 35% 50%; /* #a05552 */
   }
 
   .dark {
@@ -64,6 +77,19 @@
     --sidebar-accent-foreground: 195 8% 95%;
     --sidebar-border: 195 8% 40%;
     --sidebar-ring: 185 50% 45%; /* #3ea0ad - teal */
+    
+    /* Custom color palette - same as light theme */
+    --warm-cream: 45 85% 85%; /* #feecba */
+    --warm-yellow: 45 70% 70%; /* #eebe6b */
+    --warm-orange: 20 60% 55%; /* #c75d37 */
+    --dark-green: 195 8% 25%; /* #4e5d5b - background */
+    --card-dark: 195 8% 20%; /* #2d3a3b - darker cards */
+    --border-muted: 195 8% 50%; /* #6f817e - muted borders */
+    --teal-primary: 185 50% 45%; /* #3ea0ad */
+    --teal-secondary: 185 50% 35%; /* #2d7a85 */
+    --selected-blue: 195 50% 55%; /* #54A7B0 */
+    --correct-green: 120 25% 45%; /* #5a7a5c */
+    --wrong-red: 0 35% 50%; /* #a05552 */
   }
 }
 
@@ -109,7 +135,7 @@
           left: 0;
           width: 100vw;
           height: 100vh;
-          background-color: #4e5d5b;
+          background-color: hsl(var(--dark-green));
           z-index: 0;
         }
          

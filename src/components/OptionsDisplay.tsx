@@ -40,19 +40,19 @@ export function OptionsDisplay({ isPlayerMode = false }: OptionsDisplayProps) {
       if (option === correctAnswer) {
         // Keep the selected color if this was the selected option, otherwise show as correct
         return selectedOption === option 
-          ? "bg-[#54A7B0] text-white border-[#54A7B0]" 
-          : "bg-[#5a7a5c] text-white border-[#5a7a5c]";
+          ? "bg-selected-blue text-white border-selected-blue" 
+          : "bg-correct-green text-white border-correct-green";
       } else if (selectedOption === option) {
-        return "bg-[#a05552] text-white border-[#a05552]";
+        return "bg-wrong-red text-white border-wrong-red";
       } else {
-        return "bg-[#2d3a3b]/60 text-[#feecba] border-[#6f817e]/30";
+        return "bg-card-dark/60 text-warm-cream border-border-muted/30";
       }
     } else {
       // Selection mode
       if (selectedOption === option) {
-        return "bg-[#54A7B0] text-white border-[#54A7B0] hover:bg-[#54A7B0] hover:border-[#54A7B0]";
+        return "bg-selected-blue text-white border-selected-blue hover:bg-selected-blue hover:border-selected-blue";
       } else {
-        return "bg-[#2d3a3b]/60 text-[#feecba] border-[#6f817e]/30 hover:bg-[#2d3a3b]/80";
+        return "bg-card-dark/60 text-warm-cream border-border-muted/30 hover:bg-card-dark/80";
       }
     }
   };
@@ -100,11 +100,11 @@ export function OptionsDisplay({ isPlayerMode = false }: OptionsDisplayProps) {
             style={{
               opacity: 1,
               ...(disabled && selectedOption === option && option !== correctAnswer
-                ? { backgroundColor: '#a05552', borderColor: '#a05552', color: 'white' }
+                ? { backgroundColor: 'hsl(var(--wrong-red))', borderColor: 'hsl(var(--wrong-red))', color: 'white' }
                 : selectedOption === option && !disabled
-                ? { backgroundColor: '#54A7B0', borderColor: '#54A7B0', color: 'white' }
+                ? { backgroundColor: 'hsl(var(--selected-blue))', borderColor: 'hsl(var(--selected-blue))', color: 'white' }
                 : disabled && option === correctAnswer && selectedOption === option
-                ? { backgroundColor: '#54A7B0', borderColor: '#54A7B0', color: 'white' }
+                ? { backgroundColor: 'hsl(var(--selected-blue))', borderColor: 'hsl(var(--selected-blue))', color: 'white' }
                 : {})
             }}
             disabled={isInteractive ? disabled : false}
