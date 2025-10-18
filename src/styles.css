@@ -36,17 +36,17 @@
     --sidebar-ring: 185 50% 45%; /* #3ea0ad - teal */
     
     /* Custom color palette */
-    --warm-cream: 45 85% 85%; /* #feecba */
+    --warm-cream: 44 97% 86%; /* #feecba */
     --warm-yellow: 38 79% 68%; /* #eebe6b */
-    --warm-orange: 20 60% 55%; /* #c75d37 - correct */
-    --dark-green: 195 8% 25%; /* #4e5d5b - correct */
-    --card-dark: 195 8% 20%; /* #2d3a3b - correct */
-    --border-muted: 195 8% 50%; /* #6f817e - correct */
-    --teal-primary: 185 50% 45%; /* #3ea0ad - correct */
-    --teal-secondary: 185 50% 35%; /* #2d7a85 - correct */
-    --selected-blue: 195 50% 55%; /* #54A7B0 - correct */
-    --correct-green: 120 25% 45%; /* #5a7a5c - correct */
-    --wrong-red: 0 35% 50%; /* #a05552 - correct */
+    --warm-orange: 16 57% 50%; /* #c75d37 */
+    --dark-green: 172 9% 34%; /* #4e5d5b - background */
+    --card-dark: 184 13% 20%; /* #2d3a3b - darker cards */
+    --border-muted: 170 7% 47%; /* #6f817e - muted borders */
+    --teal-primary: 187 47% 46%; /* #3ea0ad */
+    --teal-secondary: 188 49% 35%; /* #2d7a85 */
+    --selected-blue: 186 37% 51%; /* #54A7B0 */
+    --correct-green: 124 15% 42%; /* #5a7a5c */
+    --wrong-red: 2 32% 47%; /* #a05552 */
   }
 
   .dark {
@@ -79,17 +79,17 @@
     --sidebar-ring: 185 50% 45%; /* #3ea0ad - teal */
     
     /* Custom color palette - same as light theme */
-    --warm-cream: 45 85% 85%; /* #feecba */
+    --warm-cream: 44 97% 86%; /* #feecba */
     --warm-yellow: 38 79% 68%; /* #eebe6b */
-    --warm-orange: 20 60% 55%; /* #c75d37 - correct */
-    --dark-green: 195 8% 25%; /* #4e5d5b - correct */
-    --card-dark: 195 8% 20%; /* #2d3a3b - correct */
-    --border-muted: 195 8% 50%; /* #6f817e - correct */
-    --teal-primary: 185 50% 45%; /* #3ea0ad - correct */
-    --teal-secondary: 185 50% 35%; /* #2d7a85 - correct */
-    --selected-blue: 195 50% 55%; /* #54A7B0 - correct */
-    --correct-green: 120 25% 45%; /* #5a7a5c - correct */
-    --wrong-red: 0 35% 50%; /* #a05552 - correct */
+    --warm-orange: 16 57% 50%; /* #c75d37 */
+    --dark-green: 172 9% 34%; /* #4e5d5b - background */
+    --card-dark: 184 13% 20%; /* #2d3a3b - darker cards */
+    --border-muted: 170 7% 47%; /* #6f817e - muted borders */
+    --teal-primary: 187 47% 46%; /* #3ea0ad */
+    --teal-secondary: 188 49% 35%; /* #2d7a85 */
+    --selected-blue: 186 37% 51%; /* #54A7B0 */
+    --correct-green: 124 15% 42%; /* #5a7a5c */
+    --wrong-red: 2 32% 47%; /* #a05552 */
   }
 }
 
