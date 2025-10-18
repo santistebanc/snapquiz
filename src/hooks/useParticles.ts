@@ -1,10 +1,11 @@
 import { useEffect, useRef } from 'react';
 
-// Import particles.js dynamically to avoid SSR issues
-const loadParticles = async () => {
-  const particles = await import('particles.js');
-  return particles.default || particles;
-};
+// Declare global particlesJS function
+declare global {
+  interface Window {
+    particlesJS: (id: string, config: any) => any;
+  }
+}
 
 const particlesConfig = {
   particles: {
@@ -121,16 +122,13 @@ export function useParticles() {
   const particlesInstance = useRef<any>(null);
 
   useEffect(() => {
-    let mounted = true;
-
-    const initParticles = async () => {
-      try {
-        const particlesJS = await loadParticles();
-        if (mounted) {
-          particlesInstance.current = particlesJS("particles-js", particlesConfig);
-        }
-      } catch (error) {
-        console.error('Failed to load particles.js:', error);
+    // Wait for particles.js to be available on window
+    const initParticles = () => {
+      if (typeof window !== 'undefined' && window.particlesJS) {
+        particlesInstance.current = window.particlesJS("particles-js", particlesConfig);
+      } else {
+        // Retry after a short delay if particles.js isn't loaded yet
+        setTimeout(initParticles, 100);
       }
     };
 
@@ -147,7 +145,6 @@ export function useParticles() {
 
     // Cleanup
     return () => {
-      mounted = false;
       window.removeEventListener('resize', handleResize);
     };
   }, []);
