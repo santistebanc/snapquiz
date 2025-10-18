@@ -3,7 +3,7 @@ import { useGameStore } from "./store";
 import { getRoomId, getPlayerName, getPlayerAvatar } from "./utils";
 
 export function useGameConnection() {
-  const { gameState, isConnected, isPlayer, connect, disconnect } =
+  const { serverState, isConnected, isPlayer, connect, disconnect } =
     useGameStore();
 
   // Initialize connection and determine mode
@@ -30,7 +30,7 @@ export function useGameConnection() {
   }, [connect, disconnect]);
 
   return {
-    gameState,
+    serverState,
     isConnected,
     isPlayer,
   };

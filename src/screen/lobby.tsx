@@ -15,20 +15,20 @@ import { Centered } from "../components/ui/centered";
 import { Badge } from "../components/ui/badge";
 
 export default function Lobby() {
-  const { gameState, serverAction } = useGameStore();
+  const { serverState, serverAction } = useGameStore();
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>("");
 
   useEffect(() => {
-    generateQRCode(gameState.roomId).then(setQrCodeDataUrl);
-  }, [gameState.roomId]);
+    generateQRCode(serverState.roomId).then(setQrCodeDataUrl);
+  }, [serverState.roomId]);
 
   const handleStartGame = useCallback(() => {
     serverAction("startGame");
   }, [serverAction]);
 
   const playersList = useMemo(() => {
-    return Object.values(gameState.players);
-  }, [gameState.players]);
+    return Object.values(serverState.players);
+  }, [serverState.players]);
 
   return (
     <Container variant="page">
@@ -44,9 +44,9 @@ export default function Lobby() {
             onClick={handleStartGame}
             size="sm"
             className="bg-warm-orange hover:bg-warm-orange/90 text-white"
-            disabled={Object.keys(gameState.players).length === 0}
+            disabled={Object.keys(serverState.players).length === 0}
           >
-            {Object.keys(gameState.players).length === 0 ? "Waiting for players..." : "Start Game"}
+            {Object.keys(serverState.players).length === 0 ? "Waiting for players..." : "Start Game"}
           </Button>
         </motion.div>
       </div>
@@ -63,7 +63,7 @@ export default function Lobby() {
                 <div 
                   className="text-warm-cream px-4 py-2 rounded-lg font-bold border bg-card-dark/60 border-border-muted/30"
                 >
-                  {gameState.roomId}
+                  {serverState.roomId}
                 </div>
               </div>
             </div>
@@ -90,12 +90,12 @@ export default function Lobby() {
               <div className="flex items-center justify-center gap-3 mb-2">
                 <h2 className="text-4xl font-bold text-warm-cream">Players</h2>
                 <Badge className="bg-teal-secondary text-white text-lg font-bold px-3 py-1">
-                  {Object.keys(gameState.players).length}
+                  {Object.keys(serverState.players).length}
                 </Badge>
               </div>
             </div>
             
-            {Object.keys(gameState.players).length > 0 && (
+            {Object.keys(serverState.players).length > 0 && (
               <div className="space-y-4 max-h-96 overflow-y-auto pr-4">
                 {playersList.map((player: Player) => (
                   <div key={player.id} className="flex items-center justify-between p-4 rounded-lg border border-border-muted/30 bg-card-dark/60">

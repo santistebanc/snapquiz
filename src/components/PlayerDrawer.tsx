@@ -3,7 +3,6 @@ import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { Button } from "./ui/button";
 import { Avatar, AvatarImage } from "./ui/avatar";
 import { Badge } from "./ui/badge";
-import { Card } from "./ui/card";
 import { Menu } from "lucide-react";
 import { generateAvatarUrl } from "../utils";
 import type { Player } from "../types";
@@ -62,11 +61,11 @@ export function PlayerDrawer({ players, isPlayerMode = false, open: externalOpen
         <Menu className="h-4 w-4" />
       </Button>
 
-      {/* Slide-out Card */}
-      <Card
+      {/* Slide-out Container */}
+      <div
         className={`fixed top-0 left-0 w-80 z-40 transition-transform duration-300 ease-in-out ${
           open ? "translate-x-0" : "-translate-x-full"
-        } shadow-xl border-r bg-card-dark/60 backdrop-blur-sm border-border-muted/30`}
+        }`}
       >
         <div className="p-4 space-y-3">
           {sortedPlayers.map((player, index) => (
@@ -114,7 +113,7 @@ export function PlayerDrawer({ players, isPlayerMode = false, open: externalOpen
             </div>
           )}
         </div>
-      </Card>
+      </div>
     </>
   );
 }

@@ -15,7 +15,7 @@ import { Text } from "./components/ui/text";
 
 function App() {
   const { isConnected, isPlayer } = useGameConnection();
-  const { gameState, connectionId } = useGameStore();
+  const { serverState, connectionId } = useGameStore();
   
   // Initialize particles background
   useParticles();
@@ -28,8 +28,8 @@ function App() {
     );
   }
 
-  const isInGame = gameState.phase !== 'lobby';
-  const isPlayerInGame = isPlayer && isInGame && connectionId && gameState.players[connectionId];
+  const isInGame = serverState.phase !== 'lobby';
+  const isPlayerInGame = isPlayer && isInGame && connectionId && serverState.players[connectionId];
 
   if (isPlayer) {
     return isPlayerInGame ? <PlayerInRound /> : <PlayerLobby />;

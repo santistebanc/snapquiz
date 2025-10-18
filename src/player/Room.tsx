@@ -4,9 +4,9 @@ import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 
 export function Room() {
-  const { gameState } = useGameStore();
+  const { serverState } = useGameStore();
   const [isEditingRoom, setIsEditingRoom] = useState(false);
-  const [editRoomId, setEditRoomId] = useState(gameState.roomId);
+  const [editRoomId, setEditRoomId] = useState(serverState.roomId);
   const roomInputRef = useRef<HTMLInputElement>(null);
 
   const handleRoomSubmit = useCallback(

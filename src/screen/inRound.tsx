@@ -7,13 +7,13 @@ import { PlayerDrawer } from "../components/PlayerDrawer";
 import { InRoundContent } from "../components/InRoundContent";
 
 export default function InRound() {
-  const { gameState, serverAction } = useGameStore();
+  const { serverState, serverAction } = useGameStore();
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   // Open drawer when GIVING_POINTS phase starts
   useEffect(() => {
-    if (gameState.phase === 'givingPoints') setDrawerOpen(true);
-  }, [gameState.phase]);
+    if (serverState.phase === 'givingPoints') setDrawerOpen(true);
+  }, [serverState.phase]);
 
   const handleResetGame = () => serverAction("resetGame");
   const handleNextRound = () => serverAction("nextRound");
@@ -21,14 +21,14 @@ export default function InRound() {
   return (
     <Container variant="page">
       <PlayerDrawer
-        players={Object.values(gameState.players)}
+        players={Object.values(serverState.players)}
         open={drawerOpen}
         onOpenChange={setDrawerOpen}
       />
       
       {/* Top right corner buttons */}
       <div className="fixed top-4 right-4 z-50 flex gap-2">
-        {gameState.phase === 'finishingRound' && (
+        {serverState.phase === 'finishingRound' && (
           <motion.div
             initial={{ opacity: 0, x: 20, scale: 0.8 }}
             animate={{ opacity: 1, x: 0, scale: 1 }}

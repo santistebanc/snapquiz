@@ -1,8 +1,8 @@
 import { store } from "./machine"
 import { questions } from "./questions"
-import type { GameState } from "./types"
+import type { ServerState } from "./types"
 
-export const initialState: GameState = {
+export const initialState: ServerState = {
     roomId: "",
     rounds: [],
     currentRound: 0,
@@ -12,4 +12,4 @@ export const initialState: GameState = {
     connections: {},
 }
 
-export const gameState = store<GameState>(initialState)
+export const serverState = store<ServerState>(initialState)

@@ -5,12 +5,12 @@ import { PlayerDrawer } from "../components/PlayerDrawer";
 import { InRoundContent } from "../components/InRoundContent";
 
 export default function InRound() {
-  const { gameState } = useGameStore();
+  const { serverState } = useGameStore();
 
   return (
     <Container variant="page">
       <PlayerDrawer
-        players={Object.values(gameState.players)}
+        players={Object.values(serverState.players)}
         isPlayerMode={true}
       />
       <motion.div

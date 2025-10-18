@@ -7,20 +7,20 @@ interface OptionsDisplayProps {
 }
 
 export function OptionsDisplay({ isPlayerMode = false }: OptionsDisplayProps) {
-  const { gameState, serverAction, connectionId } = useGameStore();
+  const { serverState, serverAction, connectionId } = useGameStore();
 
-  const currentRound = gameState.rounds[gameState.currentRound - 1]
-  const currentQuestion = currentRound ? gameState.questions.find(q => q.id === currentRound.questionId) : null;
+  const currentRound = serverState.rounds[serverState.currentRound - 1]
+  const currentQuestion = currentRound ? serverState.questions.find(q => q.id === currentRound.questionId) : null;
 
   if (!currentQuestion) return null;
 
   const { options, answer: correctAnswer } = currentQuestion;
-  const disabled = ['revealingAnswer', 'givingPoints', 'finishingRound', 'transitioningNextRound'].includes(gameState.phase);
+  const disabled = ['revealingAnswer', 'givingPoints', 'finishingRound', 'transitioningNextRound'].includes(serverState.phase);
   const isInteractive = isPlayerMode;
 
   // Get correct players (screen mode only)
   const correctPlayers = !isPlayerMode && currentRound && disabled
-    ? Object.values(gameState.players).filter(player =>
+    ? Object.values(serverState.players).filter(player =>
       currentRound.chosenOptions[player.id] === correctAnswer
     )
     : [];

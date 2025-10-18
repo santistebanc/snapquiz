@@ -1,8 +1,8 @@
 import { create } from "zustand";
 import PartySocket from "partysocket";
-import type { GameState, ServerMessage } from "./types";
+import type { ServerState, ServerMessage } from "./types";
 import { getStoredConnectionId, setStoredConnectionId, setStoredPlayerName, setStoredPlayerAvatar, setStoredRoomId } from "./utils";
-import { initialState } from "./gameState";
+import { initialState } from "./serverState";
 
 // Get PartyKit host from environment variable
 function getPartyKitHost(): string {
@@ -23,13 +23,13 @@ function getPartyKitHost(): string {
 
 interface GameStore {
   // State
-  gameState: GameState;
+  serverState: ServerState;
   isConnected: boolean;
   isPlayer: boolean;
   socket: PartySocket | null;
   connectionId: string;
 
-  updateGameState: (updates: Partial<GameState>) => void;
+  updateServerState: (updates: Partial<ServerState>) => void;
   connect: (roomId: string, isPlayer: boolean, name?: string, avatar?: string) => void;
   disconnect: () => void;
   serverAction: (action: string, ...args: any[]) => void;
@@ -38,7 +38,7 @@ interface GameStore {
 
 export const useGameStore = create<GameStore>((set, get) => ({
   // Initial state
-  gameState: initialState,
+  serverState: initialState,
   isConnected: false,
   isPlayer: false,
   socket: null,
@@ -46,9 +46,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   // Game state actions (now handled by server game state updates)
 
-  updateGameState: (updates) =>
+  updateServerState: (updates) =>
     set((state) => ({
-      gameState: { ...state.gameState, ...updates },
+      serverState: { ...state.serverState, ...updates },
     })),
 
   // Connection actions
@@ -91,7 +91,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     newSocket.addEventListener("close", () => set({ isConnected: false }));
     newSocket.addEventListener("error", (event) => console.error("WebSocket error:", event));
 
-    set({ socket: newSocket, gameState: { ...get().gameState, roomId }, isPlayer });
+    set({ socket: newSocket, serverState: { ...get().serverState, roomId }, isPlayer });
   },
 
   disconnect: () => {
@@ -100,7 +100,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       socket: null,
       isConnected: false,
       connectionId: "",
-      gameState: initialState,
+      serverState: initialState,
     });
   },
 
@@ -114,28 +114,28 @@ export const useGameStore = create<GameStore>((set, get) => ({
   // Message handlers
   handleServerMessage: (message) => {
     if (message.type === "update") {
-      const newGameState = message.data;
+      const newServerState = message.data;
 
       // Update localStorage
-      if (newGameState.roomId) setStoredRoomId(newGameState.roomId);
+      if (newServerState.roomId) setStoredRoomId(newServerState.roomId);
 
       const { isPlayer, connectionId } = get();
       if (isPlayer && connectionId) {
-        const currentPlayer = newGameState.players[connectionId];
+        const currentPlayer = newServerState.players[connectionId];
         if (currentPlayer?.name) setStoredPlayerName(currentPlayer.name);
         if (currentPlayer?.avatar) setStoredPlayerAvatar(currentPlayer.avatar);
       }
 
-      set({ gameState: newGameState });
+      set({ serverState: newServerState });
     }
   },
 }));
 
 // Helper to get current player
 const useCurrentPlayer = () => {
-  const { gameState, isPlayer, connectionId } = useGameStore();
+  const { serverState, isPlayer, connectionId } = useGameStore();
   if (!isPlayer || !connectionId) return null;
-  return gameState.players[connectionId] || null;
+  return serverState.players[connectionId] || null;
 };
 
 // Selector to get current player name

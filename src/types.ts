@@ -22,7 +22,7 @@ export interface Round {
   revealedWordsIndex: number;
 }
 
-export interface GameState {
+export interface ServerState {
   roomId: string;
   players: Record<string, Player>;
   questions: Question[];

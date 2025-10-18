@@ -6,15 +6,15 @@ interface CategoryDisplayProps {
 }
 
 export function CategoryDisplay({ isPlayerMode = false }: CategoryDisplayProps) {
-  const { gameState } = useGameStore();
+  const { serverState } = useGameStore();
 
   // Get current round and question
   const currentRound =
-    gameState.rounds && gameState.rounds.length > 0
-      ? gameState.rounds[gameState.currentRound - 1]
+    serverState.rounds && serverState.rounds.length > 0
+      ? serverState.rounds[serverState.currentRound - 1]
       : null;
   const question = currentRound
-    ? gameState.questions.find((q) => q.id === currentRound.questionId)
+    ? serverState.questions.find((q) => q.id === currentRound.questionId)
     : null;
 
   if (!question) return null;
@@ -26,15 +26,15 @@ export function CategoryDisplay({ isPlayerMode = false }: CategoryDisplayProps) 
       }`}
       initial={{ opacity: 0, y: -20, scale: 0.9 }}
       animate={{ 
-        opacity: gameState.phase === 'transitioningNextRound' ? 0 : 1, 
+        opacity: serverState.phase === 'transitioningNextRound' ? 0 : 1, 
         y: 0, 
         scale: 1 
       }}
       exit={{ opacity: 0, y: -20, scale: 0.9 }}
       transition={{ 
-        duration: gameState.phase === 'transitioningNextRound' ? 0.5 : 0.6, 
+        duration: serverState.phase === 'transitioningNextRound' ? 0.5 : 0.6, 
         ease: "easeOut",
-        type: gameState.phase === 'transitioningNextRound' ? "tween" : "spring",
+        type: serverState.phase === 'transitioningNextRound' ? "tween" : "spring",
         stiffness: 100,
         damping: 15
       }}

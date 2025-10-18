@@ -1,19 +1,19 @@
 import type * as Party from "partykit/server";
-import { app } from "./logic";
-import { gameState } from "./gameState";
+import { game } from "./logic";
+import { serverState } from "./serverState";
 
 export default class RoomServer implements Party.Server {
 
   constructor(readonly room: Party.Room) {
     // Set the room ID in the game state
-    gameState.roomId = room.id;
+    serverState.roomId = room.id;
 
-    gameState.onChange(() => {
+    serverState.onChange(() => {
       room.broadcast(
         JSON.stringify({
           type: "update",
           data: {
-            ...gameState,
+            ...serverState,
           },
         })
       );
@@ -24,15 +24,15 @@ export default class RoomServer implements Party.Server {
     const sendMessage = (message: string | ArrayBuffer | ArrayBufferView) => {
       conn.send(message);
     };
-    app.onConnect(sendMessage);
+    game.onConnect(sendMessage);
   }
 
   async onClose(connection: Party.Connection) {
-    app.onClose(connection.id);
+    game.onClose(connection.id);
   }
 
   async onMessage(message: string, sender: Party.Connection) {
-    app.onMessage(message, sender.id);
+    game.onMessage(message, sender.id);
   }
 
 }

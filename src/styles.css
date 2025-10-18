@@ -141,7 +141,6 @@
          
          canvas {
            display: block;
-           vertical-align: bottom;
          }
 
          /* Ensure the app content is above the background */
