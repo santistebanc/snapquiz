@@ -99,14 +99,7 @@ export default function Lobby() {
               </div>
             </div>
             
-            {Object.keys(gameState.players).length === 0 ? (
-              <div className="text-center py-8">
-                <div className="space-y-2">
-                  <Text variant="large" className="text-[#feecba] text-2xl">No players joined yet</Text>
-                  <Text variant="muted" className="text-[#feecba]/80 text-lg">Share the room code or QR code to invite players</Text>
-                </div>
-              </div>
-            ) : (
+            {Object.keys(gameState.players).length > 0 && (
               <div className="space-y-4 max-h-96 overflow-y-auto pr-4">
                 {playersList.map((player: Player) => (
                   <div key={player.id} className="flex items-center justify-between p-4 rounded-lg border border-[#6f817e]/30 bg-[#2d3a3b]/60">

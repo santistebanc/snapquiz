@@ -38,7 +38,10 @@ export function OptionsDisplay({ isPlayerMode = false }: OptionsDisplayProps) {
     if (disabled) {
       // Answer reveal mode
       if (option === correctAnswer) {
-        return "bg-[#5a7a5c] text-white border-[#5a7a5c]";
+        // Keep the selected color if this was the selected option, otherwise show as correct
+        return selectedOption === option 
+          ? "bg-[#54A7B0] text-white border-[#54A7B0]" 
+          : "bg-[#5a7a5c] text-white border-[#5a7a5c]";
       } else if (selectedOption === option) {
         return "bg-[#a05552] text-white border-[#a05552]";
       } else {
@@ -74,7 +77,15 @@ export function OptionsDisplay({ isPlayerMode = false }: OptionsDisplayProps) {
             ease: "easeOut",
             delay: index * 0.1,
           }}
-          whileHover={isInteractive ? { scale: 1.02 } : {}}
+          whileHover={
+            isInteractive 
+              ? { scale: 1.02 } 
+              : disabled && option === correctAnswer 
+                ? { scale: 1.15 } 
+                : disabled && selectedOption === option && option === correctAnswer
+                  ? { scale: 1.15 }
+                  : {}
+          }
           whileTap={isInteractive ? { scale: 0.98 } : {}}
           className="relative"
           style={{ width: `${maxWidth}px` }}
@@ -91,6 +102,8 @@ export function OptionsDisplay({ isPlayerMode = false }: OptionsDisplayProps) {
               ...(disabled && selectedOption === option && option !== correctAnswer
                 ? { backgroundColor: '#a05552', borderColor: '#a05552', color: 'white' }
                 : selectedOption === option && !disabled
+                ? { backgroundColor: '#54A7B0', borderColor: '#54A7B0', color: 'white' }
+                : disabled && option === correctAnswer && selectedOption === option
                 ? { backgroundColor: '#54A7B0', borderColor: '#54A7B0', color: 'white' }
                 : {})
             }}
