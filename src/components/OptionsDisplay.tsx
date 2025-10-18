@@ -47,7 +47,7 @@ export function OptionsDisplay({ isPlayerMode = false }: OptionsDisplayProps) {
     } else {
       // Selection mode
       if (selectedOption === option) {
-        return "bg-[#c75d37] text-white border-[#c75d37]";
+        return "bg-[#54A7B0] text-white border-[#54A7B0] hover:bg-[#54A7B0] hover:border-[#54A7B0]";
       } else {
         return "bg-[#2d3a3b]/60 text-[#feecba] border-[#6f817e]/30 hover:bg-[#2d3a3b]/80";
       }
@@ -64,7 +64,11 @@ export function OptionsDisplay({ isPlayerMode = false }: OptionsDisplayProps) {
         <motion.div
           key={index}
           initial={{ opacity: 0, y: 20, scale: 0.9 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
+          animate={{ 
+            opacity: 1, 
+            y: 0, 
+            scale: disabled && option === correctAnswer ? 1.15 : 1
+          }}
           transition={{
             duration: 0.5,
             ease: "easeOut",
@@ -79,9 +83,17 @@ export function OptionsDisplay({ isPlayerMode = false }: OptionsDisplayProps) {
             onClick={
               isInteractive ? () => handleOptionSelect(option) : undefined
             }
-            variant={selectedOption === option ? "default" : "outline"}
+            variant="outline"
             className={`w-full text-lg px-6 py-3 h-auto transition-colors duration-300 whitespace-nowrap ${isInteractive ? "" : "cursor-default pointer-events-none"
               } ${getOptionStyle(option)}`}
+            style={{
+              opacity: 1,
+              ...(disabled && selectedOption === option && option !== correctAnswer
+                ? { backgroundColor: '#a05552', borderColor: '#a05552', color: 'white' }
+                : selectedOption === option && !disabled
+                ? { backgroundColor: '#54A7B0', borderColor: '#54A7B0', color: 'white' }
+                : {})
+            }}
             disabled={isInteractive ? disabled : false}
           >
             {option}

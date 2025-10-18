@@ -1,6 +1,10 @@
 // Initialize particles.js with the new greenish-grey theme configuration
 document.addEventListener('DOMContentLoaded', function() {
-  particlesJS("particles-js", {
+  // Store the particles instance for resize handling
+  let particlesInstance = null;
+  
+  function initParticles() {
+    particlesInstance = particlesJS("particles-js", {
     "particles": {
       "number": {
         "value": 166,
@@ -109,5 +113,16 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     },
     "retina_detect": true
+  });
+  }
+  
+  // Initialize particles
+  initParticles();
+  
+  // Handle window resize to redraw particles
+  window.addEventListener('resize', function() {
+    if (particlesInstance && particlesInstance.pJSDom && particlesInstance.pJSDom[0]) {
+      particlesInstance.pJSDom[0].pJS.fn.particlesRefresh();
+    }
   });
 });

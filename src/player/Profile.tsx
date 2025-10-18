@@ -112,7 +112,7 @@ export function Profile({ onEditChange }: ProfileProps) {
 
       {/* Avatar Selection - Only show when editing name */}
       {isEditingName && (
-        <div className="space-y-2 flex-1 pt-4">
+        <div className="space-y-2 flex-1 pt-20 sm:pt-4">
           <ScrollArea>
             <div className="grid grid-cols-3 min-[300px]:grid-cols-4 min-[400px]:grid-cols-5 min-[500px]:grid-cols-6 min-[600px]:grid-cols-7 min-[700px]:grid-cols-8 min-[800px]:grid-cols-9 gap-2 p-2">
               {availableAvatars.map((avatar) => (
