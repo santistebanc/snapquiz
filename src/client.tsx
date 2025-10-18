@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import ReactDOM from "react-dom/client";
 import "./styles.css";
 import { useGameConnection } from "./useGameConnection";
@@ -6,21 +6,32 @@ import { useGameStore } from "./store";
 import { useParticles } from "./hooks/useParticles";
 import ScreenLobby from "./screen/lobby";
 import ScreenInRound from "./screen/inRound";
+import ScreenSetup from "./screen/setup";
 import PlayerLobby from "./player/lobby";
 import PlayerInRound from "./player/inRound";
-import { Card, CardContent } from "./components/ui/card";
+import PlayerSetup from "./player/setup";
 import { Container } from "./components/ui/container";
 import { Spinner } from "./components/ui/spinner";
-import { Text } from "./components/ui/text";
+import { ScreenButtons } from "./components/ScreenButtons";
+
+// Screen wrapper with buttons outside view containers
+function ScreenWrapper({ children }: { children: React.ReactNode }) {
+  return (
+    <>
+      <ScreenButtons />
+      {children}
+    </>
+  );
+}
 
 function App() {
   const { isConnected, isPlayer } = useGameConnection();
-  const { serverState, connectionId } = useGameStore();
-  
+  const { serverState, view } = useGameStore();
+
   // Initialize particles background
   useParticles();
 
-  if (!isConnected) {
+  if (!isConnected || serverState.phase === 'loading') {
     return (
       <Container variant="page">
         <Spinner variant="dots" />
@@ -28,14 +39,48 @@ function App() {
     );
   }
 
-  const isInGame = serverState.phase !== 'lobby';
-  const isPlayerInGame = isPlayer && isInGame && connectionId && serverState.players[connectionId];
-
+  // Determine what to render based on view state
   if (isPlayer) {
-    return isPlayerInGame ? <PlayerInRound /> : <PlayerLobby />;
+    // Player mode - show lobby, setup, or game based on view
+    if (view === 'setup') {
+      return <PlayerSetup />;
+    }
+    if (view === 'game') {
+      if (serverState.phase === 'lobby') return <PlayerLobby />;
+      return <PlayerInRound />;
+    }
+    return <PlayerLobby />;
   }
 
-  return isInGame ? <ScreenInRound /> : <ScreenLobby />;
+  // Screen mode - show lobby, setup, or game based on view with wrapper
+  if (view === 'setup') {
+    return (
+      <ScreenWrapper>
+        <ScreenSetup />
+      </ScreenWrapper>
+    );
+  }
+
+  if (view === 'game') {
+    if (serverState.phase === 'lobby') {
+      return (
+        <ScreenWrapper>
+          <ScreenLobby />
+        </ScreenWrapper>
+      );
+    }
+    return (
+      <ScreenWrapper>
+        <ScreenInRound />
+      </ScreenWrapper>
+    );
+  }
+
+  return (
+    <ScreenWrapper>
+      <ScreenLobby />
+    </ScreenWrapper>
+  );
 }
 
 // Initialize React app

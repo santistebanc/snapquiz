@@ -1,9 +1,7 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
-import { motion } from "framer-motion";
+import { useState, useEffect, useMemo } from "react";
 import { useGameStore } from "../store";
 import { generateQRCode, generateAvatarUrl } from "../utils";
 import type { Player } from "../types";
-import { Button } from "../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Avatar, AvatarImage } from "../components/ui/avatar";
 import { ScrollArea } from "../components/ui/scroll-area";
@@ -15,16 +13,12 @@ import { Centered } from "../components/ui/centered";
 import { Badge } from "../components/ui/badge";
 
 export default function Lobby() {
-  const { serverState, serverAction } = useGameStore();
+  const { serverState } = useGameStore();
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>("");
 
   useEffect(() => {
     generateQRCode(serverState.roomId).then(setQrCodeDataUrl);
   }, [serverState.roomId]);
-
-  const handleStartGame = useCallback(() => {
-    serverAction("startGame");
-  }, [serverAction]);
 
   const playersList = useMemo(() => {
     return Object.values(serverState.players);
@@ -32,25 +26,6 @@ export default function Lobby() {
 
   return (
     <Container variant="page">
-      {/* Top right corner button */}
-      <div className="fixed top-4 right-4 z-50">
-        <motion.div
-          initial={{ opacity: 0, x: 20, scale: 0.8 }}
-          animate={{ opacity: 1, x: 0, scale: 1 }}
-          exit={{ opacity: 0, x: 20, scale: 0.8 }}
-          transition={{ duration: 0.5, ease: "easeOut" }}
-        >
-          <Button
-            onClick={handleStartGame}
-            size="sm"
-            className="bg-warm-orange hover:bg-warm-orange/90 text-white"
-            disabled={Object.keys(serverState.players).length === 0}
-          >
-            {Object.keys(serverState.players).length === 0 ? "Waiting for players..." : "Start Game"}
-          </Button>
-        </motion.div>
-      </div>
-
       <Container variant="section" className="w-full max-w-6xl">
 
         {/* Main Content */}

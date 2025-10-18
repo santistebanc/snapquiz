@@ -4,6 +4,8 @@ import type { ServerState, ServerMessage } from "./types";
 import { getStoredConnectionId, setStoredConnectionId, setStoredPlayerName, setStoredPlayerAvatar, setStoredRoomId } from "./utils";
 import { initialState } from "./serverState";
 
+export type View = 'lobby' | 'setup' | 'game';
+
 // Get PartyKit host from environment variable
 function getPartyKitHost(): string {
   // In production, use the current host
@@ -24,11 +26,14 @@ function getPartyKitHost(): string {
 interface GameStore {
   // State
   serverState: ServerState;
+  view: View;
   isConnected: boolean;
   isPlayer: boolean;
   socket: PartySocket | null;
   connectionId: string;
 
+  // Actions
+  setView: (view: View) => void;
   updateServerState: (updates: Partial<ServerState>) => void;
   connect: (roomId: string, isPlayer: boolean, name?: string, avatar?: string) => void;
   disconnect: () => void;
@@ -38,7 +43,8 @@ interface GameStore {
 
 export const useGameStore = create<GameStore>((set, get) => ({
   // Initial state
-  serverState: initialState,
+  serverState: { ...initialState, phase: "loading" },
+  view: 'game',
   isConnected: false,
   isPlayer: false,
   socket: null,
@@ -50,6 +56,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
     set((state) => ({
       serverState: { ...state.serverState, ...updates },
     })),
+
+  setView: (view) => set({ view }),
 
   // Connection actions
   connect: (roomId, isPlayer, name, avatar) => {
