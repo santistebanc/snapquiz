@@ -12,9 +12,10 @@ export function OptionsDisplay({ isPlayerMode = false }: OptionsDisplayProps) {
   const currentRound = serverState.rounds[serverState.currentRound - 1]
   const currentQuestion = currentRound ? serverState.questions.find(q => q.id === currentRound.questionId) : null;
 
-  if (!currentQuestion) return null;
+  if (!currentQuestion || !currentRound) return null;
 
-  const { options, answer: correctAnswer } = currentQuestion;
+  const { answer: correctAnswer } = currentQuestion;
+  const options = currentRound.shuffledOptions;
   const disabled = ['revealingAnswer', 'givingPoints', 'finishingRound', 'transitioningNextRound'].includes(serverState.phase);
   const isInteractive = isPlayerMode;
 

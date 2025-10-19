@@ -20,6 +20,7 @@ export interface Round {
   questionId: string;
   chosenOptions: Record<string, string>;
   revealedWordsIndex: number;
+  shuffledOptions: string[];
 }
 
 export interface ServerState {

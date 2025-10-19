@@ -2,6 +2,16 @@ import { router, timeout } from "./machine";
 import type { Player } from "./types";
 import { serverState } from "./serverState";
 
+// Helper function to shuffle array
+const shuffleArray = <T>(array: T[]): T[] => {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+};
+
 // Timing constants
 const REVEAL_WORD_SPEED = 100; // 100ms
 const INITIAL_QUESTION_DELAY = 2000; // 2 seconds delay before first word
@@ -88,6 +98,7 @@ const startGame = () => {
         questionId: q.id,
         chosenOptions: {},
         revealedWordsIndex: 0,
+        shuffledOptions: shuffleArray(q.options),
     }));
     serverState.currentRound = 1;
     game.toPreQuestioning();

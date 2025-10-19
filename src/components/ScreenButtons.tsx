@@ -2,6 +2,7 @@ import React, { useCallback, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useGameStore } from "../store";
 import { Button } from "./ui/button";
+import { Home, Settings, Gamepad2 } from "lucide-react";
 
 export function ScreenButtons() {
   const { serverState, view, setView, serverAction } = useGameStore();
@@ -69,9 +70,10 @@ export function ScreenButtons() {
           <Button
             onClick={() => setView('lobby')}
             size="sm"
-            className="bg-teal-primary hover:bg-teal-primary/90 text-white"
+            variant="outline"
+            className="border-teal-primary text-teal-primary bg-card-dark/60 hover:bg-teal-primary hover:text-white"
           >
-            Lobby
+            <Home className="h-4 w-4" />
           </Button>
         )}
 
@@ -79,9 +81,10 @@ export function ScreenButtons() {
           <Button
             onClick={() => setView('setup')}
             size="sm"
-            className="bg-teal-primary hover:bg-teal-primary/90 text-white"
+            variant="outline"
+            className="border-teal-primary text-teal-primary bg-card-dark/60 hover:bg-teal-primary hover:text-white"
           >
-            Setup
+            <Settings className="h-4 w-4" />
           </Button>
         )}
 
@@ -89,9 +92,10 @@ export function ScreenButtons() {
           <Button
             onClick={() => setView('game')}
             size="sm"
-            className="bg-teal-primary hover:bg-teal-primary/90 text-white"
+            variant="outline"
+            className="border-teal-primary text-teal-primary bg-card-dark/60 hover:bg-teal-primary hover:text-white"
           >
-            {serverState.phase === 'lobby' ? "Lobby" : "Game"}
+            <Gamepad2 className="h-4 w-4" />
           </Button>
         )}
       </div>
