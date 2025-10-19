@@ -7,6 +7,7 @@ import { QuestionList } from "../components/QuestionList";
 import { useGameStore } from "../store";
 import { Alert, AlertDescription } from "../components/ui/alert";
 import { AlertTriangle } from "lucide-react";
+import type { Question } from "../types";
 
 export default function Setup() {
   const { gameState, serverAction } = useGameStore();
