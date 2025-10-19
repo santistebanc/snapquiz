@@ -5,14 +5,14 @@ import { Button } from "./ui/button";
 import { Home, Settings, Gamepad2 } from "lucide-react";
 
 export function ScreenButtons() {
-  const { serverState, view, setView, serverAction } = useGameStore();
+  const { gameState, view, setView, serverAction } = useGameStore();
 
-  // Auto-change view from 'lobby' to 'game' when serverState.phase === 'lobby' and view === 'lobby'
+  // Auto-change view from 'lobby' to 'game' when gameState.phase === 'lobby' and view === 'lobby'
   useEffect(() => {
-    if (serverState.phase === 'lobby' && view === 'lobby') {
+    if (gameState.phase === 'lobby' && view === 'lobby') {
       setView('game');
     }
-  }, [serverState.phase, view, setView]);
+  }, [gameState.phase, view, setView]);
 
   const handleStartGame = useCallback(() => {
     setView('game');
@@ -31,7 +31,7 @@ export function ScreenButtons() {
     <div className="fixed top-4 right-4 z-50 flex gap-2">
       {/* Action buttons (left side) */}
       <div className="flex gap-2">
-        {view === 'game' && serverState.phase === 'finishingRound' && (
+        {view === 'game' && gameState.phase === 'finishingRound' && (
           <motion.div
             initial={{ opacity: 0, x: 20, scale: 0.8 }}
             animate={{ opacity: 1, x: 0, scale: 1 }}
@@ -51,13 +51,13 @@ export function ScreenButtons() {
           transition={{ duration: 0.5, ease: "easeOut", delay: 0.3 }}
         >
           <Button
-            onClick={serverState.phase === 'lobby' ? handleStartGame : handleResetGame}
+            onClick={gameState.phase === 'lobby' ? handleStartGame : handleResetGame}
             size="sm"
             className="bg-warm-orange hover:bg-warm-orange/90 text-white"
-            disabled={serverState.phase === 'lobby' && Object.keys(serverState.players).length === 0}
+            disabled={gameState.phase === 'lobby' && Object.keys(gameState.players).length === 0}
           >
-            {serverState.phase === 'lobby'
-              ? (Object.keys(serverState.players).length === 0 ? "Waiting for players..." : "Start Game")
+            {gameState.phase === 'lobby'
+              ? (Object.keys(gameState.players).length === 0 ? "Waiting for players..." : "Start Game")
               : "Reset Game"
             }
           </Button>
@@ -66,7 +66,7 @@ export function ScreenButtons() {
 
       {/* Navigation buttons (right side) */}
       <div className="flex gap-2">
-        {view !== 'lobby' && serverState.phase !== 'lobby' && (
+        {view !== 'lobby' && gameState.phase !== 'lobby' && (
           <Button
             onClick={() => setView('lobby')}
             size="sm"

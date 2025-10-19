@@ -23,7 +23,7 @@ export interface Round {
   shuffledOptions: string[];
 }
 
-export interface ServerState {
+export interface GameState {
   roomId: string;
   players: Record<string, Player>;
   questions: Question[];

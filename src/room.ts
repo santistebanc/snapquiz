@@ -1,38 +1,83 @@
 import type * as Party from "partykit/server";
-import { game } from "./logic";
-import { serverState } from "./serverState";
+import { initialState } from "./gameState";
+import { router, store, type Router } from "./machine";
+import { routes, type ServerState } from "./logic";
+import type { GameState, Player, Question } from "./types";
 
-export default class RoomServer implements Party.Server {
+export default class RoomServer implements Party.Server, ServerState {
+  connections: Record<string, string> = {};
+  gameState = store<GameState>(initialState)
+  router: Router<typeof routes>;
 
   constructor(readonly room: Party.Room) {
-    // Set the room ID in the game state
-    serverState.roomId = room.id;
 
-    serverState.onChange(() => {
+    this.gameState.roomId = room.id;
+    this.router = (router as any).call(this, routes, "lobby", () => { this.gameState.phase = this.router.state })
+
+    // Load questions from storage on room initialization
+    this.loadQuestionsFromStorage();
+
+    this.gameState.onChange(() => {
       room.broadcast(
         JSON.stringify({
           type: "update",
           data: {
-            ...serverState,
+            ...this.gameState,
           },
         })
       );
+      this.saveQuestionsToStorage();
     });
   }
 
+  private async loadQuestionsFromStorage() {
+    try {
+      const storedQuestions = await this.room.storage.get<Question[]>("questions");
+      if (storedQuestions && Array.isArray(storedQuestions)) {
+        this.gameState.questions = storedQuestions;
+      }
+    } catch (error) {
+      console.error("Failed to load questions from storage:", error);
+    }
+  }
+
+  private async saveQuestionsToStorage() {
+    try {
+      // Ensure we're storing plain JSON-serializable objects
+      const questionsToStore = JSON.parse(JSON.stringify(this.gameState.questions));
+
+      await this.room.storage.put("questions", questionsToStore);
+    } catch (error) {
+      console.error("Failed to save questions to storage:", error);
+    }
+  }
+
   async onConnect(conn: Party.Connection) {
-    const sendMessage = (message: string | ArrayBuffer | ArrayBufferView) => {
-      conn.send(message);
-    };
-    game.onConnect(sendMessage);
+    conn.send(JSON.stringify({
+      type: "update", data: { ...this.gameState },
+    }));
   }
 
   async onClose(connection: Party.Connection) {
-    game.onClose(connection.id);
+    const playerId = this.connections[connection.id];
+
+    if (playerId) {
+      delete this.connections[connection.id];
+
+      const hasOtherConnections = Object.values(this.connections).includes(playerId);
+      if (!hasOtherConnections) {
+        delete this.gameState.players[playerId];
+      }
+    }
   }
 
   async onMessage(message: string, sender: Party.Connection) {
-    game.onMessage(message, sender.id);
+    const clientMessage: any = JSON.parse(message);
+
+    if (clientMessage.type === 'action') {
+      (this.router as any)[clientMessage.data.action]?.call(this, ...clientMessage.data.args);
+    }
   }
+
 
 }

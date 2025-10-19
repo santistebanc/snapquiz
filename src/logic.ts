@@ -1,15 +1,20 @@
-import { router, timeout } from "./machine";
-import type { Player } from "./types";
-import { serverState } from "./serverState";
+import { router, store, timeout, type Config, type Router } from "./machine";
+import type { GameState, Player, Question } from "./types";
+
+export interface ServerState {
+    gameState: GameState;
+    router: Router<typeof routes>;
+    connections: Record<string, string>;
+  }
 
 // Helper function to shuffle array
 const shuffleArray = <T>(array: T[]): T[] => {
-  const shuffled = [...array];
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-  }
-  return shuffled;
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
 };
 
 // Timing constants
@@ -22,37 +27,145 @@ const GIVE_POINTS_TIME = 500; // 0.5 seconds after points given
 const POINTS_PER_CORRECT_ANSWER = 10; // Points awarded for correct answer
 const TRANSITIONING_NEXT_ROUND_TIME = 1000; // 1 second transition time
 
-const onConnect = (send: (message: (ArrayBuffer | ArrayBufferView) | string) => void) => {
-    send(JSON.stringify({
-        type: "update", data: { ...serverState },
+function resetGame(this: ServerState) {
+    this.gameState.rounds = [];
+    this.gameState.currentRound = 0;
+    (Object.values(this.gameState.players) as Player[]).forEach((player: Player) => player.points = 0);
+    this.router.toLobby();
+}
+
+function startGame(this: ServerState) {
+    this.gameState.rounds = this.gameState.questions.map((q: Question) => ({
+        questionId: q.id,
+        chosenOptions: {},
+        revealedWordsIndex: 0,
+        shuffledOptions: shuffleArray(q.options),
     }));
+    this.gameState.currentRound = 1;
+    this.router.toPreQuestioning();
 }
 
-const onClose = (connectionId: string) => {
-    const playerId = serverState.connections[connectionId];
+function preQuestioningInit(this: ServerState) {
+    timeout(INITIAL_QUESTION_DELAY, () => {
+        this.router.toQuestioning()
+    })
+}
 
-    if (playerId) {
-        delete serverState.connections[connectionId];
+function questioningInit(this: ServerState) {
+    const round = this.gameState.rounds[this.gameState.currentRound - 1];
+    const question = this.gameState.questions.find((q: Question) => q.id === round.questionId);
 
-        const hasOtherConnections = Object.values(serverState.connections).includes(playerId);
-        if (!hasOtherConnections) {
-            delete serverState.players[playerId];
+    if (!question) return;
+
+    const words = question.text.split(" ");
+    words.forEach((_: string, index: number) => {
+        timeout(index * REVEAL_WORD_SPEED, () => {
+            round.revealedWordsIndex = Math.max(round.revealedWordsIndex, index + 1);
+            if (round.revealedWordsIndex === words.length) {
+                this.router.toAfterQuestioning();
+            }
+        });
+    });
+}
+
+function afterQuestioningInit(this: ServerState) {
+    timeout(WAIT_AFTER_QUESTION_TIME, () => {
+        this.router.toShowingOptions();
+    })
+}
+
+function showingOptionsInit(this: ServerState) {
+    timeout(OPTION_SELECTION_TIMEOUT, () => this.router.toRevealingAnswer());
+}
+
+function selectOption(this: ServerState, option: string, playerId: string) {
+    const round = this.gameState.rounds[this.gameState.currentRound - 1];
+    if (round) round.chosenOptions[playerId] = option;
+}
+
+function revealingAnswerInit(this: ServerState) {
+    timeout(REVEAL_ANSWER_TIME, () => this.router.toGivingPoints());
+}
+
+function givingPointsInit(this: ServerState) {
+    const round = this.gameState.rounds[this.gameState.currentRound - 1];
+    const question = this.gameState.questions.find((q: Question) => q.id === round.questionId);
+
+    if (question) {
+        const correctAnswer = question.answer;
+        (Object.values(this.gameState.players) as Player[]).forEach((player: Player) => {
+            if (round.chosenOptions[player.id] === correctAnswer) {
+                player.points += POINTS_PER_CORRECT_ANSWER;
+            }
+        });
+    }
+    timeout(GIVE_POINTS_TIME, this.router.toFinishingRound);
+}
+
+function transitioningNextRoundInit(this: ServerState) {
+    timeout(TRANSITIONING_NEXT_ROUND_TIME, () => {
+        if (this.gameState.currentRound < this.gameState.rounds.length) {
+            this.gameState.currentRound++;
+            this.router.toPreQuestioning();
+        } else {
+            // All rounds completed, go back to lobby
+            this.router.toLobby();
         }
+    });
+}
+
+function nextRound(this: ServerState) {
+    this.router.toTransitioningNextRound()
+}
+
+function updateQuestions(this: ServerState, questions: Question[]) {
+    this.gameState.questions = questions;
+}
+
+function reorderQuestions(this: ServerState, oldIndex: number, newIndex: number) {
+    const questions = [...this.gameState.questions];
+    const [movedQuestion] = questions.splice(oldIndex, 1);
+    questions.splice(newIndex, 0, movedQuestion);
+    this.gameState.questions = questions;
+}
+
+function removeQuestion(this: ServerState, questionId: string) {
+    this.gameState.questions = this.gameState.questions.filter((q: Question) => q.id !== questionId);
+}
+
+async function generateQuestions(this: ServerState, categories: string[]) {
+    const { generateQuestions: generateQuestionsUtil } = await import('./utils/generateQuestions');
+    const apiKey = process.env.OPENAI_API_KEY;
+
+    if (!apiKey) {
+        throw new Error('OpenAI API key not configured');
+    }
+
+    const newQuestions = await generateQuestionsUtil(categories, this.gameState.questions, apiKey);
+    this.gameState.questions = [...this.gameState.questions, ...newQuestions];
+    return newQuestions;
+}
+
+function joinAsPlayer(this: ServerState, senderId: string, name?: string, avatar?: string) {
+    if (name) {
+        this.connections[senderId] = senderId;
+        createOrUpdatePlayer.call(this,
+            senderId,
+            name,
+            avatar
+        );
     }
 }
 
-const onMessage = (message: string, senderId: string) => {
-    const clientMessage: any = JSON.parse(message);
-    const playerId = serverState.connections[senderId] || senderId;
-
-    if (clientMessage.type === 'action') {
-        (game as any)[clientMessage.data.action]?.(...clientMessage.data.args);
+function changeProfile(this: ServerState, senderId: string, name?: string, avatar?: string) {
+    if (name || avatar) {
+        this.connections[senderId] = senderId;
+        createOrUpdatePlayer.call(this, senderId, name, avatar);
     }
 }
 
-// Helper function to create/update player
-const createOrUpdatePlayer = (playerId: string, name?: string, avatar?: string) => {
-    const existingPlayer = serverState.players[playerId];
+function createOrUpdatePlayer(this: ServerState, playerId: string, name?: string, avatar?: string) {
+    const existingPlayer = this.gameState.players[playerId];
     const truncatedName = name ? name.substring(0, 20) : existingPlayer?.name || "Player";
     const playerAvatar = avatar || existingPlayer?.avatar || "robot-1";
 
@@ -64,122 +177,13 @@ const createOrUpdatePlayer = (playerId: string, name?: string, avatar?: string) 
         points: existingPlayer?.points || 0,
     };
 
-    serverState.players[playerId] = player;
+    this.gameState.players[playerId] = player;
     return player;
-};
-
-const joinAsPlayer = (senderId: string, name?: string, avatar?: string) => {
-    if (name) {
-        serverState.connections[senderId] = senderId;
-        createOrUpdatePlayer(
-            senderId,
-            name,
-            avatar
-        );
-    }
 }
 
-const changeProfile = (senderId: string, name?: string, avatar?: string) => {
-    if (name || avatar) {
-        serverState.connections[senderId] = senderId;
-        createOrUpdatePlayer(senderId, name, avatar);
-    }
-}
+const common = { resetGame, nextRound, updateQuestions, reorderQuestions, removeQuestion, generateQuestions, joinAsPlayer, changeProfile, createOrUpdatePlayer }
 
-const resetGame = () => {
-    serverState.rounds = [];
-    serverState.currentRound = 0;
-    (Object.values(serverState.players) as Player[]).forEach((player: Player) => player.points = 0);
-    game.toLobby();
-};
-
-const startGame = () => {
-    serverState.rounds = serverState.questions.map((q: any) => ({
-        questionId: q.id,
-        chosenOptions: {},
-        revealedWordsIndex: 0,
-        shuffledOptions: shuffleArray(q.options),
-    }));
-    serverState.currentRound = 1;
-    game.toPreQuestioning();
-};
-
-const preQuestioningInit = () => {
-    timeout(INITIAL_QUESTION_DELAY, () => {
-        game.toQuestioning()
-    })
-}
-
-const questioningInit = () => {
-    const round = serverState.rounds[serverState.currentRound - 1];
-    const question = serverState.questions.find((q: any) => q.id === round.questionId);
-
-    if (!question) return;
-
-    const words = question.text.split(" ");
-    words.forEach((_: any, index: number) => {
-        timeout(index * REVEAL_WORD_SPEED, () => {
-            round.revealedWordsIndex = Math.max(round.revealedWordsIndex, index + 1);
-            if (round.revealedWordsIndex === words.length) {
-                game.toAfterQuestioning();
-            }
-        });
-    });
-};
-
-const afterQuestioningInit = () => {
-    timeout(WAIT_AFTER_QUESTION_TIME, () => {
-        game.toShowingOptions();
-    })
-}
-
-const showingOptionsInit = () => {
-    timeout(OPTION_SELECTION_TIMEOUT, () => game.toRevealingAnswer());
-};
-
-const selectOption = (option: string, playerId: string) => {
-    const round = serverState.rounds[serverState.currentRound - 1];
-    if (round) round.chosenOptions[playerId] = option;
-};
-
-const revealingAnswerInit = () => {
-    timeout(REVEAL_ANSWER_TIME, () => game.toGivingPoints());
-};
-
-const givingPointsInit = () => {
-    const round = serverState.rounds[serverState.currentRound - 1];
-    const question = serverState.questions.find((q: any) => q.id === round.questionId);
-
-    if (question) {
-        const correctAnswer = question.answer;
-        (Object.values(serverState.players) as Player[]).forEach((player: Player) => {
-            if (round.chosenOptions[player.id] === correctAnswer) {
-                player.points += POINTS_PER_CORRECT_ANSWER;
-            }
-        });
-    }
-    timeout(GIVE_POINTS_TIME, game.toFinishingRound);
-};
-
-const transitioningNextRoundInit = () => {
-    timeout(TRANSITIONING_NEXT_ROUND_TIME, () => {
-        if (serverState.currentRound < serverState.rounds.length) {
-            serverState.currentRound++;
-            game.toPreQuestioning();
-        } else {
-            // All rounds completed, go back to lobby
-            game.toLobby();
-        }
-    });
-};
-
-const nextRound = () => {
-    game.toTransitioningNextRound()
-};
-
-const common = { onConnect, onClose, onMessage, joinAsPlayer, changeProfile, resetGame, nextRound }
-
-export const game = router({
+export const routes = {
     lobby: { startGame, ...common },
     preQuestioning: { init: preQuestioningInit, ...common },
     questioning: { init: questioningInit, ...common },
@@ -189,4 +193,4 @@ export const game = router({
     givingPoints: { init: givingPointsInit, ...common },
     finishingRound: { ...common },
     transitioningNextRound: { init: transitioningNextRoundInit, ...common },
-}, "lobby", () => { serverState.phase = game.state })
+} as const satisfies Config;

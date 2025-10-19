@@ -26,12 +26,12 @@ function ScreenWrapper({ children }: { children: React.ReactNode }) {
 
 function App() {
   const { isConnected, isPlayer } = useGameConnection();
-  const { serverState, view } = useGameStore();
+  const { gameState, view } = useGameStore();
 
   // Initialize particles background
   useParticles();
 
-  if (!isConnected || serverState.phase === 'loading') {
+  if (!isConnected || gameState.phase === 'loading') {
     return (
       <Container variant="page">
         <Spinner variant="dots" />
@@ -46,7 +46,7 @@ function App() {
       return <PlayerSetup />;
     }
     if (view === 'game') {
-      if (serverState.phase === 'lobby') return <PlayerLobby />;
+      if (gameState.phase === 'lobby') return <PlayerLobby />;
       return <PlayerInRound />;
     }
     return <PlayerLobby />;
@@ -62,7 +62,7 @@ function App() {
   }
 
   if (view === 'game') {
-    if (serverState.phase === 'lobby') {
+    if (gameState.phase === 'lobby') {
       return (
         <ScreenWrapper>
           <ScreenLobby />

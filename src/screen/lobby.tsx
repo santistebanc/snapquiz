@@ -13,16 +13,16 @@ import { Centered } from "../components/ui/centered";
 import { Badge } from "../components/ui/badge";
 
 export default function Lobby() {
-  const { serverState } = useGameStore();
+  const { gameState } = useGameStore();
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>("");
 
   useEffect(() => {
-    generateQRCode(serverState.roomId).then(setQrCodeDataUrl);
-  }, [serverState.roomId]);
+    generateQRCode(gameState.roomId).then(setQrCodeDataUrl);
+  }, [gameState.roomId]);
 
   const playersList = useMemo(() => {
-    return Object.values(serverState.players);
-  }, [serverState.players]);
+    return Object.values(gameState.players);
+  }, [gameState.players]);
 
   return (
     <Container variant="page">
@@ -38,7 +38,7 @@ export default function Lobby() {
                 <div 
                   className="text-warm-cream px-4 py-2 rounded-lg font-bold border bg-card-dark/60 border-border-muted/30"
                 >
-                  {serverState.roomId}
+                  {gameState.roomId}
                 </div>
               </div>
             </div>
@@ -65,12 +65,12 @@ export default function Lobby() {
               <div className="flex items-center justify-center gap-3 mb-2">
                 <h2 className="text-4xl font-bold text-warm-cream">Players</h2>
                 <Badge className="bg-teal-secondary text-white text-lg font-bold px-3 py-1">
-                  {Object.keys(serverState.players).length}
+                  {Object.keys(gameState.players).length}
                 </Badge>
               </div>
             </div>
             
-            {Object.keys(serverState.players).length > 0 && (
+            {Object.keys(gameState.players).length > 0 && (
               <div className="space-y-4 max-h-96 overflow-y-auto pr-4">
                 {playersList.map((player: Player) => (
                   <div key={player.id} className="flex items-center justify-between p-4 rounded-lg border border-border-muted/30 bg-card-dark/60">

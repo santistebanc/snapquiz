@@ -4,6 +4,32 @@ A real-time multiplayer quiz game built with PartyKit, React, and TypeScript.
 
 ## Development
 
+### Environment Variables
+
+Before running the application, you need to set up your environment variables:
+
+1. **Copy the example environment file:**
+   ```bash
+   cp .env.example .env
+   ```
+
+2. **Get your OpenAI API key:**
+   - Visit [OpenAI Platform](https://platform.openai.com/api-keys)
+   - Create a new API key
+   - Copy the key (starts with `sk-`)
+
+3. **Update your `.env` file:**
+   ```bash
+   # Replace the placeholder with your actual API key
+   OPENAI_API_KEY=sk-your-actual-api-key-here
+   ```
+
+4. **Deploy with environment variables:**
+   ```bash
+   # Deploy to PartyKit with your environment variables
+   npx partykit deploy --with-vars
+   ```
+
 ### Port Configuration
 
 The app uses the `VITE_PARTYKIT_PORT` environment variable to configure both the PartyKit server and client port.

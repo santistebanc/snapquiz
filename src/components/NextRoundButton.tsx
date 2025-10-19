@@ -6,13 +6,13 @@ interface NextRoundButtonProps {
 }
 
 export function NextRoundButton({ isPlayerMode = false }: NextRoundButtonProps) {
-  const { serverState, serverAction } = useGameStore();
+  const { gameState, serverAction } = useGameStore();
 
   const handleNextRound = () => {
     serverAction("nextRound");
   };
 
-  const isLastRound = serverState.currentRound >= serverState.rounds.length;
+  const isLastRound = gameState.currentRound >= gameState.rounds.length;
   const buttonText = isLastRound ? "Finish Game" : "Next Round";
 
   return (

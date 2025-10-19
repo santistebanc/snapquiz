@@ -10,7 +10,7 @@ interface InRoundContentProps {
 }
 
 export function InRoundContent({ isPlayerMode }: InRoundContentProps) {
-  const { serverState } = useGameStore();
+  const { gameState } = useGameStore();
 
   // Animation variants
   const containerVariants = {
@@ -45,7 +45,7 @@ export function InRoundContent({ isPlayerMode }: InRoundContentProps) {
   // Use unified layout for both screen and player modes
   return (
     <motion.div
-      key={serverState.currentRound}
+      key={gameState.currentRound}
       className="space-y-8"
       variants={containerVariants}
       initial="hidden"
@@ -76,7 +76,7 @@ export function InRoundContent({ isPlayerMode }: InRoundContentProps) {
       </motion.div>
 
       <AnimatePresence mode="wait">
-        {!['preQuestioning', 'transitioningNextRound'].includes(serverState.phase) && (
+        {!['preQuestioning', 'transitioningNextRound'].includes(gameState.phase) && (
           <motion.div
             key="question"
             variants={itemVariants}
@@ -100,7 +100,7 @@ export function InRoundContent({ isPlayerMode }: InRoundContentProps) {
 
 
       <AnimatePresence mode="wait">
-        {!['preQuestioning', 'questioning', 'afterQuestioning', 'transitioningNextRound'].includes(serverState.phase) && (
+        {!['preQuestioning', 'questioning', 'afterQuestioning', 'transitioningNextRound'].includes(gameState.phase) && (
           <motion.div
             key="options"
             variants={itemVariants}

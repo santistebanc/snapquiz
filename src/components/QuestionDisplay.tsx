@@ -7,15 +7,15 @@ interface QuestionDisplayProps {
 }
 
 export function QuestionDisplay({ isPlayerMode = false }: QuestionDisplayProps) {
-  const { serverState } = useGameStore();
+  const { gameState } = useGameStore();
 
   // Get current round and question
   const currentRound =
-    serverState.rounds && serverState.rounds.length > 0
-      ? serverState.rounds[serverState.currentRound - 1]
+    gameState.rounds && gameState.rounds.length > 0
+      ? gameState.rounds[gameState.currentRound - 1]
       : null;
   const question = currentRound
-    ? serverState.questions.find((q) => q.id === currentRound.questionId)
+    ? gameState.questions.find((q) => q.id === currentRound.questionId)
     : null;
 
   // Derive revealed words from current round's revealedWordsIndex

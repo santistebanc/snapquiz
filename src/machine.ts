@@ -15,8 +15,7 @@ export type Router<C extends Config> = {
 
 let currentRouter: any = null;
 
-export const router = <C extends Config = {}>(config: C, initial: keyof C, onTransition?: (res: Router<C>) => void) => {
-
+export function router<C extends Config = {}>(this: any, config: C, initial: keyof C, onTransition?: (res: Router<C>) => any) {
     const res = {
         state: initial,
         cleanups: [] as Function[],
@@ -24,20 +23,20 @@ export const router = <C extends Config = {}>(config: C, initial: keyof C, onTra
     } as Router<C>
 
     Object.entries(config).forEach(([state, action]) => {
-        (res as any)[`to${state.charAt(0).toUpperCase() + state.slice(1)}`] = () => {
-            res.cleanups.forEach((cleanup) => cleanup())
+        (res as any)[`to${state.charAt(0).toUpperCase() + state.slice(1)}`] = function(this: any) {
+            res.cleanups.forEach((cleanup) => cleanup.call(this))
             res.state = state
             currentRouter = res
-            res.config[state].init?.()
+            res.config[state].init?.call(this)
             currentRouter = null
-            onTransition?.(res)
-        }
+            onTransition?.call(this, res)
+        }.bind(this)
         Object.keys(action).forEach((key) => {
-            (res as any)[key] = (...args: any[]) => { config[res.state][key](...args) }
+            (res as any)[key] = function(this: any, ...args: any[]) { config[res.state][key].call(this, ...args) }.bind(this)
         })
     })
     currentRouter = res
-    res.config[initial].init?.()
+    res.config[initial].init?.call(this)
     currentRouter = null
     return res
 }

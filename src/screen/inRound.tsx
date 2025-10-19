@@ -6,18 +6,18 @@ import { PlayerDrawer } from "../components/PlayerDrawer";
 import { InRoundContent } from "../components/InRoundContent";
 
 export default function InRound() {
-  const { serverState } = useGameStore();
+  const { gameState } = useGameStore();
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   // Open drawer when GIVING_POINTS phase starts
   useEffect(() => {
-    if (serverState.phase === 'givingPoints') setDrawerOpen(true);
-  }, [serverState.phase]);
+    if (gameState.phase === 'givingPoints') setDrawerOpen(true);
+  }, [gameState.phase]);
 
   return (
     <Container variant="page">
       <PlayerDrawer
-        players={Object.values(serverState.players)}
+        players={Object.values(gameState.players)}
         open={drawerOpen}
         onOpenChange={setDrawerOpen}
       />
