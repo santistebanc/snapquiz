@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, type ReactNode } from 'react';
 import {
   DndContext,
   closestCenter,
@@ -26,6 +26,7 @@ interface QuestionListProps {
   questions: Question[];
   onReorder: (oldIndex: number, newIndex: number) => void;
   onRemove: (questionId: string) => void;
+  rightActions?: ReactNode;
 }
 
 function SortableQuestionItem({ 
@@ -67,7 +68,7 @@ function SortableQuestionItem({
   );
 }
 
-export function QuestionList({ questions, onReorder, onRemove }: QuestionListProps) {
+export function QuestionList({ questions, onReorder, onRemove, rightActions }: QuestionListProps) {
   const [expandedQuestionId, setExpandedQuestionId] = useState<string | null>(null);
 
   const sensors = useSensors(
@@ -113,6 +114,7 @@ export function QuestionList({ questions, onReorder, onRemove }: QuestionListPro
         <Text variant="large" className="text-warm-cream">
           Questions ({questions.length})
         </Text>
+        {rightActions}
       </div>
 
       <DndContext

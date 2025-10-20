@@ -36,7 +36,7 @@ export function ScreenButtons() {
             initial={{ opacity: 0, x: 20, scale: 0.8 }}
             animate={{ opacity: 1, x: 0, scale: 1 }}
             exit={{ opacity: 0, x: 20, scale: 0.8 }}
-            transition={{ duration: 0.5, ease: "easeOut", delay: 0.2 }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
           >
             <Button onClick={handleNextRound} size="sm" className="bg-warm-orange hover:bg-warm-orange/90 text-white">
               Next Round
@@ -44,24 +44,26 @@ export function ScreenButtons() {
           </motion.div>
         )}
 
-        <motion.div
-          initial={{ opacity: 0, x: 20, scale: 0.8 }}
-          animate={{ opacity: 1, x: 0, scale: 1 }}
-          exit={{ opacity: 0, x: 20, scale: 0.8 }}
-          transition={{ duration: 0.5, ease: "easeOut", delay: 0.3 }}
-        >
-          <Button
-            onClick={gameState.phase === 'lobby' ? handleStartGame : handleResetGame}
-            size="sm"
-            className="bg-warm-orange hover:bg-warm-orange/90 text-white"
-            disabled={gameState.phase === 'lobby' && Object.keys(gameState.players).length === 0}
+        {view !== 'setup' && (
+          <motion.div
+            initial={{ opacity: 0, x: 20, scale: 0.8 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: 20, scale: 0.8 }}
+            transition={{ duration: 0.5, ease: "easeOut", delay: 0.3 }}
           >
-            {gameState.phase === 'lobby'
-              ? (Object.keys(gameState.players).length === 0 ? "Waiting for players..." : "Start Game")
-              : "Reset Game"
-            }
-          </Button>
-        </motion.div>
+            <Button
+              onClick={gameState.phase === 'lobby' ? handleStartGame : handleResetGame}
+              size="sm"
+              className="bg-warm-orange hover:bg-warm-orange/90 text-white"
+              disabled={gameState.phase === 'lobby' && Object.keys(gameState.players).length === 0}
+            >
+              {gameState.phase === 'lobby'
+                ? (Object.keys(gameState.players).length === 0 ? "Waiting for players..." : "Start Game")
+                : "Reset Game"
+              }
+            </Button>
+          </motion.div>
+        )}
       </div>
 
       {/* Navigation buttons (right side) */}
@@ -77,7 +79,7 @@ export function ScreenButtons() {
           </Button>
         )}
 
-        {view !== 'setup' && (
+        {view !== 'setup' && gameState.phase === 'lobby' && (
           <Button
             onClick={() => setView('setup')}
             size="sm"

@@ -27,7 +27,8 @@ export async function generateQuestions(
     throw new Error('OpenAI API key not configured');
   }
 
-  const categoryText = categories.join(', ');
+  const singleCategory = (categories[0] || '').trim();
+  const categoryText = singleCategory || categories.join(', ');
   const existingTexts = existingQuestions.map(q => q.text.toLowerCase());
 
   // Try Vercel AI SDK first, fallback to direct OpenAI if it fails
@@ -40,14 +41,16 @@ export async function generateQuestions(
     const { object } = await generateObject({
       model: openai('gpt-4o-mini'),
       schema: QuestionsResponseSchema,
-      prompt: `Generate 5 unique quiz questions about ${categoryText}. 
-Each question should have:
+      prompt: `Generate 5 unique quiz questions strictly in the category "${categoryText}".
+Each question must have:
 - A clear, engaging question text
 - 4 multiple choice options (provide only the text content, no letters like A, B, C, D)
 - One correct answer (the full text of the correct option, not the letter)
-- A relevant category from: ${categoryText}
+- The field "category" set EXACTLY to "${categoryText}" for every question (do not invent or substitute another category)
 
-IMPORTANT: The options array should contain only the text content of each option, without any letter prefixes like "A.", "B.", etc.
+IMPORTANT:
+- The options array should contain only the text content of each option, without any letter prefixes like "A.", "B.", etc.
+- Do not create new categories. Use exactly "${categoryText}" as category for all questions.
 
 Make sure questions are unique and not similar to these existing questions: ${existingTexts.join(', ')}`,
       temperature: 0.7,
@@ -55,11 +58,11 @@ Make sure questions are unique and not similar to these existing questions: ${ex
 
     console.log('Vercel AI SDK succeeded, processing questions...');
     
-    // Validate and format the questions
+    // Validate and format the questions (force category to the exact requested one)
     const formattedQuestions: Question[] = object.questions.map((q, index: number) => ({
       id: `generated-${Date.now()}-${index}`,
       text: q.text,
-      category: q.category,
+      category: categoryText,
       options: q.options,
       answer: q.answer, // Direct text answer from structured output
       revealedQuestion: false,
@@ -83,20 +86,22 @@ Make sure questions are unique and not similar to these existing questions: ${ex
         apiKey: apiKey,
       });
 
-      const prompt = `Generate 5 unique quiz questions about ${categoryText}. 
-Each question should have:
+      const prompt = `Generate 5 unique quiz questions strictly in the category "${categoryText}".
+Each question must have:
 - A clear, engaging question text
 - 4 multiple choice options (provide only the text content, no letters like A, B, C, D)
 - One correct answer (the full text of the correct option, not the letter)
-- A relevant category from: ${categoryText}
+- The field "category" set EXACTLY to "${categoryText}" for every question (do not invent or substitute another category)
 
-IMPORTANT: The options array should contain only the text content of each option, without any letter prefixes like "A.", "B.", etc.
+IMPORTANT:
+- The options array should contain only the text content of each option, without any letter prefixes like "A.", "B.", etc.
+- Do not create new categories. Use exactly "${categoryText}" as category for all questions.
 
 Format as JSON array:
 [
   {
     "text": "Question text here?",
-    "category": "Category name",
+    "category": "${categoryText}",
     "options": ["First option text", "Second option text", "Third option text", "Fourth option text"],
     "answer": "Second option text"
   }
@@ -128,11 +133,11 @@ Make sure questions are unique and not similar to these existing questions: ${ex
       // Parse the JSON response
       const generatedQuestions = JSON.parse(responseText);
       
-      // Validate and format the questions
+      // Validate and format the questions (force category to the exact requested one)
       const formattedQuestions: Question[] = generatedQuestions.map((q: any, index: number) => ({
         id: `generated-${Date.now()}-${index}`,
         text: q.text,
-        category: q.category,
+        category: categoryText,
         options: q.options,
         answer: q.answer, // Direct text answer
         revealedQuestion: false,

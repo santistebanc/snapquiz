@@ -12,6 +12,284 @@ interface QuestionItemProps {
   dragHandleProps?: any;
 }
 
+// Large screen component (current layout)
+function QuestionItemLarge({ 
+  question, 
+  isExpanded, 
+  onToggleExpand, 
+  onRemove, 
+  dragHandleProps,
+  isRevealed,
+  toggleReveal
+}: QuestionItemProps & { isRevealed: boolean; toggleReveal: () => void }) {
+  return (
+    <div className="bg-card-dark/60 border border-border-muted/30 rounded-lg p-2 hover:bg-card-dark/80 transition-colors">
+      <div className="flex items-center gap-3">
+        {/* Drag Handle */}
+        <div
+          {...dragHandleProps}
+          className="flex-shrink-0 cursor-grab active:cursor-grabbing p-1 hover:bg-border-muted/30 rounded bg-card-dark/40"
+        >
+          <GripVertical className="w-4 h-4 text-warm-cream/80" />
+        </div>
+
+        {/* Question Content */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              {/* Category Badge and Question Text */}
+              <div className="flex items-center gap-2">
+                <Badge 
+                  variant="secondary" 
+                  className="bg-border-muted/30 text-warm-cream/80 border-border-muted/50 rounded-sm px-2 py-1 text-xs pointer-events-none"
+                >
+                  {question.category}
+                </Badge>
+                <p className={`text-warm-cream text-lg transition-all duration-300 ${
+                  isRevealed ? 'blur-none' : 'blur-sm'
+                }`}>
+                  {question.text}
+                </p>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {/* First Slot: EyeOff button when revealed, empty when not revealed */}
+              <div className="w-8 h-8 flex items-center justify-center">
+                {isRevealed && (
+                  <Button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      toggleReveal();
+                    }}
+                    size="sm"
+                    variant="outline"
+                    className="border-border-muted/50 text-warm-cream bg-card-dark/80 hover:bg-border-muted/30 hover:text-white"
+                    type="button"
+                  >
+                    <EyeOff className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
+
+              {/* Second Slot: Expand/Collapse when revealed, Eye when not revealed */}
+              <div className="w-8 h-8 flex items-center justify-center">
+                {isRevealed ? (
+                  <Button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onToggleExpand();
+                    }}
+                    size="sm"
+                    variant="outline"
+                    className="border-border-muted/50 text-warm-cream bg-card-dark/80 hover:bg-border-muted/30 hover:text-white"
+                    type="button"
+                  >
+                    {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      toggleReveal();
+                    }}
+                    size="sm"
+                    variant="outline"
+                    className="border-border-muted/50 text-warm-cream bg-card-dark/80 hover:bg-border-muted/30 hover:text-white"
+                    type="button"
+                  >
+                    <Eye className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
+
+              {/* Third Slot: Remove Button (always visible) */}
+              <Button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onRemove();
+                }}
+                size="sm"
+                variant="outline"
+                className="border-red-500/50 text-red-300 bg-red-500/20 hover:bg-red-500/40 hover:text-white"
+                type="button"
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+
+          {/* Expanded Options */}
+          {isExpanded && (
+            <div className="mt-4 space-y-2 animate-in slide-in-from-top-2 duration-200">
+              <div className="grid gap-2">
+                {question.options.map((option, index) => {
+                  const isCorrect = option === question.answer;
+                  return (
+                    <div
+                      key={index}
+                      className={`p-2 rounded border ${
+                        isCorrect
+                          ? 'bg-correct-green/20 border-correct-green/50'
+                          : 'bg-card-dark/40 border-border-muted/20'
+                      } text-warm-cream/80`}
+                    >
+                      {option}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Small screen component (question text above, category badge and action buttons below)
+function QuestionItemSmall({ 
+  question, 
+  isExpanded, 
+  onToggleExpand, 
+  onRemove, 
+  dragHandleProps,
+  isRevealed,
+  toggleReveal
+}: QuestionItemProps & { isRevealed: boolean; toggleReveal: () => void }) {
+  return (
+    <div className="bg-card-dark/60 border border-border-muted/30 rounded-lg p-2 hover:bg-card-dark/80 transition-colors">
+      <div className="flex items-start gap-3">
+        {/* Drag Handle */}
+        <div
+          {...dragHandleProps}
+          className="flex-shrink-0 cursor-grab active:cursor-grabbing p-1 hover:bg-border-muted/30 rounded bg-card-dark/40 mt-1"
+        >
+          <GripVertical className="w-4 h-4 text-warm-cream/80" />
+        </div>
+
+        {/* Question Content */}
+        <div className="flex-1 min-w-0">
+          {/* Question Text */}
+          <p className={`text-warm-cream text-lg transition-all duration-300 mb-3 ${
+            isRevealed ? 'blur-none' : 'blur-sm'
+          }`}>
+            {question.text}
+          </p>
+
+          {/* Category Badge and Action Buttons */}
+          <div className="flex items-center justify-between gap-2">
+            <Badge 
+              variant="secondary" 
+              className="bg-border-muted/30 text-warm-cream/80 border-border-muted/50 rounded-sm px-2 py-1 text-xs pointer-events-none"
+            >
+              {question.category}
+            </Badge>
+
+            {/* Action Buttons */}
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {/* First Slot: EyeOff button when revealed, empty when not revealed */}
+              <div className="w-8 h-8 flex items-center justify-center">
+                {isRevealed && (
+                  <Button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      toggleReveal();
+                    }}
+                    size="sm"
+                    variant="outline"
+                    className="border-border-muted/50 text-warm-cream bg-card-dark/80 hover:bg-border-muted/30 hover:text-white"
+                    type="button"
+                  >
+                    <EyeOff className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
+
+              {/* Second Slot: Expand/Collapse when revealed, Eye when not revealed */}
+              <div className="w-8 h-8 flex items-center justify-center">
+                {isRevealed ? (
+                  <Button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onToggleExpand();
+                    }}
+                    size="sm"
+                    variant="outline"
+                    className="border-border-muted/50 text-warm-cream bg-card-dark/80 hover:bg-border-muted/30 hover:text-white"
+                    type="button"
+                  >
+                    {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      toggleReveal();
+                    }}
+                    size="sm"
+                    variant="outline"
+                    className="border-border-muted/50 text-warm-cream bg-card-dark/80 hover:bg-border-muted/30 hover:text-white"
+                    type="button"
+                  >
+                    <Eye className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
+
+              {/* Third Slot: Remove Button (always visible) */}
+              <Button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onRemove();
+                }}
+                size="sm"
+                variant="outline"
+                className="border-red-500/50 text-red-300 bg-red-500/20 hover:bg-red-500/40 hover:text-white"
+                type="button"
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+
+          {/* Expanded Options */}
+          {isExpanded && (
+            <div className="mt-4 space-y-2 animate-in slide-in-from-top-2 duration-200">
+              <div className="grid gap-2">
+                {question.options.map((option, index) => {
+                  const isCorrect = option === question.answer;
+                  return (
+                    <div
+                      key={index}
+                      className={`p-2 rounded border ${
+                        isCorrect
+                          ? 'bg-correct-green/20 border-correct-green/50'
+                          : 'bg-card-dark/40 border-border-muted/20'
+                      } text-warm-cream/80`}
+                    >
+                      {option}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function QuestionItem({ 
   question, 
   isExpanded, 
@@ -35,131 +313,32 @@ export function QuestionItem({
   };
 
   return (
-    <div className="bg-card-dark/60 border border-border-muted/30 rounded-lg p-2 hover:bg-card-dark/80 transition-colors">
-      <div className="flex items-center gap-3">
-        {/* Drag Handle */}
-        <div
-          {...dragHandleProps}
-          className="flex-shrink-0 cursor-grab active:cursor-grabbing p-1 hover:bg-border-muted/30 rounded bg-card-dark/40"
-        >
-          <GripVertical className="w-4 h-4 text-warm-cream/80" />
-        </div>
-
-        {/* Question Content */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex-1 min-w-0">
-              {/* Category Badge and Question Text */}
-              <div className="flex items-center gap-2">
-                <Badge 
-                  variant="secondary" 
-                  className="bg-border-muted/30 text-warm-cream/80 border-border-muted/50 rounded-sm px-2 py-1 text-xs"
-                >
-                  {question.category}
-                </Badge>
-                <p className={`text-warm-cream text-lg transition-all duration-300 ${
-                  isRevealed ? 'blur-none' : 'blur-sm'
-                }`}>
-                  {question.text}
-                </p>
-              </div>
-            </div>
-
-             {/* Action Buttons */}
-             <div className="flex items-center gap-2 flex-shrink-0">
-               {/* First Slot: EyeOff button when revealed, empty when not revealed */}
-               <div className="w-8 h-8 flex items-center justify-center">
-                 {isRevealed && (
-                   <Button
-                     onClick={(e) => {
-                       e.preventDefault();
-                       e.stopPropagation();
-                       toggleReveal();
-                     }}
-                     size="sm"
-                     variant="outline"
-                     className="border-border-muted/50 text-warm-cream bg-card-dark/80 hover:bg-border-muted/30 hover:text-white"
-                     type="button"
-                   >
-                     <EyeOff className="w-4 h-4" />
-                   </Button>
-                 )}
-               </div>
-
-               {/* Second Slot: Expand/Collapse when revealed, Eye when not revealed */}
-               <div className="w-8 h-8 flex items-center justify-center">
-                 {isRevealed ? (
-                   <Button
-                     onClick={(e) => {
-                       e.preventDefault();
-                       e.stopPropagation();
-                       onToggleExpand();
-                     }}
-                     size="sm"
-                     variant="outline"
-                     className="border-border-muted/50 text-warm-cream bg-card-dark/80 hover:bg-border-muted/30 hover:text-white"
-                     type="button"
-                   >
-                     {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                   </Button>
-                 ) : (
-                   <Button
-                     onClick={(e) => {
-                       e.preventDefault();
-                       e.stopPropagation();
-                       toggleReveal();
-                     }}
-                     size="sm"
-                     variant="outline"
-                     className="border-border-muted/50 text-warm-cream bg-card-dark/80 hover:bg-border-muted/30 hover:text-white"
-                     type="button"
-                   >
-                     <Eye className="w-4 h-4" />
-                   </Button>
-                 )}
-               </div>
-
-               {/* Third Slot: Remove Button (always visible) */}
-               <Button
-                 onClick={(e) => {
-                   e.preventDefault();
-                   e.stopPropagation();
-                   onRemove();
-                 }}
-                 size="sm"
-                 variant="outline"
-                 className="border-red-500/50 text-red-300 bg-red-500/20 hover:bg-red-500/40 hover:text-white"
-                 type="button"
-               >
-                 <Trash2 className="w-4 h-4" />
-               </Button>
-             </div>
-          </div>
-
-          {/* Expanded Options */}
-                 {isExpanded && (
-                   <div className="mt-4 space-y-2 animate-in slide-in-from-top-2 duration-200">
-                     <div className="grid gap-2">
-                {question.options.map((option, index) => {
-                  const isCorrect = option === question.answer;
-                  return (
-                    <div
-                      key={index}
-                      className={`p-2 rounded border ${
-                        isCorrect 
-                          ? 'bg-correct-green/20 border-correct-green/50' 
-                          : 'bg-card-dark/40 border-border-muted/20'
-                      } text-warm-cream/80`}
-                    >
-                      {option}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-        </div>
+    <>
+      {/* Large screen layout */}
+      <div className="hidden sm:block">
+        <QuestionItemLarge
+          question={question}
+          isExpanded={isExpanded}
+          onToggleExpand={onToggleExpand}
+          onRemove={onRemove}
+          dragHandleProps={dragHandleProps}
+          isRevealed={isRevealed}
+          toggleReveal={toggleReveal}
+        />
       </div>
-    </div>
+
+      {/* Small screen layout */}
+      <div className="block sm:hidden">
+        <QuestionItemSmall
+          question={question}
+          isExpanded={isExpanded}
+          onToggleExpand={onToggleExpand}
+          onRemove={onRemove}
+          dragHandleProps={dragHandleProps}
+          isRevealed={isRevealed}
+          toggleReveal={toggleReveal}
+        />
+      </div>
+    </>
   );
 }

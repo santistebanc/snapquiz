@@ -50,8 +50,7 @@ export function QuestionDisplay({ isPlayerMode = false }: QuestionDisplayProps) 
               }}
               transition={{
                 duration: 0.5,
-                ease: "easeOut",
-                delay: isRevealed ? index * 0.1 : 0
+                ease: "easeOut"
               }}
             >
               {word}

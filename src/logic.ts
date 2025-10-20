@@ -5,7 +5,7 @@ export interface ServerState {
     gameState: GameState;
     router: Router<typeof routes>;
     connections: Record<string, string>;
-  }
+}
 
 // Helper function to shuffle array
 const shuffleArray = <T>(array: T[]): T[] => {
@@ -18,7 +18,7 @@ const shuffleArray = <T>(array: T[]): T[] => {
 };
 
 // Timing constants
-const REVEAL_WORD_SPEED = 100; // 100ms
+const REVEAL_WORD_SPEED = 200; // 100ms
 const INITIAL_QUESTION_DELAY = 2000; // 2 seconds delay before first word
 const WAIT_AFTER_QUESTION_TIME = 3000; // 3 seconds after question reveal
 const OPTION_SELECTION_TIMEOUT = 5000; // 5 seconds after options reveal
