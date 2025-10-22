@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useGameStore } from "../store";
+import { useSpeech } from "../hooks/useSpeech";
 
 interface QuestionDisplayProps {
   isPlayerMode?: boolean;
@@ -8,6 +9,7 @@ interface QuestionDisplayProps {
 
 export function QuestionDisplay({ isPlayerMode = false }: QuestionDisplayProps) {
   const { gameState } = useGameStore();
+  const { speak, cancel } = useSpeech();
 
   // Get current round and question
   const currentRound =
@@ -22,6 +24,22 @@ export function QuestionDisplay({ isPlayerMode = false }: QuestionDisplayProps) 
   const revealedWords = question && currentRound
     ? question.text.split(' ').slice(0, currentRound.revealedWordsIndex)
     : [];
+
+  // Speak each word as it's revealed
+  useEffect(() => {
+    if (!question || !currentRound || !revealedWords.length) return;
+
+    // Speak the latest revealed word
+    const latestWord = revealedWords[revealedWords.length - 1];
+    if (latestWord && !isPlayerMode) {
+      speak(latestWord, 'Daniel');
+    }
+
+    // Cleanup on unmount or when question changes
+    return () => {
+      cancel();
+    };
+  }, [revealedWords.length, question?.id, isPlayerMode]);
 
   if (!question) return null;
 
