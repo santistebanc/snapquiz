@@ -1,0 +1,120 @@
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import { Button } from "./ui/button";
+import { useGameStore } from "../store";
+import { BUZZER_ANSWER_TIMEOUT_SECONDS } from "../constants";
+
+interface AnswerInputProps {
+  isPlayerMode?: boolean;
+}
+
+export function AnswerInput({ isPlayerMode = false }: AnswerInputProps) {
+  const { gameState, serverAction, connectionId } = useGameStore();
+  const [answer, setAnswer] = useState("");
+  const [timeLeft, setTimeLeft] = useState(BUZZER_ANSWER_TIMEOUT_SECONDS);
+
+  const currentRound = gameState.rounds[gameState.currentRound - 1];
+  const buzzedPlayerId = currentRound?.buzzedPlayerId;
+  const buzzedPlayer = buzzedPlayerId ? gameState.players[buzzedPlayerId] : null;
+  
+  const handleSubmit = () => {
+    serverAction("submitAnswer", answer, connectionId);
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSubmit();
+    }
+  };
+
+  // Countdown timer - only runs when we're in the input mode
+  useEffect(() => {
+    if (gameState.phase !== 'buzzing' || !isPlayerMode || buzzedPlayerId !== connectionId) {
+      return;
+    }
+
+    if (timeLeft <= 0) {
+      handleSubmit();
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setTimeLeft(timeLeft - 1);
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [timeLeft, gameState.phase, isPlayerMode, buzzedPlayerId, connectionId]);
+
+  // Reset timer when phase changes
+  useEffect(() => {
+    if (gameState.phase === 'buzzing') {
+      setTimeLeft(BUZZER_ANSWER_TIMEOUT_SECONDS);
+      setAnswer("");
+    }
+  }, [gameState.phase]);
+
+  // Only show during buzzing phase
+  if (gameState.phase !== 'buzzing') return null;
+  if (!currentRound) return null;
+
+  // In player mode, only show to the player who buzzed
+  if (isPlayerMode && (!connectionId || buzzedPlayerId !== connectionId)) return null;
+  
+  // In screen mode, show a waiting message
+  if (!isPlayerMode) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -20 }}
+        transition={{ duration: 0.3 }}
+        className="w-full max-w-2xl mx-auto space-y-4 text-center"
+      >
+        <div className="text-4xl font-bold text-warm-yellow">
+          {buzzedPlayer?.name || "A player"} is answering...
+        </div>
+        <div className="text-2xl text-warm-cream/60">
+          Waiting for response
+        </div>
+      </motion.div>
+    );
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      transition={{ duration: 0.3 }}
+      className="w-full max-w-2xl mx-auto space-y-4"
+    >
+      <div className="text-center">
+        <div className="text-6xl font-bold text-warm-yellow mb-2">
+          {timeLeft}
+        </div>
+        <div className="text-lg text-warm-cream/80">
+          seconds remaining
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        <input
+          type="text"
+          value={answer}
+          onChange={(e) => setAnswer(e.target.value)}
+          onKeyPress={handleKeyPress}
+          placeholder="Type your answer..."
+          autoFocus
+          className="w-full px-6 py-4 text-2xl text-center bg-card-dark/60 border-2 border-border-muted/30 rounded-lg text-warm-cream placeholder-warm-cream/40 focus:outline-none focus:border-warm-yellow transition-colors"
+        />
+        
+        <Button
+          onClick={handleSubmit}
+          className="w-full py-6 text-2xl font-bold bg-warm-yellow hover:bg-warm-yellow/90 text-deep-purple"
+        >
+          Submit Answer
+        </Button>
+      </div>
+    </motion.div>
+  );
+}

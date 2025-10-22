@@ -18,9 +18,12 @@ export interface Question {
 
 export interface Round {
   questionId: string;
-  chosenOptions: Record<string, string>;
+  playerAnswers: Record<string, string>;
   revealedWordsIndex: number;
   shuffledOptions: string[];
+  buzzedPlayerId: string | null;
+  evaluationResult: 'correct' | 'wrong' | null;
+  pointsAwarded: Record<string, number>;
 }
 
 export interface GameState {

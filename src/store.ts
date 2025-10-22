@@ -140,7 +140,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
 }));
 
 // Helper to get current player
-const useCurrentPlayer = () => {
+export const useCurrentPlayer = () => {
   const { gameState, isPlayer, connectionId } = useGameStore();
   if (!isPlayer || !connectionId) return null;
   return gameState.players[connectionId] || null;

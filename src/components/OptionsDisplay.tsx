@@ -19,20 +19,23 @@ export function OptionsDisplay({ isPlayerMode = false }: OptionsDisplayProps) {
   const disabled = ['revealingAnswer', 'givingPoints', 'finishingRound', 'transitioningNextRound'].includes(gameState.phase);
   const isInteractive = isPlayerMode;
 
+  // Check if current player is banned (already has an answer)
+  const isPlayerBanned = isPlayerMode && connectionId && currentRound.playerAnswers[connectionId];
+
   // Get correct players (screen mode only)
   const correctPlayers = !isPlayerMode && currentRound && disabled
     ? Object.values(gameState.players).filter(player =>
-      currentRound.chosenOptions[player.id] === correctAnswer
+      currentRound.playerAnswers[player.id] === correctAnswer
     )
     : [];
 
   // Get selected option (player mode only)
   const selectedOption = isPlayerMode && currentRound && connectionId
-    ? currentRound.chosenOptions[connectionId]
+    ? currentRound.playerAnswers[connectionId]
     : null;
 
   const handleOptionSelect = (option: string) => {
-    if (!isPlayerMode) return;
+    if (!isPlayerMode || isPlayerBanned) return;
     serverAction("selectOption", option, connectionId);
   };
   const getOptionStyle = (option: string) => {
@@ -108,7 +111,7 @@ export function OptionsDisplay({ isPlayerMode = false }: OptionsDisplayProps) {
                 ? { backgroundColor: 'hsl(var(--selected-blue))', borderColor: 'hsl(var(--selected-blue))', color: 'white' }
                 : {})
             }}
-            disabled={isInteractive ? disabled : false}
+            disabled={isInteractive ? (disabled || isPlayerBanned) : false}
           >
             {option}
           </Button>

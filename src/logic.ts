@@ -1,5 +1,7 @@
 import { router, store, timeout, type Config, type Router } from "./machine";
 import type { GameState, Player, Question } from "./types";
+import { BUZZER_ANSWER_TIMEOUT } from "./constants";
+import { evaluateAnswer } from "./utils/evaluateAnswer";
 
 export interface ServerState {
     gameState: GameState;
@@ -23,9 +25,10 @@ const INITIAL_QUESTION_DELAY = 2000; // 2 seconds delay before first word
 const WAIT_AFTER_QUESTION_TIME = 3000; // 3 seconds after question reveal
 const OPTION_SELECTION_TIMEOUT = 5000; // 5 seconds after options reveal
 const REVEAL_ANSWER_TIME = 3000; // 3 seconds after answer reveal
-const GIVE_POINTS_TIME = 500; // 0.5 seconds after points given
+const GIVE_POINTS_TIME = 3000; // 3 seconds after points given
 const POINTS_PER_CORRECT_ANSWER = 10; // Points awarded for correct answer
 const TRANSITIONING_NEXT_ROUND_TIME = 1000; // 1 second transition time
+const SHOW_EVALUATION_RESULT_TIME = 2000; // 2 seconds to show correct/wrong result
 
 function resetGame(this: ServerState) {
     this.gameState.rounds = [];
@@ -37,9 +40,12 @@ function resetGame(this: ServerState) {
 function startGame(this: ServerState) {
     this.gameState.rounds = this.gameState.questions.map((q: Question) => ({
         questionId: q.id,
-        chosenOptions: {},
+        playerAnswers: {},
         revealedWordsIndex: 0,
         shuffledOptions: shuffleArray(q.options),
+        buzzedPlayerId: null,
+        evaluationResult: null,
+        pointsAwarded: {},
     }));
     this.gameState.currentRound = 1;
     this.router.toPreQuestioning();
@@ -80,25 +86,42 @@ function showingOptionsInit(this: ServerState) {
 
 function selectOption(this: ServerState, option: string, playerId: string) {
     const round = this.gameState.rounds[this.gameState.currentRound - 1];
-    if (round) round.chosenOptions[playerId] = option;
+    // Don't allow selection if player already has an answer (from buzzer or previous selection)
+    if (round && !round.playerAnswers[playerId]) {
+        round.playerAnswers[playerId] = option;
+    }
 }
 
 function revealingAnswerInit(this: ServerState) {
+    const round = this.gameState.rounds[this.gameState.currentRound - 1];
+    const question = this.gameState.questions.find((q: Question) => q.id === round.questionId);
+
+    // Record points for correct answers (will be applied in givingPoints)
+    if (question) {
+        const correctAnswer = question.answer;
+        (Object.values(this.gameState.players) as Player[]).forEach((player: Player) => {
+            if (round.playerAnswers[player.id] === correctAnswer) {
+                round.pointsAwarded[player.id] = POINTS_PER_CORRECT_ANSWER;
+            }
+        });
+    }
+    
     timeout(REVEAL_ANSWER_TIME, () => this.router.toGivingPoints());
 }
 
 function givingPointsInit(this: ServerState) {
     const round = this.gameState.rounds[this.gameState.currentRound - 1];
-    const question = this.gameState.questions.find((q: Question) => q.id === round.questionId);
-
-    if (question) {
-        const correctAnswer = question.answer;
-        (Object.values(this.gameState.players) as Player[]).forEach((player: Player) => {
-            if (round.chosenOptions[player.id] === correctAnswer) {
-                player.points += POINTS_PER_CORRECT_ANSWER;
+    
+    // Apply points that were recorded in pointsAwarded
+    if (round) {
+        Object.entries(round.pointsAwarded).forEach(([playerId, points]) => {
+            const player = this.gameState.players[playerId];
+            if (player) {
+                player.points += points;
             }
         });
     }
+    
     timeout(GIVE_POINTS_TIME, this.router.toFinishingRound);
 }
 
@@ -181,16 +204,148 @@ function createOrUpdatePlayer(this: ServerState, playerId: string, name?: string
     return player;
 }
 
+// Buzzer system functions
+function buzzIn(this: ServerState, playerId: string) {
+    const round = this.gameState.rounds[this.gameState.currentRound - 1];
+    if (!round) return;
+
+    // Check if player already has an answer
+    if (round.playerAnswers[playerId]) return;
+
+    // Check if someone else already buzzed
+    if (round.buzzedPlayerId) return;
+
+    // Set buzzer state
+    round.buzzedPlayerId = playerId;
+    round.evaluationResult = null;
+
+    this.router.toBuzzing();
+}
+
+function buzzingInit(this: ServerState) {
+    timeout(BUZZER_ANSWER_TIMEOUT, () => {
+        this.router.toEvaluatingAnswer();
+    });
+}
+
+function submitAnswer(this: ServerState, answer: string, playerId: string) {
+    const round = this.gameState.rounds[this.gameState.currentRound - 1];
+    if (!round) return;
+
+    // Verify this player buzzed
+    if (round.buzzedPlayerId !== playerId) return;
+
+    // Store the submitted answer in playerAnswers
+    round.playerAnswers[playerId] = answer;
+
+    this.router.toEvaluatingAnswer();
+}
+
+async function evaluatingAnswerInit(this: ServerState) {
+    const round = this.gameState.rounds[this.gameState.currentRound - 1];
+    const question = this.gameState.questions.find((q: Question) => q.id === round.questionId);
+
+    if (!round || !question || !round.buzzedPlayerId) return;
+
+    const playerId = round.buzzedPlayerId;
+    const playerAnswer = round.playerAnswers[playerId] || "";
+    const correctAnswer = question.answer;
+
+    // If no answer was given, immediately mark as wrong without AI evaluation
+    if (!playerAnswer.trim()) {
+        round.evaluationResult = 'wrong';
+        round.pointsAwarded[playerId] = -POINTS_PER_CORRECT_ANSWER;
+        this.router.toAfterBuzzEvaluation();
+        return;
+    }
+
+    // Perform AI evaluation for non-empty answers
+    const result = await evaluateAnswer(question, playerAnswer, correctAnswer);
+    round.evaluationResult = result;
+    
+    // Record points based on evaluation (will be applied in givingPointsAfterBuzz)
+    if (result === 'correct') {
+        round.pointsAwarded[playerId] = POINTS_PER_CORRECT_ANSWER;
+    } else {
+        round.pointsAwarded[playerId] = -POINTS_PER_CORRECT_ANSWER;
+    }
+    
+    this.router.toAfterBuzzEvaluation();
+}
+
+function afterBuzzEvaluationInit(this: ServerState) {
+    const round = this.gameState.rounds[this.gameState.currentRound - 1];
+    
+    timeout(SHOW_EVALUATION_RESULT_TIME, () => {
+        if (round.evaluationResult === 'correct') {
+            this.router.toGivingPointsAfterBuzz();
+        } else {
+            // Check if all players have answered
+            const totalPlayers = Object.keys(this.gameState.players).length;
+            const playersWhoAnswered = Object.keys(round.playerAnswers).length;
+            
+            if (playersWhoAnswered >= totalPlayers) {
+                // All players have answered, reveal answer alone
+                this.router.toRevealAnswerAlone();
+            } else {
+                // Some players haven't answered yet, reset buzzer state and go back to questioning
+                round.buzzedPlayerId = null;
+                round.evaluationResult = null;
+                round.revealedWordsIndex = 0; // Reset to re-reveal words
+                this.router.toQuestioning();
+            }
+        }
+    });
+}
+
+function revealAnswerAloneInit(this: ServerState) {
+    const round = this.gameState.rounds[this.gameState.currentRound - 1];
+    const question = this.gameState.questions.find((q: Question) => q.id === round?.questionId);
+
+    // Ensure question is fully revealed
+    if (round && question) {
+        const words = question.text.split(" ");
+        round.revealedWordsIndex = words.length;
+    }
+
+    timeout(REVEAL_ANSWER_TIME, () => {
+        this.router.toFinishingAfterAnswerAlone();
+    });
+}
+
+function givingPointsAfterBuzzInit(this: ServerState) {
+    const round = this.gameState.rounds[this.gameState.currentRound - 1];
+    
+    // Apply points that were recorded in pointsAwarded
+    if (round) {
+        Object.entries(round.pointsAwarded).forEach(([playerId, points]) => {
+            const player = this.gameState.players[playerId];
+            if (player) {
+                player.points += points;
+            }
+        });
+    }
+    
+    timeout(GIVE_POINTS_TIME, this.router.toFinishingRoundAfterBuzz);
+}
+
 const common = { resetGame, nextRound, updateQuestions, reorderQuestions, removeQuestion, generateQuestions, joinAsPlayer, changeProfile, createOrUpdatePlayer }
 
 export const routes = {
     lobby: { startGame, ...common },
     preQuestioning: { init: preQuestioningInit, ...common },
-    questioning: { init: questioningInit, ...common },
-    afterQuestioning: { init: afterQuestioningInit, ...common },
+    questioning: { init: questioningInit, buzzIn, ...common },
+    afterQuestioning: { init: afterQuestioningInit, buzzIn, ...common },
+    buzzing: { init: buzzingInit, submitAnswer, ...common },
+    evaluatingAnswer: { init: evaluatingAnswerInit, ...common },
+    afterBuzzEvaluation: { init: afterBuzzEvaluationInit, ...common },
+    revealAnswerAlone: { init: revealAnswerAloneInit, ...common },
     showingOptions: { init: showingOptionsInit, selectOption, ...common },
     revealingAnswer: { init: revealingAnswerInit, ...common },
     givingPoints: { init: givingPointsInit, ...common },
+    givingPointsAfterBuzz: { init: givingPointsAfterBuzzInit, ...common },
     finishingRound: { ...common },
+    finishingRoundAfterBuzz: { ...common },
+    finishingAfterAnswerAlone: { ...common },
     transitioningNextRound: { init: transitioningNextRoundInit, ...common },
 } as const satisfies Config;

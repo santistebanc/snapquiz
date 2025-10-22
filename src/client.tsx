@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import ReactDOM from "react-dom/client";
 import "./styles.css";
 import { useGameConnection } from "./useGameConnection";
-import { useGameStore } from "./store";
+import { useGameStore, useCurrentPlayer } from "./store";
 import { useParticles } from "./hooks/useParticles";
 import ScreenLobby from "./screen/lobby";
 import ScreenInRound from "./screen/inRound";
@@ -27,6 +27,7 @@ function ScreenWrapper({ children }: { children: React.ReactNode }) {
 function App() {
   const { isConnected, isPlayer } = useGameConnection();
   const { gameState, view } = useGameStore();
+  const currentPlayer = useCurrentPlayer();
 
   // Initialize particles background
   useParticles();
@@ -46,7 +47,8 @@ function App() {
       return <PlayerSetup />;
     }
     if (view === 'game') {
-      if (gameState.phase === 'lobby') return <PlayerLobby />;
+      // Players without a name stay in lobby even when game starts
+      if (gameState.phase === 'lobby' || !currentPlayer?.name) return <PlayerLobby />;
       return <PlayerInRound />;
     }
     return <PlayerLobby />;

@@ -151,6 +151,30 @@ Make sure questions are unique and not similar to these existing questions: ${ex
         )
       );
 
+      // Generate audio with timestamps for each question
+      if (unrealSpeechApiKey) {
+        console.log('Generating audio for questions with UnrealSpeech...');
+        const questionsWithAudio = await Promise.all(
+          uniqueQuestions.map(async (question) => {
+            try {
+              const { audioUrl, wordTimestamps } = await generateAudioWithTimestamps(
+                question.text,
+                unrealSpeechApiKey
+              );
+              return {
+                ...question,
+                audioUrl,
+                wordTimestamps,
+              };
+            } catch (error) {
+              console.error(`Failed to generate audio for question: ${question.text}`, error);
+              return question; // Return question without audio if generation fails
+            }
+          })
+        );
+        return questionsWithAudio;
+      }
+
       return uniqueQuestions;
     } catch (fallbackError) {
       console.error('Both Vercel AI and OpenAI fallback failed:', fallbackError);

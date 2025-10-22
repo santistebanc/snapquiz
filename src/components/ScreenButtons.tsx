@@ -31,7 +31,7 @@ export function ScreenButtons() {
     <div className="fixed top-4 right-4 z-50 flex gap-2">
       {/* Action buttons (left side) */}
       <div className="flex gap-2">
-        {view === 'game' && gameState.phase === 'finishingRound' && (
+        {['givingPoints', 'givingPointsAfterBuzz', 'finishingRound', 'finishingRoundAfterBuzz', 'finishingAfterAnswerAlone'].includes(gameState.phase) && (
           <motion.div
             initial={{ opacity: 0, x: 20, scale: 0.8 }}
             animate={{ opacity: 1, x: 0, scale: 1 }}
