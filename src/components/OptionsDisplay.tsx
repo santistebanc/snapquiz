@@ -20,7 +20,7 @@ export function OptionsDisplay({ isPlayerMode = false }: OptionsDisplayProps) {
   const isInteractive = isPlayerMode;
 
   // Check if current player is banned (already has an answer)
-  const isPlayerBanned = isPlayerMode && connectionId && currentRound.playerAnswers[connectionId];
+  const isPlayerBanned = isPlayerMode && connectionId && currentRound.playerAnswers[connectionId] !== undefined;
 
   // Get correct players (screen mode only)
   const correctPlayers = !isPlayerMode && currentRound && disabled
@@ -54,9 +54,9 @@ export function OptionsDisplay({ isPlayerMode = false }: OptionsDisplayProps) {
     } else {
       // Selection mode
       if (selectedOption === option) {
-        return "bg-selected-blue text-white border-selected-blue hover:bg-selected-blue hover:border-selected-blue";
+        return "bg-selected-blue text-white border-selected-blue";
       } else {
-        return "bg-card-dark/60 text-warm-cream border-border-muted/30 hover:bg-card-dark/80";
+        return "bg-card-dark/60 text-warm-cream border-border-muted/30";
       }
     }
   };
@@ -74,22 +74,13 @@ export function OptionsDisplay({ isPlayerMode = false }: OptionsDisplayProps) {
           animate={{ 
             opacity: 1, 
             y: 0, 
-            scale: disabled && option === correctAnswer ? 1.15 : 1
+            scale: disabled && option === correctAnswer ? 1.15 : selectedOption === option ? 1.05 : 1
           }}
           transition={{
             duration: 0.5,
             ease: "easeOut",
             delay: index * 0.1,
           }}
-          whileHover={
-            isInteractive 
-              ? { scale: 1.02 } 
-              : disabled && option === correctAnswer 
-                ? { scale: 1.15 } 
-                : disabled && selectedOption === option && option === correctAnswer
-                  ? { scale: 1.15 }
-                  : {}
-          }
           whileTap={isInteractive ? { scale: 0.98 } : {}}
           className="relative"
           style={{ width: `${maxWidth}px` }}
@@ -100,9 +91,9 @@ export function OptionsDisplay({ isPlayerMode = false }: OptionsDisplayProps) {
             }
             variant="outline"
             className={`w-full text-lg px-6 py-3 h-auto transition-colors duration-300 whitespace-nowrap ${isInteractive ? "" : "cursor-default pointer-events-none"
-              } ${getOptionStyle(option)}`}
+              } ${getOptionStyle(option)} ${isPlayerBanned && !disabled ? "opacity-50 grayscale" : ""}`}
             style={{
-              opacity: 1,
+              opacity: isPlayerBanned && !disabled ? 0.5 : 1,
               ...(disabled && selectedOption === option && option !== correctAnswer
                 ? { backgroundColor: 'hsl(var(--wrong-red))', borderColor: 'hsl(var(--wrong-red))', color: 'white' }
                 : selectedOption === option && !disabled
@@ -111,7 +102,7 @@ export function OptionsDisplay({ isPlayerMode = false }: OptionsDisplayProps) {
                 ? { backgroundColor: 'hsl(var(--selected-blue))', borderColor: 'hsl(var(--selected-blue))', color: 'white' }
                 : {})
             }}
-            disabled={isInteractive ? (disabled || isPlayerBanned) : false}
+            disabled={isInteractive ? (disabled || !!isPlayerBanned) : false}
           >
             {option}
           </Button>

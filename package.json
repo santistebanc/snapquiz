@@ -24,6 +24,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "framer-motion": "^12.23.24",
+    "howler": "^2.2.4",
     "lucide-react": "^0.536.0",
     "openai": "^6.5.0",
     "partysocket": "^1.0.2",
@@ -38,6 +39,7 @@
   "devDependencies": {
     "@babel/preset-react": "^7.27.1",
     "@babel/preset-typescript": "^7.27.1",
+    "@types/howler": "^2.2.12",
     "@types/qrcode": "^1.5.5",
     "@vitejs/plugin-react": "^5.0.4",
     "autoprefixer": "^10.4.21",

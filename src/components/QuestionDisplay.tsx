@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { useGameStore } from "../store";
+import { useAudio } from "../contexts/AudioContext";
 
 interface QuestionDisplayProps {
   isPlayerMode?: boolean;
@@ -8,6 +9,8 @@ interface QuestionDisplayProps {
 
 export function QuestionDisplay({ isPlayerMode = false }: QuestionDisplayProps) {
   const { gameState } = useGameStore();
+  const { playAudio, stopAllAudio } = useAudio();
+  const lastPlayedQuestionId = useRef<string | null>(null);
 
   // Get current round and question
   const currentRound =
@@ -17,6 +20,40 @@ export function QuestionDisplay({ isPlayerMode = false }: QuestionDisplayProps) 
   const question = currentRound
     ? gameState.questions.find((q) => q.id === currentRound.questionId)
     : null;
+
+  // Play audio when questioning phase starts - ONLY in screen mode
+  useEffect(() => {
+    console.log('QuestionDisplay useEffect:', {
+      isPlayerMode,
+      phase: gameState.phase,
+      questionId: question?.id,
+      hasAudioUrl: !!question?.audioUrl,
+      lastPlayed: lastPlayedQuestionId.current
+    });
+    
+    // Skip audio entirely in player mode
+    if (isPlayerMode) {
+      return;
+    }
+    
+    const isQuestioningPhase = gameState.phase === 'questioning' || gameState.phase === 'afterQuestioning';
+    
+    if (gameState.phase === 'questioning' && question?.id && question?.audioUrl) {
+      // Only play if it's a different question or if we just entered the questioning phase
+      if (lastPlayedQuestionId.current !== question.id) {
+        console.log('🎵 Starting audio playback for question (screen mode):', question.id);
+        playAudio(question.id);
+        lastPlayedQuestionId.current = question.id;
+      }
+    } else if (!isQuestioningPhase) {
+      // Only stop audio when leaving both questioning AND afterQuestioning phases
+      if (lastPlayedQuestionId.current) {
+        console.log('⏹️ Stopping audio (left questioning phases)');
+        stopAllAudio();
+        lastPlayedQuestionId.current = null;
+      }
+    }
+  }, [isPlayerMode, gameState.phase, gameState.currentRound, question?.id, question?.audioUrl, playAudio, stopAllAudio]);
 
   // Derive revealed words from current round's revealedWordsIndex
   const revealedWords = question && currentRound

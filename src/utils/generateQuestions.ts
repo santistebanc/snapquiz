@@ -1,8 +1,8 @@
 import { generateObject } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
 import { z } from 'zod';
-import OpenAI from 'openai';
 import type { Question } from '../types';
+import { generateAudioWithTimestamps } from './generateAudio';
 
 // Define the schema for structured output
 const QuestionSchema = z.object({
@@ -18,11 +18,13 @@ const QuestionsResponseSchema = z.object({
 
 // This will be called from the server side with PartyKit environment
 export async function generateQuestions(
-  categories: string[], 
-  existingQuestions: Question[],
-  apiKey: string
+  categories: string[],
+  existingQuestions: Question[]
 ): Promise<Question[]> {
   console.log('generateQuestions called with categories:', categories);
+
+  const apiKey = process.env.OPENAI_API_KEY;
+
   if (!apiKey) {
     throw new Error('OpenAI API key not configured');
   }
@@ -31,17 +33,15 @@ export async function generateQuestions(
   const categoryText = singleCategory || categories.join(', ');
   const existingTexts = existingQuestions.map(q => q.text.toLowerCase());
 
-  // Try Vercel AI SDK first, fallback to direct OpenAI if it fails
-  try {
-    console.log('Trying Vercel AI SDK...');
-    const openai = createOpenAI({
-      apiKey: apiKey,
-    });
+  console.log('Generating questions with Vercel AI SDK...');
+  const openai = createOpenAI({
+    apiKey: apiKey,
+  });
 
-    const { object } = await generateObject({
-      model: openai('gpt-4o-mini'),
-      schema: QuestionsResponseSchema,
-      prompt: `Generate 5 unique quiz questions strictly in the category "${categoryText}".
+  const { object } = await generateObject({
+    model: openai('gpt-4o-mini'),
+    schema: QuestionsResponseSchema,
+    prompt: `Generate 5 unique quiz questions strictly in the category "${categoryText}".
 Each question must have:
 - A clear, engaging question text
 - 4 multiple choice options (provide only the text content, no letters like A, B, C, D)
@@ -53,144 +53,60 @@ IMPORTANT:
 - Do not create new categories. Use exactly "${categoryText}" as category for all questions.
 
 Make sure questions are unique and not similar to these existing questions: ${existingTexts.join(', ')}`,
-      temperature: 0.7,
-    });
+    temperature: 0.7,
+  });
 
-    console.log('Vercel AI SDK succeeded, processing questions...');
-    
-    // Validate and format the questions (force category to the exact requested one)
-    const formattedQuestions: Question[] = object.questions.map((q, index: number) => ({
-      id: `generated-${Date.now()}-${index}`,
-      text: q.text,
-      category: categoryText,
-      options: q.options,
-      answer: q.answer, // Direct text answer from structured output
-      revealedQuestion: false,
-      openOptions: false,
-    }));
+  console.log('Questions generated successfully, processing...');
 
-    // Filter out duplicates by checking text similarity
-    const uniqueQuestions = formattedQuestions.filter(newQ => 
-      !existingTexts.some(existingText => 
-        calculateSimilarity(newQ.text.toLowerCase(), existingText) > 0.8
-      )
-    );
+  // Validate and format the questions (force category to the exact requested one)
+  const formattedQuestions: Question[] = object.questions.map((q, index: number) => ({
+    id: `generated-${Date.now()}-${index}`,
+    text: q.text,
+    category: categoryText,
+    options: q.options,
+    answer: q.answer, // Direct text answer from structured output
+    revealedQuestion: false,
+    openOptions: false,
+  }));
 
-    return uniqueQuestions;
-  } catch (vercelError) {
-    console.log('Vercel AI SDK failed, falling back to direct OpenAI:', vercelError instanceof Error ? vercelError.message : String(vercelError));
-    
-    // Fallback to direct OpenAI implementation
-    try {
-      const openai = new OpenAI({
-        apiKey: apiKey,
-      });
+  // Filter out duplicates by checking text similarity
+  const uniqueQuestions = formattedQuestions.filter(newQ =>
+    !existingTexts.some(existingText =>
+      calculateSimilarity(newQ.text.toLowerCase(), existingText) > 0.8
+    )
+  );
 
-      const prompt = `Generate 5 unique quiz questions strictly in the category "${categoryText}".
-Each question must have:
-- A clear, engaging question text
-- 4 multiple choice options (provide only the text content, no letters like A, B, C, D)
-- One correct answer (the full text of the correct option, not the letter)
-- The field "category" set EXACTLY to "${categoryText}" for every question (do not invent or substitute another category)
-
-IMPORTANT:
-- The options array should contain only the text content of each option, without any letter prefixes like "A.", "B.", etc.
-- Do not create new categories. Use exactly "${categoryText}" as category for all questions.
-
-Format as JSON array:
-[
-  {
-    "text": "Question text here?",
-    "category": "${categoryText}",
-    "options": ["First option text", "Second option text", "Third option text", "Fourth option text"],
-    "answer": "Second option text"
-  }
-]
-
-Make sure questions are unique and not similar to these existing questions: ${existingTexts.join(', ')}`;
-
-      const completion = await openai.chat.completions.create({
-        model: "gpt-3.5-turbo",
-        messages: [
-          {
-            role: "system",
-            content: "You are a quiz question generator. Always respond with valid JSON only, no additional text."
-          },
-          {
-            role: "user",
-            content: prompt
-          }
-        ],
-        temperature: 0.7,
-        max_tokens: 2000,
-      });
-
-      const responseText = completion.choices[0]?.message?.content;
-      if (!responseText) {
-        throw new Error('No response from OpenAI');
-      }
-
-      // Parse the JSON response
-      const generatedQuestions = JSON.parse(responseText);
-      
-      // Validate and format the questions (force category to the exact requested one)
-      const formattedQuestions: Question[] = generatedQuestions.map((q: any, index: number) => ({
-        id: `generated-${Date.now()}-${index}`,
-        text: q.text,
-        category: categoryText,
-        options: q.options,
-        answer: q.answer, // Direct text answer
-        revealedQuestion: false,
-        openOptions: false,
-      }));
-
-      // Filter out duplicates by checking text similarity
-      const uniqueQuestions = formattedQuestions.filter(newQ => 
-        !existingTexts.some(existingText => 
-          calculateSimilarity(newQ.text.toLowerCase(), existingText) > 0.8
-        )
-      );
-
-      // Generate audio with timestamps for each question
-      if (unrealSpeechApiKey) {
-        console.log('Generating audio for questions with UnrealSpeech...');
-        const questionsWithAudio = await Promise.all(
-          uniqueQuestions.map(async (question) => {
-            try {
-              const { audioUrl, wordTimestamps } = await generateAudioWithTimestamps(
-                question.text,
-                unrealSpeechApiKey
-              );
-              return {
-                ...question,
-                audioUrl,
-                wordTimestamps,
-              };
-            } catch (error) {
-              console.error(`Failed to generate audio for question: ${question.text}`, error);
-              return question; // Return question without audio if generation fails
-            }
-          })
+  // Generate audio with timestamps for each question
+  console.log('Generating audio for questions with UnrealSpeech...');
+  const questionsWithAudio = await Promise.all(
+    uniqueQuestions.map(async (question) => {
+      try {
+        const { audioUrl, wordTimestamps } = await generateAudioWithTimestamps(
+          question.text
         );
-        return questionsWithAudio;
+        return {
+          ...question,
+          audioUrl,
+          wordTimestamps,
+        };
+      } catch (error) {
+        console.error(`Failed to generate audio for question: ${question.text}`, error);
+        return question; // Return question without audio if generation fails
       }
-
-      return uniqueQuestions;
-    } catch (fallbackError) {
-      console.error('Both Vercel AI and OpenAI fallback failed:', fallbackError);
-      throw new Error('Failed to generate questions. Please try again.');
-    }
-  }
+    })
+  );
+  console.log('Audio generated successfully', questionsWithAudio[0]);
+  return questionsWithAudio;
 }
 
 // Simple similarity calculation using Jaccard similarity
 function calculateSimilarity(text1: string, text2: string): number {
   const words1 = new Set(text1.split(/\s+/));
   const words2 = new Set(text2.split(/\s+/));
-  
+
   const intersection = new Set([...words1].filter(x => words2.has(x)));
   const union = new Set([...words1, ...words2]);
-  
+
   return intersection.size / union.size;
 }
 

@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { useGameStore } from "../store";
 import { Container } from "../components/ui/container";
 import { PlayerDrawer } from "../components/PlayerDrawer";
-import { InRoundContent } from "../components/InRoundContent";
+import { InRoundContent } from "./inRoundContent";
 
 export default function InRound() {
   const { gameState } = useGameStore();
@@ -21,7 +21,7 @@ export default function InRound() {
         }}
         className="w-full max-w-2xl text-center"
       >
-        <InRoundContent isPlayerMode={true} />
+        <InRoundContent />
       </motion.div>
     </Container>
   );

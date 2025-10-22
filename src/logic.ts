@@ -64,8 +64,10 @@ function questioningInit(this: ServerState) {
     if (!question) return;
 
     const words = question.text.split(" ");
+
     words.forEach((_: string, index: number) => {
-        timeout(index * REVEAL_WORD_SPEED, () => {
+        const timeStamp = question.wordTimestamps?.[index]?.start;
+        timeout(timeStamp ? timeStamp * 1000 : index * REVEAL_WORD_SPEED, () => {
             round.revealedWordsIndex = Math.max(round.revealedWordsIndex, index + 1);
             if (round.revealedWordsIndex === words.length) {
                 this.router.toAfterQuestioning();
@@ -105,13 +107,13 @@ function revealingAnswerInit(this: ServerState) {
             }
         });
     }
-    
+
     timeout(REVEAL_ANSWER_TIME, () => this.router.toGivingPoints());
 }
 
 function givingPointsInit(this: ServerState) {
     const round = this.gameState.rounds[this.gameState.currentRound - 1];
-    
+
     // Apply points that were recorded in pointsAwarded
     if (round) {
         Object.entries(round.pointsAwarded).forEach(([playerId, points]) => {
@@ -121,7 +123,7 @@ function givingPointsInit(this: ServerState) {
             }
         });
     }
-    
+
     timeout(GIVE_POINTS_TIME, this.router.toFinishingRound);
 }
 
@@ -158,13 +160,7 @@ function removeQuestion(this: ServerState, questionId: string) {
 
 async function generateQuestions(this: ServerState, categories: string[]) {
     const { generateQuestions: generateQuestionsUtil } = await import('./utils/generateQuestions');
-    const apiKey = process.env.OPENAI_API_KEY;
-
-    if (!apiKey) {
-        throw new Error('OpenAI API key not configured');
-    }
-
-    const newQuestions = await generateQuestionsUtil(categories, this.gameState.questions, apiKey);
+    const newQuestions = await generateQuestionsUtil(categories, this.gameState.questions);
     this.gameState.questions = [...this.gameState.questions, ...newQuestions];
     return newQuestions;
 }
@@ -253,6 +249,7 @@ async function evaluatingAnswerInit(this: ServerState) {
 
     // If no answer was given, immediately mark as wrong without AI evaluation
     if (!playerAnswer.trim()) {
+        round.playerAnswers[playerId] = "";
         round.evaluationResult = 'wrong';
         round.pointsAwarded[playerId] = -POINTS_PER_CORRECT_ANSWER;
         this.router.toAfterBuzzEvaluation();
@@ -262,20 +259,20 @@ async function evaluatingAnswerInit(this: ServerState) {
     // Perform AI evaluation for non-empty answers
     const result = await evaluateAnswer(question, playerAnswer, correctAnswer);
     round.evaluationResult = result;
-    
+
     // Record points based on evaluation (will be applied in givingPointsAfterBuzz)
     if (result === 'correct') {
         round.pointsAwarded[playerId] = POINTS_PER_CORRECT_ANSWER;
     } else {
         round.pointsAwarded[playerId] = -POINTS_PER_CORRECT_ANSWER;
     }
-    
+
     this.router.toAfterBuzzEvaluation();
 }
 
 function afterBuzzEvaluationInit(this: ServerState) {
     const round = this.gameState.rounds[this.gameState.currentRound - 1];
-    
+
     timeout(SHOW_EVALUATION_RESULT_TIME, () => {
         if (round.evaluationResult === 'correct') {
             this.router.toGivingPointsAfterBuzz();
@@ -283,7 +280,7 @@ function afterBuzzEvaluationInit(this: ServerState) {
             // Check if all players have answered
             const totalPlayers = Object.keys(this.gameState.players).length;
             const playersWhoAnswered = Object.keys(round.playerAnswers).length;
-            
+
             if (playersWhoAnswered >= totalPlayers) {
                 // All players have answered, reveal answer alone
                 this.router.toRevealAnswerAlone();
@@ -315,7 +312,7 @@ function revealAnswerAloneInit(this: ServerState) {
 
 function givingPointsAfterBuzzInit(this: ServerState) {
     const round = this.gameState.rounds[this.gameState.currentRound - 1];
-    
+
     // Apply points that were recorded in pointsAwarded
     if (round) {
         Object.entries(round.pointsAwarded).forEach(([playerId, points]) => {
@@ -325,7 +322,7 @@ function givingPointsAfterBuzzInit(this: ServerState) {
             }
         });
     }
-    
+
     timeout(GIVE_POINTS_TIME, this.router.toFinishingRoundAfterBuzz);
 }
 

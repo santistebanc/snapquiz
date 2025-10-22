@@ -6,6 +6,12 @@ export interface Player {
   points: number;
 }
 
+export interface WordTimestamp {
+  word: string;
+  start: number;
+  end: number;
+}
+
 export interface Question {
   id: string;
   text: string;
@@ -14,6 +20,8 @@ export interface Question {
   options: string[];
   revealedQuestion: boolean;
   openOptions: boolean;
+  audioUrl?: string;
+  wordTimestamps?: WordTimestamp[];
 }
 
 export interface Round {

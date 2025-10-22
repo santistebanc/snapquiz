@@ -4,6 +4,8 @@ import "./styles.css";
 import { useGameConnection } from "./useGameConnection";
 import { useGameStore, useCurrentPlayer } from "./store";
 import { useParticles } from "./hooks/useParticles";
+import { AudioProvider } from "./contexts/AudioContext";
+import { AudioPreloader } from "./components/AudioPreloader";
 import ScreenLobby from "./screen/lobby";
 import ScreenInRound from "./screen/inRound";
 import ScreenSetup from "./screen/setup";
@@ -40,48 +42,56 @@ function App() {
     );
   }
 
-  // Determine what to render based on view state
-  if (isPlayer) {
-    // Player mode - show lobby, setup, or game based on view
-    if (view === 'setup') {
-      return <PlayerSetup />;
-    }
-    if (view === 'game') {
-      // Players without a name stay in lobby even when game starts
-      if (gameState.phase === 'lobby' || !currentPlayer?.name) return <PlayerLobby />;
-      return <PlayerInRound />;
-    }
-    return <PlayerLobby />;
-  }
-
-  // Screen mode - show lobby, setup, or game based on view with wrapper
-  if (view === 'setup') {
-    return (
-      <ScreenWrapper>
-        <ScreenSetup />
-      </ScreenWrapper>
-    );
-  }
-
-  if (view === 'game') {
-    if (gameState.phase === 'lobby') {
-      return (
-        <ScreenWrapper>
-          <ScreenLobby />
-        </ScreenWrapper>
-      );
-    }
-    return (
-      <ScreenWrapper>
-        <ScreenInRound />
-      </ScreenWrapper>
-    );
-  }
-
+  // Wrap the entire app with AudioProvider to preload all question audios
   return (
-    <ScreenWrapper>
-      <ScreenLobby />
-    </ScreenWrapper>
+    <AudioProvider questions={gameState.questions}>
+      <AudioPreloader isPlayerMode={isPlayer} />
+      {(() => {
+        // Determine what to render based on view state
+        if (isPlayer) {
+          // Player mode - show lobby, setup, or game based on view
+          if (view === 'setup') {
+            return <PlayerSetup />;
+          }
+          if (view === 'game') {
+            // Players without a name stay in lobby even when game starts
+            if (gameState.phase === 'lobby' || !currentPlayer?.name) return <PlayerLobby />;
+            return <PlayerInRound />;
+          }
+          return <PlayerLobby />;
+        }
+
+        // Screen mode - show lobby, setup, or game based on view with wrapper
+        if (view === 'setup') {
+          return (
+            <ScreenWrapper>
+              <ScreenSetup />
+            </ScreenWrapper>
+          );
+        }
+
+        if (view === 'game') {
+          if (gameState.phase === 'lobby') {
+            return (
+              <ScreenWrapper>
+                <ScreenLobby />
+              </ScreenWrapper>
+            );
+          }
+          return (
+            <ScreenWrapper>
+              <ScreenInRound />
+            </ScreenWrapper>
+          );
+        }
+
+        return (
+          <ScreenWrapper>
+            <ScreenLobby />
+          </ScreenWrapper>
+        );
+      })()}
+    </AudioProvider>
   );
 }
 

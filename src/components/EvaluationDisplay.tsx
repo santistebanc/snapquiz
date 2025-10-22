@@ -44,6 +44,13 @@ export function EvaluationDisplay({ isPlayerMode = false }: EvaluationDisplayPro
   // In all other phases: show the evaluation result (checkmark/X)
   const showEvaluationResult = gameState.phase !== 'evaluatingAnswer';
 
+  // Show player name if:
+  // - In screen mode: always show
+  // - In player mode: only show if it's NOT the current player's answer
+  const showPlayerName = player && (
+    !isPlayerMode || (isPlayerMode && displayPlayerId !== connectionId)
+  );
+
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.9 }}
@@ -52,21 +59,23 @@ export function EvaluationDisplay({ isPlayerMode = false }: EvaluationDisplayPro
       transition={{ duration: 0.3 }}
       className={`w-full max-w-2xl mx-auto space-y-6 text-center ${isPlayerMode ? "text-lg" : "text-2xl"}`}
     >
-      {!isPlayerMode && player && (
-        <div className={`text-warm-cream/80 ${isPlayerMode ? "text-base" : "text-xl"}`}>
-          <span className="font-semibold text-warm-yellow">{player.name}</span> answered:
-        </div>
-      )}
-
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
-        className={`font-bold text-warm-cream bg-card-dark/60 border-2 border-border-muted/30 rounded-lg p-6 ${
+        className={`bg-card-dark/60 border-2 border-border-muted/30 rounded-lg p-6 ${
           isPlayerMode ? "text-xl" : "text-4xl"
         }`}
       >
-        "{submittedAnswer || "(no answer)"}"
+        <div className="font-bold text-warm-cream">
+          {showPlayerName && (
+            <>
+              <span className="text-warm-yellow">{player.name}</span>
+              <span className="text-warm-cream/80">: </span>
+            </>
+          )}
+          "{submittedAnswer || "(no answer)"}"
+        </div>
       </motion.div>
 
       {showEvaluationResult && displayEvaluationResult && (
