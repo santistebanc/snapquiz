@@ -106,7 +106,7 @@ export function PlayerDrawer({ players, isPlayerMode = false, open: externalOpen
                   onClick={() => setView('settings')}
                   size="sm"
                   variant="outline"
-                  className="w-full border-teal-primary/30 text-teal-primary hover:bg-teal-primary/10 bg-transparent text-sm"
+                  className="w-full border-teal-primary text-teal-primary bg-card-dark/60 hover:bg-teal-primary hover:text-white"
                 >
                   <Settings className="w-4 h-4 mr-2" />
                   Settings
@@ -115,7 +115,7 @@ export function PlayerDrawer({ players, isPlayerMode = false, open: externalOpen
                   onClick={() => setView('game')}
                   size="sm"
                   variant="outline"
-                  className="w-full border-warm-orange/30 text-warm-orange hover:bg-warm-orange/10 bg-transparent text-sm"
+                  className="w-full border-teal-primary text-teal-primary bg-card-dark/60 hover:bg-teal-primary hover:text-white"
                 >
                   <Gamepad2 className="w-4 h-4 mr-2" />
                   Back to Game
