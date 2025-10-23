@@ -8,14 +8,16 @@ interface VoiceInputProps {
   isActive: boolean;
   disabled?: boolean;
   autoStart?: boolean;
+  onSubmit?: () => void;
 }
 
-export function VoiceInput({ onTranscript, isActive, disabled = false, autoStart = false }: VoiceInputProps) {
+export function VoiceInput({ onTranscript, isActive, disabled = false, autoStart = false, onSubmit }: VoiceInputProps) {
   const [isListening, setIsListening] = useState(false);
   const [isSupported, setIsSupported] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [error, setError] = useState<string | null>(null);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const submitTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
     // Check if speech recognition is supported
@@ -50,6 +52,18 @@ export function VoiceInput({ onTranscript, isActive, disabled = false, autoStart
         const currentTranscript = finalTranscript || interimTranscript;
         setTranscript(currentTranscript);
         onTranscript(currentTranscript);
+
+        // Clear existing timeout
+        if (submitTimeoutRef.current) {
+          clearTimeout(submitTimeoutRef.current);
+        }
+
+        // Set new timeout to auto-submit after 2 seconds of silence
+        if (currentTranscript.trim() && onSubmit) {
+          submitTimeoutRef.current = window.setTimeout(() => {
+            onSubmit();
+          }, 2000);
+        }
       };
 
       recognition.onerror = (event) => {
@@ -60,6 +74,11 @@ export function VoiceInput({ onTranscript, isActive, disabled = false, autoStart
 
       recognition.onend = () => {
         setIsListening(false);
+        // Clear timeout when recognition ends
+        if (submitTimeoutRef.current) {
+          clearTimeout(submitTimeoutRef.current);
+          submitTimeoutRef.current = null;
+        }
       };
     }
   }, [onTranscript]);
@@ -74,6 +93,15 @@ export function VoiceInput({ onTranscript, isActive, disabled = false, autoStart
       return () => clearTimeout(timer);
     }
   }, [autoStart, isActive, isSupported, isListening, disabled]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (submitTimeoutRef.current) {
+        clearTimeout(submitTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const startListening = () => {
     if (!recognitionRef.current || isListening || disabled) return;

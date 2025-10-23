@@ -150,6 +150,7 @@ export function AnswerInput({ isPlayerMode = false }: AnswerInputProps) {
             isActive={gameState.phase === 'buzzing'}
             disabled={timeLeft <= 0}
             autoStart={true}
+            onSubmit={handleSubmit}
           />
         )}
         
