@@ -88,10 +88,7 @@ function showingOptionsInit(this: ServerState) {
 
 function selectOption(this: ServerState, option: string, playerId: string) {
     const round = this.gameState.rounds[this.gameState.currentRound - 1];
-    // Don't allow selection if player already has an answer (from buzzer or previous selection)
-    if (round && !round.playerAnswers[playerId]) {
-        round.playerAnswers[playerId] = option;
-    }
+    round.playerAnswers[playerId] = option;
 }
 
 function revealingAnswerInit(this: ServerState) {
@@ -192,10 +189,18 @@ function createOrUpdatePlayer(this: ServerState, playerId: string, name?: string
         avatar: playerAvatar,
         connectedAt: existingPlayer?.connectedAt || Date.now(),
         points: existingPlayer?.points || 0,
+        isAdmin: existingPlayer?.isAdmin || false,
     };
 
     this.gameState.players[playerId] = player;
     return player;
+}
+
+function togglePlayerAdmin(this: ServerState, playerId: string) {
+    const player = this.gameState.players[playerId];
+    if (player) {
+        player.isAdmin = !player.isAdmin;
+    }
 }
 
 // Buzzer system functions
@@ -322,7 +327,7 @@ function givingPointsAfterBuzzInit(this: ServerState) {
     }
 }
 
-const common = { resetGame, nextRound, updateQuestions, reorderQuestions, removeQuestion, generateQuestions, joinAsPlayer, changeProfile, createOrUpdatePlayer }
+const common = { resetGame, nextRound, updateQuestions, reorderQuestions, removeQuestion, generateQuestions, joinAsPlayer, changeProfile, createOrUpdatePlayer, togglePlayerAdmin }
 
 export const routes = {
     lobby: { startGame, ...common },

@@ -5,7 +5,7 @@ import { Button } from "../components/ui/button";
 import { Text } from "../components/ui/text";
 import { useGameStore } from "../store";
 
-export default function Setup() {
+export default function Settings() {
   const { setView } = useGameStore();
 
   return (
@@ -14,7 +14,7 @@ export default function Setup() {
         <Card className="bg-card-dark/60 backdrop-blur-sm border-border-muted/30">
           <CardContent className="p-8 text-center space-y-6">
             <Text variant="large" className="text-warm-cream text-4xl font-bold mb-4">
-              Player Setup
+              Player Settings
             </Text>
             
             <Text variant="large" className="text-warm-cream/80 mb-6">
@@ -47,11 +47,11 @@ export default function Setup() {
                 Lobby
               </Button>
               <Button 
-                onClick={() => setView('setup')}
+                onClick={() => setView('settings')}
                 size="sm"
                 className="bg-teal-primary hover:bg-teal-primary/90 text-white flex-1"
               >
-                Setup
+                Settings
               </Button>
               <Button 
                 onClick={() => setView('game')}

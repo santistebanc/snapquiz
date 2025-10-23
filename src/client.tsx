@@ -8,11 +8,11 @@ import { AudioProvider } from "./contexts/AudioContext";
 import { AudioPreloader } from "./components/AudioPreloader";
 import ScreenLobby from "./screen/lobby";
 import ScreenInRound from "./screen/inRound";
-import ScreenSetup from "./screen/setup";
+import ScreenSettings from "./screen/settings";
 import ScreenGameOver from "./screen/gameOver";
 import PlayerLobby from "./player/lobby";
 import PlayerInRound from "./player/inRound";
-import PlayerSetup from "./player/setup";
+import PlayerSettings from "./player/settings";
 import PlayerGameOver from "./player/gameOver";
 import { Container } from "./components/ui/container";
 import { Spinner } from "./components/ui/spinner";
@@ -51,9 +51,9 @@ function App() {
       {(() => {
         // Determine what to render based on view state
         if (isPlayer) {
-        // Player mode - show lobby, setup, or game based on view
-        if (view === 'setup') {
-          return <PlayerSetup />;
+        // Player mode - show lobby, settings, or game based on view
+        if (view === 'settings') {
+          return <PlayerSettings />;
         }
         if (view === 'game') {
           // Players without a name stay in lobby even when game starts
@@ -64,11 +64,11 @@ function App() {
         return <PlayerLobby />;
         }
 
-        // Screen mode - show lobby, setup, or game based on view with wrapper
-        if (view === 'setup') {
+        // Screen mode - show lobby, settings, or game based on view with wrapper
+        if (view === 'settings') {
           return (
             <ScreenWrapper>
-              <ScreenSetup />
+              <ScreenSettings />
             </ScreenWrapper>
           );
         }

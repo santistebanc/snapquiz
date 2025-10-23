@@ -6,11 +6,12 @@ import { CategoryInput } from "../components/CategoryInput";
 import { QuestionList } from "../components/QuestionList";
 import { useGameStore } from "../store";
 import { Alert, AlertDescription } from "../components/ui/alert";
-import { AlertTriangle, Shuffle } from "lucide-react";
+import { AlertTriangle, Shuffle, Shield, ShieldOff, User } from "lucide-react";
 import type { Question } from "../types";
 import { Button } from "../components/ui/button";
+import { Avatar, AvatarFallback } from "../components/ui/avatar";
 
-export default function Setup() {
+export default function Settings() {
   const { gameState, serverAction } = useGameStore();
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -93,7 +94,13 @@ export default function Setup() {
     setCategoryInputValue(category);
   }, []);
 
+  const handleToggleAdmin = useCallback((playerId: string) => {
+    serverAction("togglePlayerAdmin", playerId);
+  }, [serverAction]);
+
   const hasQuestions = optimisticQuestions.length > 0;
+  
+  const playersList = useMemo(() => Object.values(gameState.players), [gameState.players]);
 
   // Build category counts from current questions
   const categoryCounts = useMemo(() => {
@@ -113,12 +120,66 @@ export default function Setup() {
             <div className="space-y-6">
               <div>
                 <Text variant="large" className="text-warm-cream text-4xl font-bold mb-3">
-                  Game Setup
+                  Game Settings
                 </Text>
                 <Text className="text-warm-cream/80 text-lg">
-                  Manage your quiz questions and generate new ones with AI
+                  Manage players, questions, and game configuration
                 </Text>
               </div>
+
+              {/* Player Management Section */}
+              {playersList.length > 0 && (
+                <div className="space-y-3">
+                  <Text variant="large" className="text-warm-cream text-2xl font-bold">
+                    Players
+                  </Text>
+                  <div className="grid gap-3">
+                    {playersList.map((player) => (
+                      <div
+                        key={player.id}
+                        className="flex items-center justify-between p-4 bg-border-muted/20 border border-border-muted/30 rounded-lg hover:bg-border-muted/30 transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-10 w-10 border-2 border-warm-yellow">
+                            <AvatarFallback className="bg-warm-orange text-white text-lg font-bold">
+                              {player.avatar}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex flex-col">
+                            <Text className="text-warm-cream font-semibold text-lg">
+                              {player.name || "Anonymous"}
+                            </Text>
+                            <Text className="text-warm-cream/60 text-sm">
+                              {player.points} points
+                            </Text>
+                          </div>
+                        </div>
+                        <Button
+                          onClick={() => handleToggleAdmin(player.id)}
+                          variant={player.isAdmin ? "default" : "outline"}
+                          size="sm"
+                          className={player.isAdmin 
+                            ? "bg-warm-yellow hover:bg-warm-yellow/90 text-white" 
+                            : "border-border-muted/30 bg-card-dark/50 hover:bg-border-muted/30 text-warm-cream/80"
+                          }
+                        >
+                          {player.isAdmin ? (
+                            <>
+                              <Shield className="w-4 h-4 mr-2" />
+                              Admin
+                            </>
+                          ) : (
+                            <>
+                              <User className="w-4 h-4 mr-2" />
+                              Player
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <CategoryInput
                 onCategoriesChange={handleCategoriesChange}

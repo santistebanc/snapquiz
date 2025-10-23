@@ -44,7 +44,7 @@ export function ScreenButtons() {
           </motion.div>
         )}
 
-        {view !== 'setup' && (
+        {view !== 'settings' && (
           <motion.div
             initial={{ opacity: 0, x: 20, scale: 0.8 }}
             animate={{ opacity: 1, x: 0, scale: 1 }}
@@ -81,9 +81,9 @@ export function ScreenButtons() {
           </Button>
         )}
 
-        {view !== 'setup' && gameState.phase === 'lobby' && (
+        {view !== 'settings' && gameState.phase === 'lobby' && (
           <Button
-            onClick={() => setView('setup')}
+            onClick={() => setView('settings')}
             size="sm"
             variant="outline"
             className="border-teal-primary text-teal-primary bg-card-dark/60 hover:bg-teal-primary hover:text-white"

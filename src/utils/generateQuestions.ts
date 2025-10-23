@@ -95,7 +95,6 @@ Make sure questions are unique and not similar to these existing questions: ${ex
       }
     })
   );
-  console.log('Audio generated successfully', questionsWithAudio[0]);
   return questionsWithAudio;
 }
 

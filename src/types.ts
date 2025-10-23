@@ -4,6 +4,7 @@ export interface Player {
   avatar: string;
   connectedAt: number;
   points: number;
+  isAdmin: boolean;
 }
 
 export interface WordTimestamp {

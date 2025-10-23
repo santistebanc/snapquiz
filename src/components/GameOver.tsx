@@ -32,8 +32,8 @@ export function GameOver({ isPlayerMode = false }: GameOverProps) {
     };
     window.addEventListener("resize", handleResize);
 
-    // Stop confetti after 5 seconds
-    const timer = setTimeout(() => setShowConfetti(false), 5000);
+    // Stop confetti after 10 seconds
+    const timer = setTimeout(() => setShowConfetti(false), 10000);
 
     return () => {
       window.removeEventListener("resize", handleResize);

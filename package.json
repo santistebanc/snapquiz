@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "dev": "partykit dev --live --port ${VITE_PARTYKIT_PORT:-37011}",
+    "dev": "partykit dev --live --port 37011",
     "deploy": "partykit deploy",
     "build:css": "tailwindcss -i ./src/styles.css -o ./public/dist/tailwind.css --minify"
   },

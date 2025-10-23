@@ -1,4 +1,4 @@
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useMotionValue, useTransform, animate as motionAnimate } from "framer-motion";
 import { useEffect, useState } from "react";
 import { useGameStore } from "../store";
 import type { Player } from "../types";
@@ -13,6 +13,31 @@ interface PlayerWithPoints extends Player {
   newPoints: number;
   oldRank: number;
   newRank: number;
+}
+
+// Animated counter component
+function AnimatedCounter({ from, to }: { from: number; to: number }) {
+  const count = useMotionValue(from);
+  const rounded = useTransform(count, (latest) => Math.round(latest));
+  const [displayValue, setDisplayValue] = useState(from);
+
+  useEffect(() => {
+    const controls = motionAnimate(count, to, {
+      duration: 0.8,
+      ease: "easeOut",
+    });
+
+    const unsubscribe = rounded.on("change", (latest) => {
+      setDisplayValue(latest);
+    });
+
+    return () => {
+      controls.stop();
+      unsubscribe();
+    };
+  }, [from, to, count, rounded]);
+
+  return <>{displayValue}</>;
 }
 
 const RANK_COLORS = {
@@ -186,14 +211,10 @@ export function PointsBreakdown({ isPlayerMode = false }: PointsBreakdownProps) 
                       <motion.div
                         className={`font-bold text-warm-yellow ${isPlayerMode ? "text-xl" : "text-3xl"}`}
                       >
-                        <motion.span
-                          key={animatedPoints[player.id]}
-                          initial={{ scale: 1.5, opacity: 0 }}
-                          animate={{ scale: 1, opacity: 1 }}
-                          transition={{ type: "spring", damping: 15 }}
-                        >
-                          {Math.round(animatedPoints[player.id] || player.oldPoints)}
-                        </motion.span>
+                        <AnimatedCounter 
+                          from={player.oldPoints} 
+                          to={animatedPoints[player.id] || player.newPoints} 
+                        />
                       </motion.div>
                     </div>
                   </div>
