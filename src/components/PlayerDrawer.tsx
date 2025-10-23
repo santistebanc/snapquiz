@@ -106,7 +106,7 @@ export function PlayerDrawer({ players, isPlayerMode = false, open: externalOpen
                   onClick={() => setView('settings')}
                   size="sm"
                   variant="outline"
-                  className="w-full border-teal-primary/30 text-teal-primary hover:bg-teal-primary/10 text-sm"
+                  className="w-full border-teal-primary/30 text-teal-primary hover:bg-teal-primary/10 bg-transparent text-sm"
                 >
                   <Settings className="w-4 h-4 mr-2" />
                   Settings
