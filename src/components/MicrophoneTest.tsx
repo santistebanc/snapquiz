@@ -281,7 +281,7 @@ export function MicrophoneTest({ isPlayerMode = false }: MicrophoneTestProps) {
               className={`${
                 isListening 
                   ? 'bg-red-500 hover:bg-red-600 text-white' 
-                  : 'bg-warm-yellow hover:bg-warm-yellow/90 text-deep-purple'
+                  : 'bg-warm-orange hover:bg-warm-orange/90 text-white'
               }`}
             >
               {isListening ? (
