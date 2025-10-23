@@ -112,12 +112,12 @@ export function Profile({ onEditChange, onMicrophoneTest }: ProfileProps) {
           
           {/* Microphone Test Button - Only show when not editing name */}
           {!isEditingName && onMicrophoneTest && (
-            <div className="flex justify-center mt-3">
+            <div className="flex justify-center mt-6 pt-4 border-t border-border-muted/20">
               <Button
                 onClick={onMicrophoneTest}
                 size="sm"
                 variant="outline"
-                className="border-warm-yellow text-warm-yellow hover:bg-warm-yellow hover:text-deep-purple bg-transparent"
+                className="border-warm-yellow text-warm-yellow hover:bg-warm-yellow/20 hover:border-warm-yellow/80 hover:text-warm-yellow bg-transparent"
               >
                 <Mic className="w-4 h-4 mr-2" />
                 Test Microphone
