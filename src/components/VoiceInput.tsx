@@ -3,6 +3,16 @@ import { motion } from 'framer-motion';
 import { Mic, MicOff, Volume2 } from 'lucide-react';
 import { Button } from './ui/button';
 
+// Extend Window interface for speech recognition
+declare global {
+  interface Window {
+    SpeechRecognition: any;
+    webkitSpeechRecognition: any;
+    mozSpeechRecognition: any;
+    msSpeechRecognition: any;
+  }
+}
+
 interface VoiceInputProps {
   onTranscript: (text: string) => void;
   isActive: boolean;
@@ -16,13 +26,16 @@ export function VoiceInput({ onTranscript, isActive, disabled = false, autoStart
   const [isSupported, setIsSupported] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const recognitionRef = useRef<any>(null);
   const submitTimeoutRef = useRef<number | null>(null);
   const currentTranscriptRef = useRef<string>('');
 
   useEffect(() => {
-    // Check if speech recognition is supported
-    const SpeechRecognition = window.SpeechRecognition || (window as any).webkitSpeechRecognition;
+    // Check if speech recognition is supported with better browser compatibility
+    const SpeechRecognition = window.SpeechRecognition || 
+                             (window as any).webkitSpeechRecognition ||
+                             (window as any).mozSpeechRecognition ||
+                             (window as any).msSpeechRecognition;
     if (SpeechRecognition) {
       setIsSupported(true);
       recognitionRef.current = new SpeechRecognition();
@@ -37,7 +50,7 @@ export function VoiceInput({ onTranscript, isActive, disabled = false, autoStart
         setError(null);
       };
 
-      recognition.onresult = (event) => {
+      recognition.onresult = (event: any) => {
         let finalTranscript = '';
         let interimTranscript = '';
 
@@ -72,9 +85,34 @@ export function VoiceInput({ onTranscript, isActive, disabled = false, autoStart
         }
       };
 
-      recognition.onerror = (event) => {
+      recognition.onerror = (event: any) => {
         console.error('Speech recognition error:', event.error);
-        setError(`Speech recognition error: ${event.error}`);
+        
+        let errorMessage = '';
+        switch (event.error) {
+          case 'network':
+            errorMessage = 'Network error: Speech recognition service is unavailable. Please check your internet connection.';
+            break;
+          case 'not-allowed':
+            errorMessage = 'Microphone access denied. Please allow microphone access and try again.';
+            break;
+          case 'no-speech':
+            errorMessage = 'No speech detected. Please try speaking again.';
+            break;
+          case 'audio-capture':
+            errorMessage = 'Audio capture error. Please check your microphone and try again.';
+            break;
+          case 'service-not-allowed':
+            errorMessage = 'Speech recognition service not allowed. Please try again later.';
+            break;
+          case 'aborted':
+            errorMessage = 'Speech recognition was aborted. Please try again.';
+            break;
+          default:
+            errorMessage = `Speech recognition error: ${event.error}`;
+        }
+        
+        setError(errorMessage);
         setIsListening(false);
       };
 

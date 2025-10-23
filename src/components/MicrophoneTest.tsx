@@ -15,7 +15,6 @@ export function MicrophoneTest({ isPlayerMode = false }: MicrophoneTestProps) {
   const [isRecording, setIsRecording] = useState(false);
   const [audioLevel, setAudioLevel] = useState(0);
   const [error, setError] = useState<string | null>(null);
-  const [retryCount, setRetryCount] = useState(0);
   
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
@@ -25,11 +24,19 @@ export function MicrophoneTest({ isPlayerMode = false }: MicrophoneTestProps) {
 
   // Check if speech recognition is supported
   useEffect(() => {
-    if (typeof window !== 'undefined' && ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
-      setIsSupported(true);
-      checkMicrophonePermission();
-    } else {
-      setError("Speech recognition is not supported in this browser. Please use Chrome, Edge, or Safari.");
+    if (typeof window !== 'undefined') {
+      // Check for various speech recognition implementations
+      const hasSpeechRecognition = 'SpeechRecognition' in window || 
+                                   'webkitSpeechRecognition' in window ||
+                                   'mozSpeechRecognition' in window ||
+                                   'msSpeechRecognition' in window;
+      
+      if (hasSpeechRecognition) {
+        setIsSupported(true);
+        checkMicrophonePermission();
+      } else {
+        setError("Speech recognition is not supported in this browser. Please use Chrome, Edge, or Safari.");
+      }
     }
   }, []);
 
@@ -72,7 +79,9 @@ export function MicrophoneTest({ isPlayerMode = false }: MicrophoneTestProps) {
   // Setup audio level monitoring
   const setupAudioLevelMonitoring = (stream: MediaStream) => {
     try {
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      // Better AudioContext compatibility for Edge
+      const AudioContext = window.AudioContext || (window as any).webkitAudioContext || (window as any).mozAudioContext;
+      const audioContext = new AudioContext();
       const analyser = audioContext.createAnalyser();
       const microphone = audioContext.createMediaStreamSource(stream);
       
@@ -88,6 +97,7 @@ export function MicrophoneTest({ isPlayerMode = false }: MicrophoneTestProps) {
       monitorAudioLevel();
     } catch (err) {
       console.error('Error setting up audio monitoring:', err);
+      setError("Failed to set up audio monitoring. This might be a browser compatibility issue.");
     }
   };
 
@@ -125,8 +135,11 @@ export function MicrophoneTest({ isPlayerMode = false }: MicrophoneTestProps) {
       mediaStreamRef.current = stream;
       setupAudioLevelMonitoring(stream);
       
-      // Set up speech recognition
-      const SpeechRecognition = window.SpeechRecognition || (window as any).webkitSpeechRecognition;
+      // Set up speech recognition with better browser compatibility
+      const SpeechRecognition = window.SpeechRecognition || 
+                               (window as any).webkitSpeechRecognition ||
+                               (window as any).mozSpeechRecognition ||
+                               (window as any).msSpeechRecognition;
       const recognition = new SpeechRecognition();
       
       recognition.continuous = true;
@@ -175,6 +188,9 @@ export function MicrophoneTest({ isPlayerMode = false }: MicrophoneTestProps) {
           case 'service-not-allowed':
             errorMessage = 'Speech recognition service not allowed. Please try again later.';
             break;
+          case 'aborted':
+            errorMessage = 'Speech recognition was aborted. Please try again.';
+            break;
           default:
             errorMessage = `Speech recognition error: ${event.error}`;
         }
@@ -182,15 +198,6 @@ export function MicrophoneTest({ isPlayerMode = false }: MicrophoneTestProps) {
         setError(errorMessage);
         setIsListening(false);
         setIsRecording(false);
-        
-        // Auto-retry for network errors (up to 2 times)
-        if (event.error === 'network' && retryCount < 2) {
-          setTimeout(() => {
-            setRetryCount(prev => prev + 1);
-            setError(null);
-            startListening();
-          }, 2000);
-        }
       };
       
       recognition.onend = () => {
@@ -362,19 +369,6 @@ export function MicrophoneTest({ isPlayerMode = false }: MicrophoneTestProps) {
             <span className="text-sm font-medium">Error</span>
           </div>
           <p className="text-red-300/80 text-sm mt-1">{error}</p>
-          {error.includes('Network error') && retryCount >= 2 && (
-            <Button
-              onClick={() => {
-                setRetryCount(0);
-                setError(null);
-                startListening();
-              }}
-              size="sm"
-              className="mt-2 bg-red-500 hover:bg-red-600 text-white"
-            >
-              Try Again
-            </Button>
-          )}
         </div>
       )}
 
@@ -384,7 +378,8 @@ export function MicrophoneTest({ isPlayerMode = false }: MicrophoneTestProps) {
         <p>• Use "Start Test" to check if your microphone is working</p>
         <p>• Speak clearly and watch the audio level indicator</p>
         <p>• Your spoken words should appear in the transcript</p>
-        <p>• <strong>Edge users:</strong> Network errors are common - try refreshing the page or using Chrome</p>
+        <p>• <strong>Edge users:</strong> If you experience issues, try refreshing the page or using Chrome</p>
+        <p>• <strong>HTTPS required:</strong> Microphone access requires a secure connection</p>
       </div>
     </div>
   );
