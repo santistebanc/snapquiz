@@ -113,8 +113,7 @@ export function PlayerDrawer({ players, isPlayerMode = false, open: externalOpen
                   <Button
                     onClick={() => serverAction("resetGame")}
                     size="sm"
-                    variant="outline"
-                    className="w-full border-red-500/30 text-red-400 hover:bg-red-500/10 text-sm"
+                    className="w-full bg-warm-orange hover:bg-warm-orange/90 text-white text-sm"
                   >
                     <Restart className="w-4 h-4 mr-2" />
                     Reset Game
