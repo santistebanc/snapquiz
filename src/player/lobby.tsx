@@ -21,33 +21,34 @@ export default function Lobby() {
       />
       <Card className="bg-card-dark/60 backdrop-blur-sm border-border-muted/30">
         <CardContent className="p-6">
-          {!isEditingProfile && <Room />}
-          <Profile 
-            onEditChange={setIsEditingProfile} 
-            onMicrophoneTest={() => setShowMicrophoneTest(true)}
-          />
+          {showMicrophoneTest ? (
+            // Microphone Test Section
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold text-warm-cream">Microphone Test</h2>
+                <Button
+                  onClick={() => setShowMicrophoneTest(false)}
+                  size="sm"
+                  variant="outline"
+                  className="border-warm-cream/30 text-warm-cream hover:bg-warm-cream/10 bg-transparent"
+                >
+                  Close
+                </Button>
+              </div>
+              <MicrophoneTest isPlayerMode={true} />
+            </div>
+          ) : (
+            // Normal Lobby Content
+            <>
+              {!isEditingProfile && <Room />}
+              <Profile 
+                onEditChange={setIsEditingProfile} 
+                onMicrophoneTest={() => setShowMicrophoneTest(true)}
+              />
+            </>
+          )}
         </CardContent>
       </Card>
-      
-      {/* Microphone Test Section - Only show when toggled */}
-      {showMicrophoneTest && (
-        <Card className="bg-card-dark/60 backdrop-blur-sm border-border-muted/30">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-warm-cream">Microphone Test</h2>
-              <Button
-                onClick={() => setShowMicrophoneTest(false)}
-                size="sm"
-                variant="outline"
-                className="border-warm-cream/30 text-warm-cream hover:bg-warm-cream/10"
-              >
-                Close
-              </Button>
-            </div>
-            <MicrophoneTest isPlayerMode={true} />
-          </CardContent>
-        </Card>
-      )}
     </Container>
   );
 }
