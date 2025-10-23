@@ -14,6 +14,7 @@ export function AnswerInput({ isPlayerMode = false }: AnswerInputProps) {
   const [answer, setAnswer] = useState("");
   const [timeLeft, setTimeLeft] = useState(BUZZER_ANSWER_TIMEOUT_SECONDS);
   const [useVoice, setUseVoice] = useState(true);
+  const resetRef = useRef(false);
 
   const currentRound = gameState.rounds[gameState.currentRound - 1];
   const buzzedPlayerId = currentRound?.buzzedPlayerId;
@@ -53,11 +54,15 @@ export function AnswerInput({ isPlayerMode = false }: AnswerInputProps) {
     return () => clearTimeout(timer);
   }, [timeLeft, gameState.phase, isPlayerMode, buzzedPlayerId, connectionId]);
 
-  // Reset timer when phase changes
+  // Reset timer and answer when phase changes to buzzing (only once per buzzing session)
   useEffect(() => {
-    if (gameState.phase === 'buzzing') {
+    if (gameState.phase === 'buzzing' && !resetRef.current) {
+      console.log('Resetting answer and timer for new buzzing session');
       setTimeLeft(BUZZER_ANSWER_TIMEOUT_SECONDS);
       setAnswer("");
+      resetRef.current = true;
+    } else if (gameState.phase !== 'buzzing') {
+      resetRef.current = false;
     }
   }, [gameState.phase]);
 
