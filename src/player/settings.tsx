@@ -3,13 +3,18 @@ import { Container } from "../components/ui/container";
 import { Card, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Text } from "../components/ui/text";
+import { PlayerDrawer } from "../components/PlayerDrawer";
 import { useGameStore } from "../store";
 
 export default function Settings() {
-  const { setView } = useGameStore();
+  const { setView, gameState } = useGameStore();
 
   return (
     <Container variant="page">
+      <PlayerDrawer
+        players={Object.values(gameState.players)}
+        isPlayerMode={true}
+      />
       <div className="flex flex-col items-center justify-center min-h-[70vh] space-y-8">
         <Card className="bg-card-dark/60 backdrop-blur-sm border-border-muted/30">
           <CardContent className="p-8 text-center space-y-6">
