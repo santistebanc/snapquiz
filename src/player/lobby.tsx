@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Profile } from "./Profile";
 import { Room } from "./Room";
 import { Container } from "../components/ui/container";
@@ -21,32 +22,46 @@ export default function Lobby() {
       />
       <Card className="bg-card-dark/60 backdrop-blur-sm border-border-muted/30">
         <CardContent className="p-6">
-          {showMicrophoneTest ? (
-            // Microphone Test Section
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold text-warm-cream">Microphone Test</h2>
-                <Button
-                  onClick={() => setShowMicrophoneTest(false)}
-                  size="sm"
-                  variant="outline"
-                  className="border-warm-cream/30 text-warm-cream hover:bg-warm-cream/10 bg-transparent"
-                >
-                  Close
-                </Button>
-              </div>
-              <MicrophoneTest isPlayerMode={true} />
-            </div>
-          ) : (
-            // Normal Lobby Content
-            <>
-              {!isEditingProfile && <Room />}
-              <Profile 
-                onEditChange={setIsEditingProfile} 
-                onMicrophoneTest={() => setShowMicrophoneTest(true)}
-              />
-            </>
-          )}
+          <AnimatePresence mode="wait">
+            {showMicrophoneTest ? (
+              // Microphone Test Section
+              <motion.div
+                key="microphone-test"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-semibold text-warm-cream">Microphone Test</h2>
+                  <Button
+                    onClick={() => setShowMicrophoneTest(false)}
+                    size="sm"
+                    variant="outline"
+                    className="border-warm-cream/30 text-warm-cream hover:bg-warm-cream/10 bg-transparent"
+                  >
+                    Close
+                  </Button>
+                </div>
+                <MicrophoneTest isPlayerMode={true} />
+              </motion.div>
+            ) : (
+              // Normal Lobby Content
+              <motion.div
+                key="lobby-content"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+              >
+                {!isEditingProfile && <Room />}
+                <Profile 
+                  onEditChange={setIsEditingProfile} 
+                  onMicrophoneTest={() => setShowMicrophoneTest(true)}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
         </CardContent>
       </Card>
     </Container>
