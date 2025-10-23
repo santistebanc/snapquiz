@@ -56,25 +56,27 @@ export function InRoundContent() {
         }
       }}
     >
-      <motion.div
-        variants={itemVariants}
-        initial="hidden"
-        animate="visible"
-        layout
-        transition={{
-          duration: 0.5,
-          ease: "easeOut",
-          layout: {
-            duration: 0.5,
-            ease: "easeInOut"
-          }
-        }}
-      >
-        <CategoryDisplay isPlayerMode={false} />
-      </motion.div>
-
       <AnimatePresence mode="wait">
-        {!['preQuestioning', 'transitioningNextRound'].includes(gameState.phase) && (
+        {!['transitioningNextRound', 'givingPoints', 'givingPointsAfterBuzz'].includes(gameState.phase) && (<motion.div
+          variants={itemVariants}
+          initial="hidden"
+          animate="visible"
+          layout
+          transition={{
+            duration: 0.5,
+            ease: "easeOut",
+            layout: {
+              duration: 0.5,
+              ease: "easeInOut"
+            }
+          }}
+        >
+          <CategoryDisplay isPlayerMode={false} />
+        </motion.div>
+        )}
+      </AnimatePresence>
+      <AnimatePresence mode="wait">
+        {!['preQuestioning', 'transitioningNextRound', 'givingPoints', 'givingPointsAfterBuzz'].includes(gameState.phase) && (
           <motion.div
             key="question"
             variants={itemVariants}
@@ -97,7 +99,7 @@ export function InRoundContent() {
       </AnimatePresence>
 
       <AnimatePresence mode="wait">
-        {['showingOptions', 'revealingAnswer', 'givingPoints', 'finishingRound'].includes(gameState.phase) && (
+        {['showingOptions', 'revealingAnswer'].includes(gameState.phase) && (
           <motion.div
             key="options"
             variants={itemVariants}
@@ -121,7 +123,7 @@ export function InRoundContent() {
 
       {/* Evaluation display - shown during buzz-related phases */}
       <AnimatePresence mode="wait">
-        {['evaluatingAnswer', 'afterBuzzEvaluation', 'revealAnswerAlone', 'givingPointsAfterBuzz', 'finishingRoundAfterBuzz', 'finishingAfterAnswerAlone'].includes(gameState.phase) && (
+        {['evaluatingAnswer', 'afterBuzzEvaluation', 'revealAnswerAlone'].includes(gameState.phase) && (
           <motion.div
             key="evaluation"
             variants={itemVariants}
@@ -169,7 +171,9 @@ export function InRoundContent() {
 
       {/* Points breakdown overlay */}
       <AnimatePresence>
-        <PointsBreakdown isPlayerMode={false} />
+        {['givingPoints', 'givingPointsAfterBuzz'].includes(gameState.phase) && (
+          <PointsBreakdown isPlayerMode={false} />
+        )}
       </AnimatePresence>
     </motion.div>
   );

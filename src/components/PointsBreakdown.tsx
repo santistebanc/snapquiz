@@ -33,10 +33,9 @@ export function PointsBreakdown({ isPlayerMode = false }: PointsBreakdownProps) 
   const [playersData, setPlayersData] = useState<PlayerWithPoints[]>([]);
 
   const currentRound = gameState.rounds[gameState.currentRound - 1];
-  const isActive = ['givingPoints', 'givingPointsAfterBuzz'].includes(gameState.phase);
 
   useEffect(() => {
-    if (!isActive || !currentRound) return;
+    if (!currentRound) return;
 
     const players = Object.values(gameState.players) as Player[];
     
@@ -88,9 +87,7 @@ export function PointsBreakdown({ isPlayerMode = false }: PointsBreakdownProps) 
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [isActive, gameState.phase, currentRound, gameState.players]);
-
-  if (!isActive || !currentRound) return null;
+  }, [gameState.phase, currentRound, gameState.players]);
 
   return (
     <motion.div
