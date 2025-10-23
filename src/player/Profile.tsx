@@ -11,6 +11,7 @@ import { Avatar, AvatarImage } from "../components/ui/avatar";
 import { ScrollArea } from "../components/ui/scroll-area";
 import { Separator } from "../components/ui/separator";
 import { Card, CardContent } from "../components/ui/card";
+import { Mic } from "lucide-react";
 import {
   generateAvatarUrl,
   getStoredPlayerName,
@@ -26,9 +27,10 @@ import {
 
 interface ProfileProps {
   onEditChange?: (isEditing: boolean) => void;
+  onMicrophoneTest?: () => void;
 }
 
-export function Profile({ onEditChange }: ProfileProps) {
+export function Profile({ onEditChange, onMicrophoneTest }: ProfileProps) {
   const { serverAction, connectionId } = useGameStore();
   const playerName = useCurrentPlayerName();
   const playerAvatar = useCurrentPlayerAvatar();
@@ -107,6 +109,21 @@ export function Profile({ onEditChange }: ProfileProps) {
               </Button>
             </div>
           </form>
+          
+          {/* Microphone Test Button - Only show when not editing name */}
+          {!isEditingName && onMicrophoneTest && (
+            <div className="flex justify-center mt-3">
+              <Button
+                onClick={onMicrophoneTest}
+                size="sm"
+                variant="outline"
+                className="border-warm-yellow text-warm-yellow hover:bg-warm-yellow hover:text-deep-purple bg-transparent"
+              >
+                <Mic className="w-4 h-4 mr-2" />
+                Test Microphone
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 
