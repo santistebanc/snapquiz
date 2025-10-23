@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Button } from "./ui/button";
 import { VoiceInput } from "./VoiceInput";
@@ -20,14 +20,16 @@ export function AnswerInput({ isPlayerMode = false }: AnswerInputProps) {
   const buzzedPlayerId = currentRound?.buzzedPlayerId;
   const buzzedPlayer = buzzedPlayerId ? gameState.players[buzzedPlayerId] : null;
   
-  const handleSubmit = () => {
+  const handleSubmit = useCallback(() => {
     console.log('AnswerInput handleSubmit called with answer:', answer);
     serverAction("submitAnswer", answer, connectionId);
-  };
+  }, [answer, serverAction, connectionId]);
 
   const handleVoiceTranscript = (transcript: string) => {
     console.log('AnswerInput handleVoiceTranscript called with:', transcript);
+    console.log('Current answer state before setting:', answer);
     setAnswer(transcript);
+    console.log('Answer state set to:', transcript);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -52,7 +54,7 @@ export function AnswerInput({ isPlayerMode = false }: AnswerInputProps) {
     }, 1000);
 
     return () => clearTimeout(timer);
-  }, [timeLeft, gameState.phase, isPlayerMode, buzzedPlayerId, connectionId]);
+  }, [timeLeft, gameState.phase, isPlayerMode, buzzedPlayerId, connectionId, handleSubmit]);
 
   // Reset timer and answer when phase changes to buzzing (only once per buzzing session)
   useEffect(() => {
@@ -62,6 +64,7 @@ export function AnswerInput({ isPlayerMode = false }: AnswerInputProps) {
       setAnswer("");
       resetRef.current = true;
     } else if (gameState.phase !== 'buzzing') {
+      console.log('Phase changed away from buzzing, resetting flag');
       resetRef.current = false;
     }
   }, [gameState.phase]);
