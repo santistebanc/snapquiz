@@ -3,7 +3,7 @@ import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { Button } from "./ui/button";
 import { Avatar, AvatarImage } from "./ui/avatar";
 import { Badge } from "./ui/badge";
-import { Menu, RotateCcw, ArrowRight, Settings, Gamepad2 } from "lucide-react";
+import { Menu, RotateCcw, ArrowRight, Settings, Gamepad2, Play, RotateCcw as Restart } from "lucide-react";
 import { generateAvatarUrl } from "../utils";
 import { useGameStore } from "../store";
 import type { Player } from "../types";
@@ -81,6 +81,22 @@ export function PlayerDrawer({ players, isPlayerMode = false, open: externalOpen
                 Admin Controls
               </div>
               <div className="space-y-2">
+                {/* Start Game Button - only show in lobby */}
+                {gameState.phase === 'lobby' && (
+                  <Button
+                    onClick={() => {
+                      setView('game');
+                      serverAction("startGame");
+                    }}
+                    size="sm"
+                    className="w-full bg-warm-orange hover:bg-warm-orange/90 text-white text-sm"
+                  >
+                    <Play className="w-4 h-4 mr-2" />
+                    Start Game
+                  </Button>
+                )}
+                
+                {/* Next Round Button - show during appropriate phases */}
                 {['givingPoints', 'givingPointsAfterBuzz', 'finishingRound', 'finishingRoundAfterBuzz', 'finishingAfterAnswerAlone'].includes(gameState.phase) && (
                   <Button
                     onClick={() => serverAction("nextRound")}
@@ -91,6 +107,8 @@ export function PlayerDrawer({ players, isPlayerMode = false, open: externalOpen
                     Next Round
                   </Button>
                 )}
+                
+                {/* Reset Game Button - show when game is active */}
                 {gameState.phase !== 'lobby' && gameState.phase !== 'gameOver' && (
                   <Button
                     onClick={() => serverAction("resetGame")}
@@ -98,7 +116,7 @@ export function PlayerDrawer({ players, isPlayerMode = false, open: externalOpen
                     variant="outline"
                     className="w-full border-red-500/30 text-red-400 hover:bg-red-500/10 text-sm"
                   >
-                    <RotateCcw className="w-4 h-4 mr-2" />
+                    <Restart className="w-4 h-4 mr-2" />
                     Reset Game
                   </Button>
                 )}
