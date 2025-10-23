@@ -6,6 +6,7 @@ import { QuestionDisplay } from "../components/QuestionDisplay";
 import { OptionsDisplay } from "../components/OptionsDisplay";
 import { EvaluationDisplay } from "../components/EvaluationDisplay";
 import { RevealAnswerAlone } from "../components/RevealAnswerAlone";
+import { PointsBreakdown } from "../components/PointsBreakdown";
 
 export function InRoundContent() {
   const { gameState } = useGameStore();
@@ -164,6 +165,11 @@ export function InRoundContent() {
             <RevealAnswerAlone isPlayerMode={false} />
           </motion.div>
         )}
+      </AnimatePresence>
+
+      {/* Points breakdown overlay */}
+      <AnimatePresence>
+        <PointsBreakdown isPlayerMode={false} />
       </AnimatePresence>
     </motion.div>
   );

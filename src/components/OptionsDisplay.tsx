@@ -19,8 +19,8 @@ export function OptionsDisplay({ isPlayerMode = false }: OptionsDisplayProps) {
   const disabled = ['revealingAnswer', 'givingPoints', 'finishingRound', 'transitioningNextRound'].includes(gameState.phase);
   const isInteractive = isPlayerMode;
 
-  // Check if current player is banned (already has an answer)
-  const isPlayerBanned = isPlayerMode && connectionId && currentRound.playerAnswers[connectionId] !== undefined;
+  // Check if current player is banned (already has points deducted from buzzing)
+  const isPlayerBanned = isPlayerMode && connectionId && (currentRound.pointsAwarded[connectionId] || 0) < 0;
 
   // Get correct players (screen mode only)
   const correctPlayers = !isPlayerMode && currentRound && disabled
@@ -91,9 +91,9 @@ export function OptionsDisplay({ isPlayerMode = false }: OptionsDisplayProps) {
             }
             variant="outline"
             className={`w-full text-lg px-6 py-3 h-auto transition-colors duration-300 whitespace-nowrap ${isInteractive ? "" : "cursor-default pointer-events-none"
-              } ${getOptionStyle(option)} ${isPlayerBanned && !disabled ? "opacity-50 grayscale" : ""}`}
+              } ${getOptionStyle(option)} ${isPlayerBanned && !disabled && selectedOption !== option ? "opacity-50 grayscale" : ""}`}
             style={{
-              opacity: isPlayerBanned && !disabled ? 0.5 : 1,
+              opacity: isPlayerBanned && !disabled && selectedOption !== option ? 0.5 : 1,
               ...(disabled && selectedOption === option && option !== correctAnswer
                 ? { backgroundColor: 'hsl(var(--wrong-red))', borderColor: 'hsl(var(--wrong-red))', color: 'white' }
                 : selectedOption === option && !disabled

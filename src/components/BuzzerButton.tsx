@@ -16,8 +16,8 @@ export function BuzzerButton({ isPlayerMode = false }: BuzzerButtonProps) {
   const currentRound = gameState.rounds[gameState.currentRound - 1];
   if (!currentRound) return null;
 
-  // Check if this player already has an answer (is banned)
-  const isPlayerBanned = currentRound.playerAnswers[connectionId] !== undefined;
+  // Check if this player is banned (already has points deducted from buzzing)
+  const isPlayerBanned = (currentRound.pointsAwarded[connectionId] || 0) < 0;
   if (isPlayerBanned) return null;
 
   // Check if someone else already buzzed

@@ -123,8 +123,6 @@ function givingPointsInit(this: ServerState) {
             }
         });
     }
-
-    timeout(GIVE_POINTS_TIME, this.router.toFinishingRound);
 }
 
 function transitioningNextRoundInit(this: ServerState) {
@@ -306,7 +304,7 @@ function revealAnswerAloneInit(this: ServerState) {
     }
 
     timeout(REVEAL_ANSWER_TIME, () => {
-        this.router.toFinishingAfterAnswerAlone();
+        this.router.toGivingPointsAfterBuzz();
     });
 }
 
@@ -322,8 +320,6 @@ function givingPointsAfterBuzzInit(this: ServerState) {
             }
         });
     }
-
-    timeout(GIVE_POINTS_TIME, this.router.toFinishingRoundAfterBuzz);
 }
 
 const common = { resetGame, nextRound, updateQuestions, reorderQuestions, removeQuestion, generateQuestions, joinAsPlayer, changeProfile, createOrUpdatePlayer }
@@ -341,8 +337,5 @@ export const routes = {
     revealingAnswer: { init: revealingAnswerInit, ...common },
     givingPoints: { init: givingPointsInit, ...common },
     givingPointsAfterBuzz: { init: givingPointsAfterBuzzInit, ...common },
-    finishingRound: { ...common },
-    finishingRoundAfterBuzz: { ...common },
-    finishingAfterAnswerAlone: { ...common },
     transitioningNextRound: { init: transitioningNextRoundInit, ...common },
 } as const satisfies Config;
