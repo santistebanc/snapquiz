@@ -15,6 +15,7 @@ export function MicrophoneTest({ isPlayerMode = false }: MicrophoneTestProps) {
   const [isRecording, setIsRecording] = useState(false);
   const [audioLevel, setAudioLevel] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
   
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
@@ -24,11 +25,11 @@ export function MicrophoneTest({ isPlayerMode = false }: MicrophoneTestProps) {
 
   // Check if speech recognition is supported
   useEffect(() => {
-    if (typeof window !== 'undefined' && 'webkitSpeechRecognition' in window) {
+    if (typeof window !== 'undefined' && ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
       setIsSupported(true);
       checkMicrophonePermission();
     } else {
-      setError("Speech recognition is not supported in this browser");
+      setError("Speech recognition is not supported in this browser. Please use Chrome, Edge, or Safari.");
     }
   }, []);
 
@@ -156,9 +157,40 @@ export function MicrophoneTest({ isPlayerMode = false }: MicrophoneTestProps) {
       
       recognition.onerror = (event: any) => {
         console.error('Speech recognition error:', event.error);
-        setError(`Speech recognition error: ${event.error}`);
+        
+        let errorMessage = '';
+        switch (event.error) {
+          case 'network':
+            errorMessage = 'Network error: Speech recognition service is unavailable. Please check your internet connection or try again later.';
+            break;
+          case 'not-allowed':
+            errorMessage = 'Microphone access denied. Please allow microphone access and try again.';
+            break;
+          case 'no-speech':
+            errorMessage = 'No speech detected. Please try speaking again.';
+            break;
+          case 'audio-capture':
+            errorMessage = 'Audio capture error. Please check your microphone and try again.';
+            break;
+          case 'service-not-allowed':
+            errorMessage = 'Speech recognition service not allowed. Please try again later.';
+            break;
+          default:
+            errorMessage = `Speech recognition error: ${event.error}`;
+        }
+        
+        setError(errorMessage);
         setIsListening(false);
         setIsRecording(false);
+        
+        // Auto-retry for network errors (up to 2 times)
+        if (event.error === 'network' && retryCount < 2) {
+          setTimeout(() => {
+            setRetryCount(prev => prev + 1);
+            setError(null);
+            startListening();
+          }, 2000);
+        }
       };
       
       recognition.onend = () => {
@@ -330,6 +362,19 @@ export function MicrophoneTest({ isPlayerMode = false }: MicrophoneTestProps) {
             <span className="text-sm font-medium">Error</span>
           </div>
           <p className="text-red-300/80 text-sm mt-1">{error}</p>
+          {error.includes('Network error') && retryCount >= 2 && (
+            <Button
+              onClick={() => {
+                setRetryCount(0);
+                setError(null);
+                startListening();
+              }}
+              size="sm"
+              className="mt-2 bg-red-500 hover:bg-red-600 text-white"
+            >
+              Try Again
+            </Button>
+          )}
         </div>
       )}
 
@@ -339,6 +384,7 @@ export function MicrophoneTest({ isPlayerMode = false }: MicrophoneTestProps) {
         <p>• Use "Start Test" to check if your microphone is working</p>
         <p>• Speak clearly and watch the audio level indicator</p>
         <p>• Your spoken words should appear in the transcript</p>
+        <p>• <strong>Edge users:</strong> Network errors are common - try refreshing the page or using Chrome</p>
       </div>
     </div>
   );
