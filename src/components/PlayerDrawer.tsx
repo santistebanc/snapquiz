@@ -3,8 +3,9 @@ import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { Button } from "./ui/button";
 import { Avatar, AvatarImage } from "./ui/avatar";
 import { Badge } from "./ui/badge";
-import { Menu } from "lucide-react";
+import { Menu, RotateCcw, ArrowRight, Settings } from "lucide-react";
 import { generateAvatarUrl } from "../utils";
+import { useGameStore } from "../store";
 import type { Player } from "../types";
 
 // Component for animating counter from previous to current value
@@ -34,9 +35,14 @@ interface PlayerDrawerProps {
 export function PlayerDrawer({ players, isPlayerMode = false, open: externalOpen, onOpenChange }: PlayerDrawerProps) {
   const [internalOpen, setInternalOpen] = useState(false);
   const [previousPoints, setPreviousPoints] = useState<Record<string, number>>({});
+  const { gameState, connectionId, serverAction, setView } = useGameStore();
   const open = externalOpen !== undefined ? externalOpen : internalOpen;
   const setOpen = onOpenChange || setInternalOpen;
   const sortedPlayers = [...players].sort((a, b) => b.points - a.points);
+  
+  // Check if current player is admin
+  const currentPlayer = connectionId ? gameState.players[connectionId] : null;
+  const isCurrentPlayerAdmin = currentPlayer?.isAdmin || false;
 
   // Track point changes for animation
   useEffect(() => {
@@ -68,6 +74,47 @@ export function PlayerDrawer({ players, isPlayerMode = false, open: externalOpen
         }`}
       >
         <div className="p-4 space-y-3">
+          {/* Admin Controls - only show for admin players */}
+          {isCurrentPlayerAdmin && isPlayerMode && (
+            <div className="space-y-2 mb-4 pb-4 border-b border-border-muted/30">
+              <div className="text-xs font-semibold text-warm-cream/60 uppercase tracking-wide">
+                Admin Controls
+              </div>
+              <div className="space-y-2">
+                {['givingPoints', 'givingPointsAfterBuzz', 'finishingRound', 'finishingRoundAfterBuzz', 'finishingAfterAnswerAlone'].includes(gameState.phase) && (
+                  <Button
+                    onClick={() => serverAction("nextRound")}
+                    size="sm"
+                    className="w-full bg-warm-orange hover:bg-warm-orange/90 text-white text-sm"
+                  >
+                    <ArrowRight className="w-4 h-4 mr-2" />
+                    Next Round
+                  </Button>
+                )}
+                {gameState.phase !== 'lobby' && gameState.phase !== 'gameOver' && (
+                  <Button
+                    onClick={() => serverAction("resetGame")}
+                    size="sm"
+                    variant="outline"
+                    className="w-full border-red-500/30 text-red-400 hover:bg-red-500/10 text-sm"
+                  >
+                    <RotateCcw className="w-4 h-4 mr-2" />
+                    Reset Game
+                  </Button>
+                )}
+                <Button
+                  onClick={() => setView('settings')}
+                  size="sm"
+                  variant="outline"
+                  className="w-full border-teal-primary/30 text-teal-primary hover:bg-teal-primary/10 text-sm"
+                >
+                  <Settings className="w-4 h-4 mr-2" />
+                  Settings
+                </Button>
+              </div>
+            </div>
+          )}
+          
           {sortedPlayers.map((player, index) => (
             <div
               key={player.id}
