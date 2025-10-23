@@ -35,7 +35,7 @@ interface PlayerDrawerProps {
 export function PlayerDrawer({ players, isPlayerMode = false, open: externalOpen, onOpenChange }: PlayerDrawerProps) {
   const [internalOpen, setInternalOpen] = useState(false);
   const [previousPoints, setPreviousPoints] = useState<Record<string, number>>({});
-  const { gameState, connectionId, serverAction, setView } = useGameStore();
+  const { gameState, connectionId, serverAction, setView, view } = useGameStore();
   const open = externalOpen !== undefined ? externalOpen : internalOpen;
   const setOpen = onOpenChange || setInternalOpen;
   const sortedPlayers = [...players].sort((a, b) => b.points - a.points);
@@ -102,24 +102,28 @@ export function PlayerDrawer({ players, isPlayerMode = false, open: externalOpen
                     Reset Game
                   </Button>
                 )}
-                <Button
-                  onClick={() => setView('settings')}
-                  size="sm"
-                  variant="outline"
-                  className="w-full border-teal-primary text-teal-primary bg-card-dark/60 hover:bg-teal-primary hover:text-white"
-                >
-                  <Settings className="w-4 h-4 mr-2" />
-                  Settings
-                </Button>
-                <Button
-                  onClick={() => setView('game')}
-                  size="sm"
-                  variant="outline"
-                  className="w-full border-teal-primary text-teal-primary bg-card-dark/60 hover:bg-teal-primary hover:text-white"
-                >
-                  <Gamepad2 className="w-4 h-4 mr-2" />
-                  Back to Game
-                </Button>
+                {view !== 'settings' && (
+                  <Button
+                    onClick={() => setView('settings')}
+                    size="sm"
+                    variant="outline"
+                    className="w-full border-teal-primary text-teal-primary bg-card-dark/60 hover:bg-teal-primary hover:text-white"
+                  >
+                    <Settings className="w-4 h-4 mr-2" />
+                    Settings
+                  </Button>
+                )}
+                {view !== 'game' && (
+                  <Button
+                    onClick={() => setView('game')}
+                    size="sm"
+                    variant="outline"
+                    className="w-full border-teal-primary text-teal-primary bg-card-dark/60 hover:bg-teal-primary hover:text-white"
+                  >
+                    <Gamepad2 className="w-4 h-4 mr-2" />
+                    Back to Game
+                  </Button>
+                )}
               </div>
             </div>
           )}
