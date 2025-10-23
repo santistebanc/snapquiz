@@ -26,7 +26,6 @@ export function VoiceInput({ onTranscript, isActive, disabled = false, autoStart
   const [isSupported, setIsSupported] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [retryCount, setRetryCount] = useState(0);
   const recognitionRef = useRef<any>(null);
   const submitTimeoutRef = useRef<number | null>(null);
   const currentTranscriptRef = useRef<string>('');
@@ -45,6 +44,13 @@ export function VoiceInput({ onTranscript, isActive, disabled = false, autoStart
       recognition.continuous = true;
       recognition.interimResults = true;
       recognition.lang = 'en-US';
+      
+      // Mobile-specific optimizations
+      if (navigator.userAgent.includes('Mobile') || navigator.userAgent.includes('Android') || navigator.userAgent.includes('iPhone')) {
+        recognition.continuous = false; // Mobile works better with continuous: false
+        recognition.maxAlternatives = 1;
+        recognition.serviceURI = 'wss://www.google.com/speech-api/v2/recognize';
+      }
 
       recognition.onstart = () => {
         setIsListening(true);
@@ -90,34 +96,38 @@ export function VoiceInput({ onTranscript, isActive, disabled = false, autoStart
         console.error('Speech recognition error:', event.error);
         
         let errorMessage = '';
+        const isMobile = navigator.userAgent.includes('Mobile') || navigator.userAgent.includes('Android') || navigator.userAgent.includes('iPhone');
+        
         switch (event.error) {
           case 'network':
-            // Auto-retry for network errors (up to 2 times)
-            if (retryCount < 2) {
-              setRetryCount(prev => prev + 1);
-              setError(null);
-              setTimeout(() => {
-                console.log(`Retrying voice input (attempt ${retryCount + 1}/2)`);
-                startListening();
-              }, 2000);
-              return;
-            }
-            errorMessage = 'Network error: Speech recognition service is unavailable. Please check your internet connection.';
+            errorMessage = isMobile 
+              ? 'Network error: Please check your mobile internet connection and try again.'
+              : 'Network error: Speech recognition service is unavailable. Please check your internet connection.';
             break;
           case 'not-allowed':
-            errorMessage = 'Microphone access denied. Please allow microphone access and try again.';
+            errorMessage = isMobile
+              ? 'Microphone access denied. Please allow microphone access in your mobile browser settings and try again.'
+              : 'Microphone access denied. Please allow microphone access and try again.';
             break;
           case 'no-speech':
-            errorMessage = 'No speech detected. Please try speaking again.';
+            errorMessage = isMobile
+              ? 'No speech detected. Please speak clearly and try again. Make sure you are in a quiet environment.'
+              : 'No speech detected. Please try speaking again.';
             break;
           case 'audio-capture':
-            errorMessage = 'Audio capture error. Please check your microphone and try again.';
+            errorMessage = isMobile
+              ? 'Audio capture error. Please check your mobile microphone and ensure no other apps are using it.'
+              : 'Audio capture error. Please check your microphone and try again.';
             break;
           case 'service-not-allowed':
-            errorMessage = 'Speech recognition service not allowed. Please try again later.';
+            errorMessage = isMobile
+              ? 'Speech recognition service not allowed. Please try refreshing the page or using a different browser.'
+              : 'Speech recognition service not allowed. Please try again later.';
             break;
           case 'aborted':
-            errorMessage = 'Speech recognition was aborted. Please try again.';
+            errorMessage = isMobile
+              ? 'Speech recognition was aborted. Please try again and ensure you are speaking clearly.'
+              : 'Speech recognition was aborted. Please try again.';
             break;
           default:
             errorMessage = `Speech recognition error: ${event.error}`;
@@ -145,11 +155,14 @@ export function VoiceInput({ onTranscript, isActive, disabled = false, autoStart
   // Auto-start listening when component becomes active and autoStart is true
   useEffect(() => {
     if (autoStart && isActive && isSupported && !isListening && !disabled) {
-      // Small delay to ensure component is fully mounted
+      // Mobile needs longer delay for proper initialization
+      const isMobile = navigator.userAgent.includes('Mobile') || navigator.userAgent.includes('Android') || navigator.userAgent.includes('iPhone');
+      const delay = isMobile ? 1000 : 500; // Mobile needs more time
+      
       const timer = setTimeout(() => {
-        console.log('Auto-starting voice input');
+        console.log('Auto-starting voice input', isMobile ? '(mobile)' : '(desktop)');
         startListening();
-      }, 500);
+      }, delay);
       return () => clearTimeout(timer);
     }
   }, [autoStart, isActive, isSupported, isListening, disabled]);
@@ -173,7 +186,6 @@ export function VoiceInput({ onTranscript, isActive, disabled = false, autoStart
     
     setError(null);
     setTranscript('');
-    setRetryCount(0); // Reset retry count on manual start
     recognitionRef.current.start();
   };
 
