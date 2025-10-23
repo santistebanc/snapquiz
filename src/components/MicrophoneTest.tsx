@@ -302,7 +302,7 @@ export function MicrophoneTest({ isPlayerMode = false }: MicrophoneTestProps) {
                 onClick={() => setTranscript("")}
                 size="sm"
                 variant="outline"
-                className="border-warm-cream/30 text-warm-cream hover:bg-warm-cream/10"
+                className="border-warm-cream/30 text-warm-cream hover:bg-warm-cream/10 bg-transparent"
               >
                 Clear
               </Button>
