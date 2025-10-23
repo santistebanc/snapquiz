@@ -1,13 +1,117 @@
-import React from "react";
+import React, { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { Container } from "../components/ui/container";
 import { Card, CardContent } from "../components/ui/card";
-import { Button } from "../components/ui/button";
 import { Text } from "../components/ui/text";
-import { PlayerDrawer } from "../components/PlayerDrawer";
+import { CategoryInput } from "../components/CategoryInput";
+import { QuestionList } from "../components/QuestionList";
 import { useGameStore } from "../store";
+import { Alert, AlertDescription } from "../components/ui/alert";
+import { AlertTriangle, Shuffle, Shield, ShieldOff, User } from "lucide-react";
+import type { Question } from "../types";
+import { Button } from "../components/ui/button";
+import { Avatar, AvatarFallback } from "../components/ui/avatar";
+import { PlayerDrawer } from "../components/PlayerDrawer";
 
 export default function Settings() {
-  const { setView, gameState } = useGameStore();
+  const { gameState, serverAction } = useGameStore();
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [optimisticQuestions, setOptimisticQuestions] = useState<Question[]>([]);
+  const prevCountRef = useRef(0);
+  const timeoutRef = useRef<number | null>(null);
+  const [categoryInputValue, setCategoryInputValue] = useState('');
+
+  // Sync optimistic questions with server state
+  useEffect(() => {
+    setOptimisticQuestions(gameState.questions);
+  }, [gameState.questions]);
+
+  const handleCategoriesChange = useCallback((categories: string[]) => {
+    // Categories are managed locally in CategoryInput
+  }, []);
+
+  const handleGenerate = useCallback(async (categories: string[]) => {
+    setIsGenerating(true);
+    setError(null);
+    prevCountRef.current = optimisticQuestions.length;
+
+    try {
+      // Fire-and-forget to server; UI stays loading until update arrives
+      serverAction("generateQuestions", categories);
+
+      // Fallback timeout to ensure loading doesn't get stuck (20s)
+      if (timeoutRef.current) window.clearTimeout(timeoutRef.current);
+      timeoutRef.current = window.setTimeout(() => {
+        setIsGenerating(false);
+        timeoutRef.current = null;
+      }, 20000) as unknown as number;
+    } catch (err) {
+      setError("Failed to generate questions. Please try again.");
+      setIsGenerating(false);
+      console.error("Generation error:", err);
+    }
+  }, [serverAction, optimisticQuestions.length]);
+
+  // When questions list grows vs previous count, stop loading
+  useEffect(() => {
+    if (!isGenerating) return;
+    if (optimisticQuestions.length > prevCountRef.current) {
+      setIsGenerating(false);
+      if (timeoutRef.current) {
+        window.clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+    }
+  }, [optimisticQuestions.length, isGenerating]);
+
+  const handleReorder = useCallback((oldIndex: number, newIndex: number) => {
+    // Optimistic update - immediately update the UI
+    const newQuestions = [...optimisticQuestions];
+    const [movedQuestion] = newQuestions.splice(oldIndex, 1);
+    newQuestions.splice(newIndex, 0, movedQuestion);
+    setOptimisticQuestions(newQuestions);
+    
+    // Send to server
+    serverAction("reorderQuestions", oldIndex, newIndex);
+  }, [serverAction, optimisticQuestions]);
+
+  const handleRemove = useCallback((questionId: string) => {
+    serverAction("removeQuestion", questionId);
+  }, [serverAction]);
+
+  const handleShuffle = useCallback(() => {
+    if (optimisticQuestions.length < 2) return;
+    const shuffled = [...optimisticQuestions];
+    // Fisher-Yates shuffle
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    setOptimisticQuestions(shuffled);
+    serverAction("updateQuestions", shuffled);
+  }, [optimisticQuestions, serverAction]);
+
+  const handleCategoryBadgeClick = useCallback((category: string) => {
+    setCategoryInputValue(category);
+  }, []);
+
+  const handleToggleAdmin = useCallback((playerId: string) => {
+    serverAction("togglePlayerAdmin", playerId);
+  }, [serverAction]);
+
+  const hasQuestions = optimisticQuestions.length > 0;
+  
+  const playersList = useMemo(() => Object.values(gameState.players), [gameState.players]);
+
+  // Build category counts from current questions
+  const categoryCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const q of optimisticQuestions) {
+      const key = (q.category || "Uncategorized").trim();
+      counts[key] = (counts[key] || 0) + 1;
+    }
+    return counts;
+  }, [optimisticQuestions]);
 
   return (
     <Container variant="page">
@@ -15,56 +119,134 @@ export default function Settings() {
         players={Object.values(gameState.players)}
         isPlayerMode={true}
       />
-      <div className="flex flex-col items-center justify-center min-h-[70vh] space-y-8">
+      <div className="max-w-7xl mx-auto space-y-6">
         <Card className="bg-card-dark/60 backdrop-blur-sm border-border-muted/30">
-          <CardContent className="p-8 text-center space-y-6">
-            <Text variant="large" className="text-warm-cream text-4xl font-bold mb-4">
-              Player Settings
-            </Text>
-            
-            <Text variant="large" className="text-warm-cream/80 mb-6">
-              Configure your player settings here
-            </Text>
+          <CardContent className="p-6">
+            <div className="space-y-6">
+              <div>
+                <Text variant="large" className="text-warm-cream text-4xl font-bold mb-3">
+                  Game Settings
+                </Text>
+                <Text className="text-warm-cream/80 text-lg">
+                  Manage players, questions, and game configuration
+                </Text>
+              </div>
 
-            <div className="space-y-4">
-              <Button 
-                onClick={() => setView('lobby')}
-                className="bg-teal-primary hover:bg-teal-primary/90 text-white w-full"
-              >
-                Back to Lobby
-              </Button>
-              
-              <Button 
-                onClick={() => setView('game')}
-                className="bg-teal-primary hover:bg-teal-primary/90 text-white w-full"
-              >
-                Join Game
-              </Button>
-            </div>
-            
-            {/* Navigation buttons */}
-            <div className="flex gap-2 pt-4 border-t border-border-muted/30">
-              <Button 
-                onClick={() => setView('lobby')}
-                size="sm"
-                className="bg-teal-primary hover:bg-teal-primary/90 text-white flex-1"
-              >
-                Lobby
-              </Button>
-              <Button 
-                onClick={() => setView('settings')}
-                size="sm"
-                className="bg-teal-primary hover:bg-teal-primary/90 text-white flex-1"
-              >
-                Settings
-              </Button>
-              <Button 
-                onClick={() => setView('game')}
-                size="sm"
-                className="bg-teal-primary hover:bg-teal-primary/90 text-white flex-1"
-              >
-                Game
-              </Button>
+              {/* Player Management Section */}
+              {playersList.length > 0 && (
+                <div className="space-y-3">
+                  <Text variant="large" className="text-warm-cream text-2xl font-bold">
+                    Players
+                  </Text>
+                  <div className="grid gap-3">
+                    {playersList.map((player) => (
+                      <div
+                        key={player.id}
+                        className="flex items-center justify-between p-4 bg-border-muted/20 border border-border-muted/30 rounded-lg hover:bg-border-muted/30 transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-10 w-10 border-2 border-warm-yellow">
+                            <AvatarFallback className="bg-warm-orange text-white text-lg font-bold">
+                              {player.avatar}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex flex-col">
+                            <Text className="text-warm-cream font-semibold text-lg">
+                              {player.name || "Anonymous"}
+                            </Text>
+                            <Text className="text-warm-cream/60 text-sm">
+                              {player.points} points
+                            </Text>
+                          </div>
+                        </div>
+                        <Button
+                          onClick={() => handleToggleAdmin(player.id)}
+                          variant={player.isAdmin ? "default" : "outline"}
+                          size="sm"
+                          className={player.isAdmin 
+                            ? "bg-warm-yellow hover:bg-warm-yellow/90 text-white" 
+                            : "border-border-muted/30 bg-card-dark/50 hover:bg-border-muted/30 text-warm-cream/80"
+                          }
+                        >
+                          {player.isAdmin ? (
+                            <>
+                              <Shield className="w-4 h-4 mr-2" />
+                              Admin
+                            </>
+                          ) : (
+                            <>
+                              <User className="w-4 h-4 mr-2" />
+                              Player
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <CategoryInput
+                onCategoriesChange={handleCategoriesChange}
+                onGenerate={handleGenerate}
+                isGenerating={isGenerating}
+                roomId={gameState.roomId || ""}
+                inputValue={categoryInputValue}
+                onInputValueChange={setCategoryInputValue}
+              />
+
+              {/* Category usage summary */}
+              {Object.keys(categoryCounts).length > 0 && (
+                <div className="flex flex-wrap items-center gap-2">
+                  {Object.entries(categoryCounts).map(([cat, count]) => (
+                    <div
+                      key={cat}
+                      onClick={() => handleCategoryBadgeClick(cat)}
+                      className="flex items-center gap-2 pl-2 pr-2 py-1 bg-border-muted/20 border border-border-muted/30 rounded-sm text-warm-cream/90 cursor-pointer hover:bg-border-muted/30 transition-colors"
+                    >
+                      <span className="text-sm">{cat}</span>
+                      <span className="text-[11px] min-w-5 h-5 px-1 inline-flex items-center justify-center rounded-full bg-card-dark/60 border border-border-muted/30">
+                        {count}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {error && (
+                <Alert className="border-red-500/30 bg-red-500/10">
+                  <AlertTriangle className="h-5 w-5 text-red-400" />
+                  <AlertDescription className="text-red-400 text-base">
+                    {error}
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {!hasQuestions && (
+                <Alert className="border-yellow-500/30 bg-yellow-500/10">
+                  <AlertTriangle className="h-5 w-5 text-yellow-400" />
+                  <AlertDescription className="text-yellow-400 text-base">
+                    You need at least one question to start the game. Add questions manually or generate them using the categories above.
+                  </AlertDescription>
+                </Alert>
+              )}
+
+            <QuestionList
+              questions={optimisticQuestions}
+              onReorder={handleReorder}
+              onRemove={handleRemove}
+              rightActions={(
+                <Button
+                  onClick={handleShuffle}
+                  disabled={!hasQuestions}
+                  variant="outline"
+                  className="border-border-muted/30 bg-card-dark/50 hover:bg-border-muted/30 text-warm-cream/80"
+                >
+                  <Shuffle className="w-4 h-4 mr-2" />
+                  Shuffle
+                </Button>
+              )}
+            />
             </div>
           </CardContent>
         </Card>
