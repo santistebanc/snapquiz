@@ -7,9 +7,10 @@ interface VoiceInputProps {
   onTranscript: (text: string) => void;
   isActive: boolean;
   disabled?: boolean;
+  autoStart?: boolean;
 }
 
-export function VoiceInput({ onTranscript, isActive, disabled = false }: VoiceInputProps) {
+export function VoiceInput({ onTranscript, isActive, disabled = false, autoStart = false }: VoiceInputProps) {
   const [isListening, setIsListening] = useState(false);
   const [isSupported, setIsSupported] = useState(false);
   const [transcript, setTranscript] = useState('');
@@ -62,6 +63,17 @@ export function VoiceInput({ onTranscript, isActive, disabled = false }: VoiceIn
       };
     }
   }, [onTranscript]);
+
+  // Auto-start listening when component becomes active and autoStart is true
+  useEffect(() => {
+    if (autoStart && isActive && isSupported && !isListening && !disabled) {
+      // Small delay to ensure component is fully mounted
+      const timer = setTimeout(() => {
+        startListening();
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [autoStart, isActive, isSupported, isListening, disabled]);
 
   const startListening = () => {
     if (!recognitionRef.current || isListening || disabled) return;

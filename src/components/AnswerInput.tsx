@@ -13,7 +13,7 @@ export function AnswerInput({ isPlayerMode = false }: AnswerInputProps) {
   const { gameState, serverAction, connectionId } = useGameStore();
   const [answer, setAnswer] = useState("");
   const [timeLeft, setTimeLeft] = useState(BUZZER_ANSWER_TIMEOUT_SECONDS);
-  const [useVoice, setUseVoice] = useState(false);
+  const [useVoice, setUseVoice] = useState(true);
 
   const currentRound = gameState.rounds[gameState.currentRound - 1];
   const buzzedPlayerId = currentRound?.buzzedPlayerId;
@@ -126,7 +126,7 @@ export function AnswerInput({ isPlayerMode = false }: AnswerInputProps) {
               : "border-warm-cream/30 text-warm-cream hover:bg-warm-cream/10"
             }
           >
-            Voice
+            🎤 Voice
           </Button>
         </div>
 
@@ -149,6 +149,7 @@ export function AnswerInput({ isPlayerMode = false }: AnswerInputProps) {
             onTranscript={handleVoiceTranscript}
             isActive={gameState.phase === 'buzzing'}
             disabled={timeLeft <= 0}
+            autoStart={true}
           />
         )}
         
