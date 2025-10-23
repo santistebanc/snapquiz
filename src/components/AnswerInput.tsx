@@ -13,7 +13,17 @@ export function AnswerInput({ isPlayerMode = false }: AnswerInputProps) {
   const { gameState, serverAction, connectionId } = useGameStore();
   const [answer, setAnswer] = useState("");
   const [timeLeft, setTimeLeft] = useState(BUZZER_ANSWER_TIMEOUT_SECONDS);
-  const [useVoice, setUseVoice] = useState(true);
+  
+  // Load voice preference from localStorage, default to true
+  const [useVoice, setUseVoice] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('snapquiz-voice-preference');
+      return saved ? JSON.parse(saved) : true;
+    }
+    return true;
+  });
+  
+  const [showSavedMessage, setShowSavedMessage] = useState(false);
   const resetRef = useRef(false);
   const answerRef = useRef("");
 
@@ -32,6 +42,17 @@ export function AnswerInput({ isPlayerMode = false }: AnswerInputProps) {
     setAnswer(transcript);
     answerRef.current = transcript; // Update ref with latest value
     console.log('Answer state set to:', transcript);
+  };
+
+  // Save voice preference to localStorage when it changes
+  const handleVoiceToggle = (newUseVoice: boolean) => {
+    setUseVoice(newUseVoice);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('snapquiz-voice-preference', JSON.stringify(newUseVoice));
+      // Show brief confirmation message
+      setShowSavedMessage(true);
+      setTimeout(() => setShowSavedMessage(false), 2000);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -118,29 +139,38 @@ export function AnswerInput({ isPlayerMode = false }: AnswerInputProps) {
 
       <div className="space-y-4">
         {/* Input method toggle */}
-        <div className="flex gap-2 justify-center">
-          <Button
-            onClick={() => setUseVoice(false)}
-            variant={!useVoice ? "default" : "outline"}
-            size="sm"
-            className={!useVoice 
-              ? "bg-warm-yellow hover:bg-warm-yellow/90 text-deep-purple" 
-              : "border-warm-cream/30 text-warm-cream hover:bg-warm-cream/10 bg-transparent"
-            }
-          >
-            Type
-          </Button>
-          <Button
-            onClick={() => setUseVoice(true)}
-            variant={useVoice ? "default" : "outline"}
-            size="sm"
-            className={useVoice 
-              ? "bg-warm-yellow hover:bg-warm-yellow/90 text-deep-purple" 
-              : "border-warm-cream/30 text-warm-cream hover:bg-warm-cream/10 bg-transparent"
-            }
-          >
-            🎤 Voice
-          </Button>
+        <div className="flex flex-col items-center gap-2">
+          <div className="flex gap-2 justify-center">
+            <Button
+              onClick={() => handleVoiceToggle(false)}
+              variant={!useVoice ? "default" : "outline"}
+              size="sm"
+              className={!useVoice 
+                ? "bg-warm-yellow hover:bg-warm-yellow/90 text-deep-purple" 
+                : "border-warm-cream/30 text-warm-cream hover:bg-warm-cream/10 bg-transparent"
+              }
+            >
+              Type
+            </Button>
+            <Button
+              onClick={() => handleVoiceToggle(true)}
+              variant={useVoice ? "default" : "outline"}
+              size="sm"
+              className={useVoice 
+                ? "bg-warm-yellow hover:bg-warm-yellow/90 text-deep-purple" 
+                : "border-warm-cream/30 text-warm-cream hover:bg-warm-cream/10 bg-transparent"
+              }
+            >
+              🎤 Voice
+            </Button>
+          </div>
+          <div className="text-xs text-warm-cream/50">
+            {showSavedMessage ? (
+              <span className="text-warm-yellow">✓ Preference saved!</span>
+            ) : (
+              "Your preference is saved for next time"
+            )}
+          </div>
         </div>
 
         {/* Text input */}
