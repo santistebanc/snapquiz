@@ -3,7 +3,7 @@ import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { Button } from "./ui/button";
 import { Avatar, AvatarImage } from "./ui/avatar";
 import { Badge } from "./ui/badge";
-import { Menu, RotateCcw, ArrowRight, Settings } from "lucide-react";
+import { Menu, RotateCcw, ArrowRight, Settings, Gamepad2 } from "lucide-react";
 import { generateAvatarUrl } from "../utils";
 import { useGameStore } from "../store";
 import type { Player } from "../types";
@@ -110,6 +110,15 @@ export function PlayerDrawer({ players, isPlayerMode = false, open: externalOpen
                 >
                   <Settings className="w-4 h-4 mr-2" />
                   Settings
+                </Button>
+                <Button
+                  onClick={() => setView('game')}
+                  size="sm"
+                  variant="outline"
+                  className="w-full border-warm-orange/30 text-warm-orange hover:bg-warm-orange/10 bg-transparent text-sm"
+                >
+                  <Gamepad2 className="w-4 h-4 mr-2" />
+                  Back to Game
                 </Button>
               </div>
             </div>
