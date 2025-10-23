@@ -112,7 +112,7 @@ export function AnswerInput({ isPlayerMode = false }: AnswerInputProps) {
             size="sm"
             className={!useVoice 
               ? "bg-warm-yellow hover:bg-warm-yellow/90 text-deep-purple" 
-              : "border-warm-cream/30 text-warm-cream hover:bg-warm-cream/10"
+              : "border-warm-cream/30 text-warm-cream hover:bg-warm-cream/10 bg-transparent"
             }
           >
             Type
@@ -123,7 +123,7 @@ export function AnswerInput({ isPlayerMode = false }: AnswerInputProps) {
             size="sm"
             className={useVoice 
               ? "bg-warm-yellow hover:bg-warm-yellow/90 text-deep-purple" 
-              : "border-warm-cream/30 text-warm-cream hover:bg-warm-cream/10"
+              : "border-warm-cream/30 text-warm-cream hover:bg-warm-cream/10 bg-transparent"
             }
           >
             🎤 Voice
