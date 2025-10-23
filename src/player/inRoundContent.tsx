@@ -195,36 +195,61 @@ export function InRoundContent() {
         )}
       </AnimatePresence>
 
-      {/* Reveal answer alone - shown when all players are banned */}
+      {/* Reveal answer alone - shown when all players are banned OR when correct answer is given but doesn't match exactly */}
       <AnimatePresence mode="wait">
-        {['revealAnswerAlone', 'finishingAfterAnswerAlone'].includes(gameState.phase) && (
-          <motion.div
-            key="reveal-answer"
-            variants={itemVariants}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
-            layout
-            transition={{
-              duration: 0.5,
-              ease: "easeOut",
-              layout: {
+        {(() => {
+          const currentRound = gameState.rounds[gameState.currentRound - 1];
+          const shouldShowRevealAnswer = ['revealAnswerAlone', 'finishingAfterAnswerAlone'].includes(gameState.phase);
+          
+          // Also show if answer is correct but doesn't match exactly
+          const isAfterBuzzEval = gameState.phase === 'afterBuzzEvaluation';
+          const isCorrect = currentRound?.evaluationResult === 'correct';
+          const buzzedPlayerId = currentRound?.buzzedPlayerId;
+          const submittedAnswer = buzzedPlayerId ? currentRound?.playerAnswers[buzzedPlayerId] : null;
+          const currentQuestion = gameState.questions.find(q => q.id === currentRound?.questionId);
+          const isExactMatch = submittedAnswer?.toLowerCase().trim() === currentQuestion?.answer.toLowerCase().trim();
+          
+          const shouldShowForInexactMatch = isAfterBuzzEval && isCorrect && !isExactMatch && submittedAnswer;
+          
+          // Debug logging (only in player mode to reduce noise)
+          if (isAfterBuzzEval && isCorrect) {
+            console.log('RevealAnswer Debug (Player):', {
+              phase: gameState.phase,
+              isCorrect,
+              submittedAnswer,
+              correctAnswer: currentQuestion?.answer,
+              isExactMatch,
+              shouldShowForInexactMatch
+            });
+          }
+          
+          return (shouldShowRevealAnswer || shouldShowForInexactMatch) && (
+            <motion.div
+              key="reveal-answer"
+              variants={itemVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              layout
+              transition={{
                 duration: 0.5,
-                ease: "easeInOut"
-              }
-            }}
-          >
-            <RevealAnswerAlone isPlayerMode={true} />
-          </motion.div>
-        )}
+                ease: "easeOut",
+                layout: {
+                  duration: 0.5,
+                  ease: "easeInOut"
+                }
+              }}
+            >
+              <RevealAnswerAlone isPlayerMode={true} />
+            </motion.div>
+          );
+        })()}
       </AnimatePresence>
 
       {/* Points breakdown overlay */}
-      <AnimatePresence>
-        {['givingPoints', 'givingPointsAfterBuzz'].includes(gameState.phase) && (
-          <PointsBreakdown isPlayerMode={true} />
-        )}
-      </AnimatePresence>
+      {['givingPoints', 'givingPointsAfterBuzz'].includes(gameState.phase) && (
+        <PointsBreakdown isPlayerMode={true} />
+      )}
     </motion.div>
   );
 }

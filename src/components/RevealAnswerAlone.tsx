@@ -10,8 +10,9 @@ export function RevealAnswerAlone({ isPlayerMode = false }: RevealAnswerAlonePro
 
   const currentRound = gameState.rounds[gameState.currentRound - 1];
   
-  // Only show during revealAnswerAlone and finishingAfterAnswerAlone phases
-  if (gameState.phase !== 'revealAnswerAlone' && gameState.phase !== 'finishingAfterAnswerAlone') return null;
+  // Show during revealAnswerAlone, finishingAfterAnswerAlone, or afterBuzzEvaluation (for inexact correct answers)
+  const validPhases = ['revealAnswerAlone', 'finishingAfterAnswerAlone', 'afterBuzzEvaluation'];
+  if (!validPhases.includes(gameState.phase)) return null;
   if (!currentRound) return null;
 
   const currentQuestion = gameState.questions.find(q => q.id === currentRound.questionId);
