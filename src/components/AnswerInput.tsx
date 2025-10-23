@@ -20,10 +20,12 @@ export function AnswerInput({ isPlayerMode = false }: AnswerInputProps) {
   const buzzedPlayer = buzzedPlayerId ? gameState.players[buzzedPlayerId] : null;
   
   const handleSubmit = () => {
+    console.log('AnswerInput handleSubmit called with answer:', answer);
     serverAction("submitAnswer", answer, connectionId);
   };
 
   const handleVoiceTranscript = (transcript: string) => {
+    console.log('AnswerInput handleVoiceTranscript called with:', transcript);
     setAnswer(transcript);
   };
 

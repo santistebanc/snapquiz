@@ -62,10 +62,13 @@ export function VoiceInput({ onTranscript, isActive, disabled = false, autoStart
 
         // Set new timeout to auto-submit after 1.5 seconds of silence
         if (currentTranscript.trim() && onSubmit) {
+          console.log('Setting timeout for auto-submit with transcript:', currentTranscript);
           submitTimeoutRef.current = window.setTimeout(() => {
-            console.log('Auto-submitting voice input:', currentTranscript);
+            console.log('Timeout triggered - Auto-submitting voice input:', currentTranscript);
             onSubmit();
           }, 1500);
+        } else {
+          console.log('Not setting timeout - transcript:', currentTranscript.trim(), 'onSubmit:', !!onSubmit);
         }
       };
 
@@ -76,12 +79,15 @@ export function VoiceInput({ onTranscript, isActive, disabled = false, autoStart
       };
 
       recognition.onend = () => {
+        console.log('Recognition ended - isListening:', isListening, 'transcript:', currentTranscriptRef.current);
         setIsListening(false);
         // If there's a transcript and no timeout is set, submit immediately
         const currentTranscript = currentTranscriptRef.current.trim();
         if (currentTranscript && onSubmit && !submitTimeoutRef.current) {
           console.log('Auto-submitting on recognition end:', currentTranscript);
           onSubmit();
+        } else {
+          console.log('Not submitting on recognition end - transcript:', currentTranscript, 'onSubmit:', !!onSubmit, 'timeout:', !!submitTimeoutRef.current);
         }
       };
     }
@@ -92,11 +98,17 @@ export function VoiceInput({ onTranscript, isActive, disabled = false, autoStart
     if (autoStart && isActive && isSupported && !isListening && !disabled) {
       // Small delay to ensure component is fully mounted
       const timer = setTimeout(() => {
+        console.log('Auto-starting voice input');
         startListening();
       }, 500);
       return () => clearTimeout(timer);
     }
   }, [autoStart, isActive, isSupported, isListening, disabled]);
+
+  // Debug logging for onSubmit prop
+  useEffect(() => {
+    console.log('VoiceInput onSubmit prop changed:', !!onSubmit);
+  }, [onSubmit]);
 
   // Cleanup timeout on unmount
   useEffect(() => {
