@@ -131,8 +131,8 @@ function transitioningNextRoundInit(this: ServerState) {
             this.gameState.currentRound++;
             this.router.toPreQuestioning();
         } else {
-            // All rounds completed, go back to lobby
-            this.router.toLobby();
+            // All rounds completed, show game over screen
+            this.router.toGameOver();
         }
     });
 }
@@ -337,5 +337,9 @@ export const routes = {
     revealingAnswer: { init: revealingAnswerInit, ...common },
     givingPoints: { init: givingPointsInit, ...common },
     givingPointsAfterBuzz: { init: givingPointsAfterBuzzInit, ...common },
+    finishingRound: { ...common },
+    finishingRoundAfterBuzz: { ...common },
+    finishingAfterAnswerAlone: { ...common },
     transitioningNextRound: { init: transitioningNextRoundInit, ...common },
+    gameOver: { ...common },
 } as const satisfies Config;

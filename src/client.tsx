@@ -9,9 +9,11 @@ import { AudioPreloader } from "./components/AudioPreloader";
 import ScreenLobby from "./screen/lobby";
 import ScreenInRound from "./screen/inRound";
 import ScreenSetup from "./screen/setup";
+import ScreenGameOver from "./screen/gameOver";
 import PlayerLobby from "./player/lobby";
 import PlayerInRound from "./player/inRound";
 import PlayerSetup from "./player/setup";
+import PlayerGameOver from "./player/gameOver";
 import { Container } from "./components/ui/container";
 import { Spinner } from "./components/ui/spinner";
 import { ScreenButtons } from "./components/ScreenButtons";
@@ -49,16 +51,17 @@ function App() {
       {(() => {
         // Determine what to render based on view state
         if (isPlayer) {
-          // Player mode - show lobby, setup, or game based on view
-          if (view === 'setup') {
-            return <PlayerSetup />;
-          }
-          if (view === 'game') {
-            // Players without a name stay in lobby even when game starts
-            if (gameState.phase === 'lobby' || !currentPlayer?.name) return <PlayerLobby />;
-            return <PlayerInRound />;
-          }
-          return <PlayerLobby />;
+        // Player mode - show lobby, setup, or game based on view
+        if (view === 'setup') {
+          return <PlayerSetup />;
+        }
+        if (view === 'game') {
+          // Players without a name stay in lobby even when game starts
+          if (gameState.phase === 'lobby' || !currentPlayer?.name) return <PlayerLobby />;
+          if (gameState.phase === 'gameOver') return <PlayerGameOver />;
+          return <PlayerInRound />;
+        }
+        return <PlayerLobby />;
         }
 
         // Screen mode - show lobby, setup, or game based on view with wrapper
@@ -75,6 +78,13 @@ function App() {
             return (
               <ScreenWrapper>
                 <ScreenLobby />
+              </ScreenWrapper>
+            );
+          }
+          if (gameState.phase === 'gameOver') {
+            return (
+              <ScreenWrapper>
+                <ScreenGameOver />
               </ScreenWrapper>
             );
           }

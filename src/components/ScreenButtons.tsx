@@ -59,6 +59,8 @@ export function ScreenButtons() {
             >
               {gameState.phase === 'lobby'
                 ? (Object.keys(gameState.players).length === 0 ? "Waiting for players..." : "Start Game")
+                : gameState.phase === 'gameOver'
+                ? "Finish"
                 : "Reset Game"
               }
             </Button>
