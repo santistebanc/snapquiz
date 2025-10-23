@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Button } from "./ui/button";
+import { VoiceInput } from "./VoiceInput";
 import { useGameStore } from "../store";
 import { BUZZER_ANSWER_TIMEOUT_SECONDS } from "../constants";
 
@@ -12,6 +13,7 @@ export function AnswerInput({ isPlayerMode = false }: AnswerInputProps) {
   const { gameState, serverAction, connectionId } = useGameStore();
   const [answer, setAnswer] = useState("");
   const [timeLeft, setTimeLeft] = useState(BUZZER_ANSWER_TIMEOUT_SECONDS);
+  const [useVoice, setUseVoice] = useState(false);
 
   const currentRound = gameState.rounds[gameState.currentRound - 1];
   const buzzedPlayerId = currentRound?.buzzedPlayerId;
@@ -19,6 +21,10 @@ export function AnswerInput({ isPlayerMode = false }: AnswerInputProps) {
   
   const handleSubmit = () => {
     serverAction("submitAnswer", answer, connectionId);
+  };
+
+  const handleVoiceTranscript = (transcript: string) => {
+    setAnswer(transcript);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -97,16 +103,54 @@ export function AnswerInput({ isPlayerMode = false }: AnswerInputProps) {
         </div>
       </div>
 
-      <div className="space-y-3">
-        <input
-          type="text"
-          value={answer}
-          onChange={(e) => setAnswer(e.target.value)}
-          onKeyPress={handleKeyPress}
-          placeholder="Type your answer..."
-          autoFocus
-          className="w-full px-6 py-4 text-2xl text-center bg-card-dark/60 border-2 border-border-muted/30 rounded-lg text-warm-cream placeholder-warm-cream/40 focus:outline-none focus:border-warm-yellow transition-colors"
-        />
+      <div className="space-y-4">
+        {/* Input method toggle */}
+        <div className="flex gap-2 justify-center">
+          <Button
+            onClick={() => setUseVoice(false)}
+            variant={!useVoice ? "default" : "outline"}
+            size="sm"
+            className={!useVoice 
+              ? "bg-warm-yellow hover:bg-warm-yellow/90 text-deep-purple" 
+              : "border-warm-cream/30 text-warm-cream hover:bg-warm-cream/10"
+            }
+          >
+            Type
+          </Button>
+          <Button
+            onClick={() => setUseVoice(true)}
+            variant={useVoice ? "default" : "outline"}
+            size="sm"
+            className={useVoice 
+              ? "bg-warm-yellow hover:bg-warm-yellow/90 text-deep-purple" 
+              : "border-warm-cream/30 text-warm-cream hover:bg-warm-cream/10"
+            }
+          >
+            Voice
+          </Button>
+        </div>
+
+        {/* Text input */}
+        {!useVoice && (
+          <input
+            type="text"
+            value={answer}
+            onChange={(e) => setAnswer(e.target.value)}
+            onKeyPress={handleKeyPress}
+            placeholder="Type your answer..."
+            autoFocus
+            className="w-full px-6 py-4 text-2xl text-center bg-card-dark/60 border-2 border-border-muted/30 rounded-lg text-warm-cream placeholder-warm-cream/40 focus:outline-none focus:border-warm-yellow transition-colors"
+          />
+        )}
+
+        {/* Voice input */}
+        {useVoice && (
+          <VoiceInput
+            onTranscript={handleVoiceTranscript}
+            isActive={gameState.phase === 'buzzing'}
+            disabled={timeLeft <= 0}
+          />
+        )}
         
         <Button
           onClick={handleSubmit}
