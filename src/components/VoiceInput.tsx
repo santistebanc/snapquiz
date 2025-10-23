@@ -26,6 +26,7 @@ export function VoiceInput({ onTranscript, isActive, disabled = false, autoStart
   const [isSupported, setIsSupported] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
   const recognitionRef = useRef<any>(null);
   const submitTimeoutRef = useRef<number | null>(null);
   const currentTranscriptRef = useRef<string>('');
@@ -91,6 +92,16 @@ export function VoiceInput({ onTranscript, isActive, disabled = false, autoStart
         let errorMessage = '';
         switch (event.error) {
           case 'network':
+            // Auto-retry for network errors (up to 2 times)
+            if (retryCount < 2) {
+              setRetryCount(prev => prev + 1);
+              setError(null);
+              setTimeout(() => {
+                console.log(`Retrying voice input (attempt ${retryCount + 1}/2)`);
+                startListening();
+              }, 2000);
+              return;
+            }
             errorMessage = 'Network error: Speech recognition service is unavailable. Please check your internet connection.';
             break;
           case 'not-allowed':
@@ -162,6 +173,7 @@ export function VoiceInput({ onTranscript, isActive, disabled = false, autoStart
     
     setError(null);
     setTranscript('');
+    setRetryCount(0); // Reset retry count on manual start
     recognitionRef.current.start();
   };
 

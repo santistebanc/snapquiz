@@ -15,6 +15,7 @@ export function MicrophoneTest({ isPlayerMode = false }: MicrophoneTestProps) {
   const [isRecording, setIsRecording] = useState(false);
   const [audioLevel, setAudioLevel] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
   
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
@@ -129,6 +130,7 @@ export function MicrophoneTest({ isPlayerMode = false }: MicrophoneTestProps) {
     try {
       setError(null);
       setTranscript("");
+      setRetryCount(0); // Reset retry count on manual start
       
       // Request microphone access
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -174,6 +176,16 @@ export function MicrophoneTest({ isPlayerMode = false }: MicrophoneTestProps) {
         let errorMessage = '';
         switch (event.error) {
           case 'network':
+            // Auto-retry for network errors (up to 3 times)
+            if (retryCount < 3) {
+              setRetryCount(prev => prev + 1);
+              setError(null);
+              setTimeout(() => {
+                console.log(`Retrying speech recognition (attempt ${retryCount + 1}/3)`);
+                startListening();
+              }, 2000);
+              return;
+            }
             errorMessage = 'Network error: Speech recognition service is unavailable. Please check your internet connection or try again later.';
             break;
           case 'not-allowed':
@@ -369,6 +381,19 @@ export function MicrophoneTest({ isPlayerMode = false }: MicrophoneTestProps) {
             <span className="text-sm font-medium">Error</span>
           </div>
           <p className="text-red-300/80 text-sm mt-1">{error}</p>
+          {error.includes('Network error') && retryCount >= 3 && (
+            <Button
+              onClick={() => {
+                setRetryCount(0);
+                setError(null);
+                startListening();
+              }}
+              size="sm"
+              className="mt-2 bg-red-500 hover:bg-red-600 text-white"
+            >
+              Try Again
+            </Button>
+          )}
         </div>
       )}
 
@@ -378,8 +403,9 @@ export function MicrophoneTest({ isPlayerMode = false }: MicrophoneTestProps) {
         <p>• Use "Start Test" to check if your microphone is working</p>
         <p>• Speak clearly and watch the audio level indicator</p>
         <p>• Your spoken words should appear in the transcript</p>
-        <p>• <strong>Edge users:</strong> If you experience issues, try refreshing the page or using Chrome</p>
+        <p>• <strong>Edge users:</strong> Network errors are common - the app will auto-retry up to 3 times</p>
         <p>• <strong>HTTPS required:</strong> Microphone access requires a secure connection</p>
+        <p>• <strong>Network issues:</strong> If retries fail, try refreshing the page or using Chrome</p>
       </div>
     </div>
   );
