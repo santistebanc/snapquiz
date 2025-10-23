@@ -18,6 +18,7 @@ export function VoiceInput({ onTranscript, isActive, disabled = false, autoStart
   const [error, setError] = useState<string | null>(null);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const submitTimeoutRef = useRef<number | null>(null);
+  const currentTranscriptRef = useRef<string>('');
 
   useEffect(() => {
     // Check if speech recognition is supported
@@ -52,17 +53,19 @@ export function VoiceInput({ onTranscript, isActive, disabled = false, autoStart
         const currentTranscript = finalTranscript || interimTranscript;
         setTranscript(currentTranscript);
         onTranscript(currentTranscript);
+        currentTranscriptRef.current = currentTranscript;
 
         // Clear existing timeout
         if (submitTimeoutRef.current) {
           clearTimeout(submitTimeoutRef.current);
         }
 
-        // Set new timeout to auto-submit after 2 seconds of silence
+        // Set new timeout to auto-submit after 1.5 seconds of silence
         if (currentTranscript.trim() && onSubmit) {
           submitTimeoutRef.current = window.setTimeout(() => {
+            console.log('Auto-submitting voice input:', currentTranscript);
             onSubmit();
-          }, 2000);
+          }, 1500);
         }
       };
 
@@ -74,10 +77,11 @@ export function VoiceInput({ onTranscript, isActive, disabled = false, autoStart
 
       recognition.onend = () => {
         setIsListening(false);
-        // Clear timeout when recognition ends
-        if (submitTimeoutRef.current) {
-          clearTimeout(submitTimeoutRef.current);
-          submitTimeoutRef.current = null;
+        // If there's a transcript and no timeout is set, submit immediately
+        const currentTranscript = currentTranscriptRef.current.trim();
+        if (currentTranscript && onSubmit && !submitTimeoutRef.current) {
+          console.log('Auto-submitting on recognition end:', currentTranscript);
+          onSubmit();
         }
       };
     }
