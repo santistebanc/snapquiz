@@ -15,20 +15,22 @@ export function AnswerInput({ isPlayerMode = false }: AnswerInputProps) {
   const [timeLeft, setTimeLeft] = useState(BUZZER_ANSWER_TIMEOUT_SECONDS);
   const [useVoice, setUseVoice] = useState(true);
   const resetRef = useRef(false);
+  const answerRef = useRef("");
 
   const currentRound = gameState.rounds[gameState.currentRound - 1];
   const buzzedPlayerId = currentRound?.buzzedPlayerId;
   const buzzedPlayer = buzzedPlayerId ? gameState.players[buzzedPlayerId] : null;
   
   const handleSubmit = useCallback(() => {
-    console.log('AnswerInput handleSubmit called with answer:', answer);
-    serverAction("submitAnswer", answer, connectionId);
-  }, [answer, serverAction, connectionId]);
+    console.log('AnswerInput handleSubmit called with answer:', answerRef.current);
+    serverAction("submitAnswer", answerRef.current, connectionId);
+  }, [serverAction, connectionId]);
 
   const handleVoiceTranscript = (transcript: string) => {
     console.log('AnswerInput handleVoiceTranscript called with:', transcript);
     console.log('Current answer state before setting:', answer);
     setAnswer(transcript);
+    answerRef.current = transcript; // Update ref with latest value
     console.log('Answer state set to:', transcript);
   };
 
@@ -62,6 +64,7 @@ export function AnswerInput({ isPlayerMode = false }: AnswerInputProps) {
       console.log('Resetting answer and timer for new buzzing session');
       setTimeLeft(BUZZER_ANSWER_TIMEOUT_SECONDS);
       setAnswer("");
+      answerRef.current = ""; // Also reset the ref
       resetRef.current = true;
     } else if (gameState.phase !== 'buzzing') {
       console.log('Phase changed away from buzzing, resetting flag');
@@ -145,7 +148,10 @@ export function AnswerInput({ isPlayerMode = false }: AnswerInputProps) {
           <input
             type="text"
             value={answer}
-            onChange={(e) => setAnswer(e.target.value)}
+            onChange={(e) => {
+              setAnswer(e.target.value);
+              answerRef.current = e.target.value; // Also update ref
+            }}
             onKeyPress={handleKeyPress}
             placeholder="Type your answer..."
             autoFocus
