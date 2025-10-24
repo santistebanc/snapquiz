@@ -7,7 +7,7 @@ import { createOpenAI } from "@ai-sdk/openai";
 import { generateObject } from "ai";
 import { z } from "zod";
 
-export default class RoomServer implements Party.Server, ServerState {
+export default class Server implements Party.Server, ServerState {
   connections: Record<string, string> = {};
   gameState = store<GameState>(initialState)
   router: Router<typeof routes>;

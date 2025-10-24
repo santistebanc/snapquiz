@@ -4,7 +4,7 @@ import type { ServerMessage, GameState } from "./types";
 import { getStoredConnectionId, setStoredConnectionId, setStoredPlayerName, setStoredPlayerAvatar, setStoredRoomId } from "./utils";
 import { initialState } from "./gameState";
 
-export type View = 'lobby' | 'setup' | 'game';
+export type View = 'lobby' | 'settings' | 'game';
 
 // Get PartyKit host from environment variable
 function getPartyKitHost(): string {
@@ -13,14 +13,14 @@ function getPartyKitHost(): string {
     return window.location.host;
   }
 
-  // In development, use VITE_PARTYKIT_PORT environment variable
-  const envPort = (window as any).VITE_PARTYKIT_PORT;
-  if (envPort) {
-    return `localhost:${envPort}`;
+  // In development, use the port from the current URL or default PartyKit port
+  const currentPort = window.location.port;
+  if (currentPort && currentPort !== "80" && currentPort !== "443") {
+    return `localhost:${currentPort}`;
   }
 
   // Fallback to default PartyKit development port
-  return `localhost:37011`;
+  return `localhost:1999`;
 }
 
 interface GameStore {
@@ -76,7 +76,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const newSocket = new PartySocket({
       host: getPartyKitHost(),
       room: roomId,
-      party: "room",
     });
 
     // Set up event listeners
