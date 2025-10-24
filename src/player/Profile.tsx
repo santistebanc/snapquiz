@@ -120,7 +120,7 @@ export function Profile({ onEditChange, onMicrophoneTest }: ProfileProps) {
                 className="border-warm-yellow text-warm-yellow hover:bg-warm-yellow/20 hover:border-warm-yellow/80 hover:text-warm-yellow bg-transparent"
               >
                 <Mic className="w-4 h-4 mr-2" />
-                Test Microphone
+                Test Audio
               </Button>
             </div>
           )}

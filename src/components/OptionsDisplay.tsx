@@ -62,11 +62,8 @@ export function OptionsDisplay({ isPlayerMode = false }: OptionsDisplayProps) {
   };
 
   // Calculate the width needed for the longest option with minimum width constraint
-  const minWidth = 250; // minimum width in pixels
-  const maxWidth = Math.max(minWidth, ...options.map(option => option.length * 8 + 48)); // rough calculation
-
   return (
-    <div className={`flex flex-col items-center gap-3 ${isPlayerMode ? "" : "gap-4"}`}>
+    <div className={`flex flex-col items-center gap-3 w-full max-w-4xl mx-auto px-4 ${isPlayerMode ? "" : "gap-4"}`}>
       {options.map((option, index) => (
         <motion.div
           key={index}
@@ -82,15 +79,14 @@ export function OptionsDisplay({ isPlayerMode = false }: OptionsDisplayProps) {
             delay: index * 0.1,
           }}
           whileTap={isInteractive ? { scale: 0.98 } : {}}
-          className="relative"
-          style={{ width: `${maxWidth}px` }}
+          className="relative w-full"
         >
           <Button
             onClick={
               isInteractive ? () => handleOptionSelect(option) : undefined
             }
             variant="outline"
-            className={`w-full text-lg px-6 py-3 h-auto transition-colors duration-300 whitespace-nowrap ${isInteractive ? "" : "cursor-default pointer-events-none"
+            className={`w-full text-lg px-6 py-3 h-auto transition-colors duration-300 break-words whitespace-normal text-center leading-relaxed ${isInteractive ? "" : "cursor-default pointer-events-none"
               } ${getOptionStyle(option)} ${isPlayerBanned && !disabled && selectedOption !== option ? "opacity-50 grayscale" : ""}`}
             style={{
               opacity: isPlayerBanned && !disabled && selectedOption !== option ? 0.5 : 1,

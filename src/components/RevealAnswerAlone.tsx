@@ -1,5 +1,7 @@
 import { motion } from "framer-motion";
 import { useGameStore } from "../store";
+import { useEffect, useRef } from "react";
+import { Howl } from "howler";
 
 interface RevealAnswerAloneProps {
   isPlayerMode?: boolean;
@@ -7,6 +9,7 @@ interface RevealAnswerAloneProps {
 
 export function RevealAnswerAlone({ isPlayerMode = false }: RevealAnswerAloneProps) {
   const { gameState } = useGameStore();
+  const hasPlayedSound = useRef(false);
 
   const currentRound = gameState.rounds[gameState.currentRound - 1];
   
@@ -17,6 +20,40 @@ export function RevealAnswerAlone({ isPlayerMode = false }: RevealAnswerAlonePro
 
   const currentQuestion = gameState.questions.find(q => q.id === currentRound.questionId);
   if (!currentQuestion) return null;
+
+  // Play reveal sound when answer is shown (only in screen mode)
+  useEffect(() => {
+    if (!isPlayerMode && !hasPlayedSound.current) {
+      hasPlayedSound.current = true;
+      
+      const revealSound = new Howl({
+        src: ['/sounds/reveal.mp3'],
+        volume: 0.6,
+        onloaderror: () => {
+          console.log('Reveal sound file not found, using fallback');
+          // Fallback to Web Audio API if sound file doesn't exist
+          const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+          const oscillator = audioContext.createOscillator();
+          const gainNode = audioContext.createGain();
+          oscillator.connect(gainNode);
+          gainNode.connect(audioContext.destination);
+          oscillator.frequency.setValueAtTime(600, audioContext.currentTime);
+          oscillator.frequency.setValueAtTime(800, audioContext.currentTime + 0.1);
+          oscillator.frequency.setValueAtTime(1000, audioContext.currentTime + 0.2);
+          gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.4);
+          oscillator.start(audioContext.currentTime);
+          oscillator.stop(audioContext.currentTime + 0.4);
+        }
+      });
+      revealSound.play();
+    }
+    
+    // Reset sound flag when phase changes away from reveal phases
+    if (!validPhases.includes(gameState.phase)) {
+      hasPlayedSound.current = false;
+    }
+  }, [isPlayerMode, gameState.phase, validPhases]);
 
   return (
     <motion.div

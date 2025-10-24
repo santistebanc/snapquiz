@@ -24,7 +24,7 @@ const REVEAL_WORD_SPEED = 200; // 100ms
 const INITIAL_QUESTION_DELAY = 2000; // 2 seconds delay before first word
 const WAIT_AFTER_QUESTION_TIME = 3000; // 3 seconds after question reveal
 const OPTION_SELECTION_TIMEOUT = 5000; // 5 seconds after options reveal
-const REVEAL_ANSWER_TIME = 5000; // 5 seconds after answer reveal
+const REVEAL_ANSWER_TIME = 8000; // 8 seconds after answer reveal
 const GIVE_POINTS_TIME = 3000; // 3 seconds after points given
 const POINTS_PER_CORRECT_ANSWER = 10; // Points awarded for correct answer
 const TRANSITIONING_NEXT_ROUND_TIME = 1000; // 1 second transition time
@@ -116,7 +116,7 @@ function givingPointsInit(this: ServerState) {
         Object.entries(round.pointsAwarded).forEach(([playerId, points]) => {
             const player = this.gameState.players[playerId];
             if (player) {
-                player.points += points;
+                player.points = Math.max(0, player.points + points); // Ensure points never go below 0
             }
         });
     }
@@ -248,7 +248,7 @@ async function evaluatingAnswerInit(this: ServerState) {
     if (!playerAnswer.trim()) {
         round.playerAnswers[playerId] = "";
         round.evaluationResult = 'wrong';
-        round.pointsAwarded[playerId] = -POINTS_PER_CORRECT_ANSWER;
+        round.pointsAwarded[playerId] = -Math.floor(POINTS_PER_CORRECT_ANSWER / 2); // Deduct half points for buzzing wrong
         this.router.toAfterBuzzEvaluation();
         return;
     }
@@ -261,7 +261,7 @@ async function evaluatingAnswerInit(this: ServerState) {
     if (result === 'correct') {
         round.pointsAwarded[playerId] = POINTS_PER_CORRECT_ANSWER;
     } else {
-        round.pointsAwarded[playerId] = -POINTS_PER_CORRECT_ANSWER;
+        round.pointsAwarded[playerId] = -Math.floor(POINTS_PER_CORRECT_ANSWER / 2); // Deduct half points for buzzing wrong
     }
 
     this.router.toAfterBuzzEvaluation();
@@ -315,7 +315,7 @@ function givingPointsAfterBuzzInit(this: ServerState) {
         Object.entries(round.pointsAwarded).forEach(([playerId, points]) => {
             const player = this.gameState.players[playerId];
             if (player) {
-                player.points += points;
+                player.points = Math.max(0, player.points + points); // Ensure points never go below 0
             }
         });
     }

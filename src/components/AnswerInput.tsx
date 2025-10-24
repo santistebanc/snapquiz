@@ -37,29 +37,34 @@ export function AnswerInput({ isPlayerMode = false }: AnswerInputProps) {
     console.log('AnswerInput handleSubmit called with answer:', answerRef.current);
     console.log('Current mode (useVoice):', useVoice);
     
+    // Stop listening immediately when submit is clicked
+    if (microphone.isListening) {
+      console.log('Stopping voice recording immediately on submit');
+      microphone.stopListening();
+    }
+    
     if (useVoice) {
       // Voice mode: submit audio transcription
-      if (microphone.isListening) {
-        // Set up callback to submit when transcript is ready
+      if (microphone.transcript || answer) {
+        // Use current transcript if available
+        const currentTranscript = microphone.transcript || answer || answerRef.current;
+        console.log('Submitting current transcript:', currentTranscript);
+        console.log('Available transcripts - microphone.transcript:', microphone.transcript, 'answer:', answer, 'answerRef.current:', answerRef.current);
+        serverAction("submitAnswer", currentTranscript, connectionId);
+      } else {
+        // Set up callback to submit when transcript is ready (if no current transcript)
         microphone.setSubmitCallback((transcript: string) => {
           console.log('Submitting with transcript from callback:', transcript);
           answerRef.current = transcript;
           serverAction("submitAnswer", transcript, connectionId);
         });
-        microphone.stopListening();
-      } else {
-        // No voice recording active, submit current transcript if available
-        const currentTranscript = microphone.transcript || answer || answerRef.current;
-        console.log('Submitting current transcript:', currentTranscript);
-        console.log('Available transcripts - microphone.transcript:', microphone.transcript, 'answer:', answer, 'answerRef.current:', answerRef.current);
-        serverAction("submitAnswer", currentTranscript, connectionId);
       }
     } else {
       // Type mode: submit typed text (ignore any audio)
       console.log('Submitting typed text:', answerRef.current);
       serverAction("submitAnswer", answerRef.current, connectionId);
     }
-  }, [serverAction, connectionId, microphone, useVoice]);
+  }, [serverAction, connectionId, microphone, useVoice, answer]);
 
   const handleVoiceTranscript = (transcript: string) => {
     console.log('AnswerInput handleVoiceTranscript called with:', transcript);
@@ -74,11 +79,13 @@ export function AnswerInput({ isPlayerMode = false }: AnswerInputProps) {
     setUseVoice(newUseVoice);
     
     if (newUseVoice) {
-      // Switching to voice mode - start listening
-      console.log('Switching to voice mode - starting voice recording');
-      microphone.startListening().catch(error => {
-        console.error('Failed to start listening:', error);
-      });
+      // Switching to voice mode - start listening (but only if we're in buzzing phase)
+      if (gameState.phase === 'buzzing') {
+        console.log('Switching to voice mode - starting voice recording');
+        microphone.startListening().catch(error => {
+          console.error('Failed to start listening:', error);
+        });
+      }
     } else {
       // Switching to type mode - stop listening and clear any pending requests
       if (microphone.isListening) {
@@ -115,8 +122,14 @@ export function AnswerInput({ isPlayerMode = false }: AnswerInputProps) {
     } else if (gameState.phase !== 'buzzing') {
       console.log('Phase changed away from buzzing, resetting flag');
       resetRef.current = false;
+      
+      // Stop listening when phase changes away from buzzing
+      if (microphone.isListening) {
+        console.log('Stopping voice recording - phase changed away from buzzing');
+        microphone.stopListening();
+      }
     }
-  }, [gameState.phase]);
+  }, [gameState.phase, microphone]);
 
   // Only show during buzzing phase
   if (gameState.phase !== 'buzzing') return null;

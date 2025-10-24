@@ -1,6 +1,8 @@
 import { motion } from "framer-motion";
 import { useGameStore } from "../store";
 import { Check, X } from "lucide-react";
+import { useEffect, useRef } from "react";
+import { Howl } from "howler";
 
 interface EvaluationDisplayProps {
   isPlayerMode?: boolean;
@@ -8,6 +10,7 @@ interface EvaluationDisplayProps {
 
 export function EvaluationDisplay({ isPlayerMode = false }: EvaluationDisplayProps) {
   const { gameState, connectionId } = useGameStore();
+  const hasPlayedSound = useRef(false);
 
   const currentRound = gameState.rounds[gameState.currentRound - 1];
   
@@ -50,6 +53,64 @@ export function EvaluationDisplay({ isPlayerMode = false }: EvaluationDisplayPro
   const showPlayerName = player && (
     !isPlayerMode || (isPlayerMode && displayPlayerId !== connectionId)
   );
+
+  // Play sound effects when evaluation result is shown (only in screen mode)
+  useEffect(() => {
+    if (!isPlayerMode && showEvaluationResult && displayEvaluationResult && !hasPlayedSound.current) {
+      hasPlayedSound.current = true;
+      
+      if (displayEvaluationResult === 'correct') {
+        // Play correct sound
+        const correctSound = new Howl({
+          src: ['/sounds/correct.mp3'],
+          volume: 0.5,
+          onloaderror: () => {
+            console.log('Correct sound file not found, using fallback');
+            // Fallback to Web Audio API if sound file doesn't exist
+            const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+            oscillator.frequency.setValueAtTime(1000, audioContext.currentTime + 0.1);
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.5);
+          }
+        });
+        correctSound.play();
+      } else {
+        // Play wrong sound
+        const wrongSound = new Howl({
+          src: ['/sounds/wrong.mp3'],
+          volume: 0.5,
+          onloaderror: () => {
+            console.log('Wrong sound file not found, using fallback');
+            // Fallback to Web Audio API if sound file doesn't exist
+            const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            oscillator.frequency.setValueAtTime(200, audioContext.currentTime);
+            oscillator.frequency.setValueAtTime(150, audioContext.currentTime + 0.1);
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.3);
+          }
+        });
+        wrongSound.play();
+      }
+    }
+    
+    // Reset sound flag when phase changes
+    if (!buzzPhases.includes(gameState.phase)) {
+      hasPlayedSound.current = false;
+    }
+  }, [showEvaluationResult, displayEvaluationResult, gameState.phase, buzzPhases]);
 
   return (
     <motion.div

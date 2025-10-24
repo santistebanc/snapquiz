@@ -3,7 +3,8 @@ import { motion } from "framer-motion";
 import { SmartVoiceInput } from "./SmartVoiceInput";
 import { ContextVoiceInput } from "./ContextVoiceInput";
 import { useMicrophone } from "../contexts/MicrophoneContext";
-import { Wifi, Volume2, WifiOff, Mic, MicOff } from "lucide-react";
+import { Wifi, Volume2, WifiOff, Mic, MicOff, Speaker } from "lucide-react";
+import { Howl } from "howler";
 
 interface MicrophoneTestProps {
   isPlayerMode?: boolean;
@@ -34,6 +35,31 @@ export function MicrophoneTest({ isPlayerMode = false }: MicrophoneTestProps) {
     microphone.stopListening();
   };
 
+  const handleTestSpeaker = () => {
+    // Play buzzer sound for testing
+    const buzzerSound = new Howl({
+      src: ['/sounds/buzzer.mp3'],
+      volume: 0.7,
+      onloaderror: () => {
+        console.log('Buzzer sound file not found, using fallback');
+        // Fallback to Web Audio API if sound file doesn't exist
+        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+        oscillator.frequency.setValueAtTime(1200, audioContext.currentTime + 0.1);
+        oscillator.frequency.setValueAtTime(600, audioContext.currentTime + 0.2);
+        gainNode.gain.setValueAtTime(0.4, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.3);
+      }
+    });
+    buzzerSound.play();
+  };
+
 
   // Handle transcript updates from microphone context
   React.useEffect(() => {
@@ -48,13 +74,18 @@ export function MicrophoneTest({ isPlayerMode = false }: MicrophoneTestProps) {
       animate={{ opacity: 1, y: 0 }}
       className="space-y-6 p-6 bg-card-dark/40 rounded-lg border border-border-muted/20"
     >
+      {/* Test Speaker Button - At the top */}
+      <div className="flex justify-center mb-6">
+        <button
+          onClick={handleTestSpeaker}
+          className="px-6 py-3 rounded-lg font-medium transition-colors flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white"
+        >
+          <Speaker className="w-4 h-4" />
+          Test Speaker
+        </button>
+      </div>
+      
       <div className="text-center">
-        <h3 className="text-lg font-semibold text-warm-cream mb-2">
-          Microphone Test
-        </h3>
-        <p className="text-sm text-warm-cream/70 mb-4">
-          Test your microphone and speech recognition. This will use LEMONFOX for high-quality speech recognition when available.
-        </p>
         
         {/* Status Indicator */}
         <div className="flex items-center justify-center gap-2 mb-4 p-3 bg-card-dark/60 rounded-lg border border-border-muted/30">
@@ -68,32 +99,28 @@ export function MicrophoneTest({ isPlayerMode = false }: MicrophoneTestProps) {
         </div>
       </div>
 
-      {/* Manual Start/Stop Controls */}
-      <div className="flex gap-4 justify-center mb-4">
+      {/* Manual Start/Stop Control - Single Toggle Button */}
+      <div className="flex justify-center mb-4">
         <button
-          onClick={handleStartListening}
-          disabled={!microphone.isSupported || microphone.isListening}
-          className={`px-6 py-3 rounded-lg font-medium transition-colors flex items-center gap-2 ${
-            microphone.isListening 
-              ? 'bg-gray-600 text-gray-400 cursor-not-allowed' 
-              : 'bg-teal-600 hover:bg-teal-700 text-white'
-          } disabled:opacity-50 disabled:cursor-not-allowed`}
-        >
-          <Mic className="w-4 h-4" />
-          Start Recording
-        </button>
-
-        <button
-          onClick={handleStopListening}
-          disabled={!microphone.isListening}
+          onClick={microphone.isListening ? handleStopListening : handleStartListening}
+          disabled={!microphone.isSupported}
           className={`px-6 py-3 rounded-lg font-medium transition-colors flex items-center gap-2 ${
             microphone.isListening 
               ? 'bg-red-600 hover:bg-red-700 text-white' 
-              : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+              : 'bg-teal-600 hover:bg-teal-700 text-white'
           } disabled:opacity-50 disabled:cursor-not-allowed`}
         >
-          <MicOff className="w-4 h-4" />
-          Stop Recording
+          {microphone.isListening ? (
+            <>
+              <MicOff className="w-4 h-4" />
+              Stop Recording
+            </>
+          ) : (
+            <>
+              <Mic className="w-4 h-4" />
+              Start Recording
+            </>
+          )}
         </button>
       </div>
 
@@ -110,33 +137,13 @@ export function MicrophoneTest({ isPlayerMode = false }: MicrophoneTestProps) {
         </div>
       )}
 
-      {/* Transcript Display */}
-      {transcript && (
+          {/* Transcript Display */}
+          {transcript && (
         <div className="bg-card-dark/60 p-4 rounded-lg border border-border-muted/30 mb-4">
           <h4 className="text-sm font-medium text-warm-cream/80 mb-2">Transcript:</h4>
           <p className="text-warm-cream text-sm leading-relaxed">{transcript}</p>
         </div>
       )}
-
-      {/* Auto-submit indicator */}
-      {microphone.isWaitingForSilence && (
-        <div className="flex items-center justify-center gap-2 text-sm text-warm-yellow mb-4">
-          <div className="w-2 h-2 bg-warm-yellow rounded-full animate-pulse"></div>
-          <span>Listening for more speech... will submit in 1.5s if you stop speaking</span>
-        </div>
-      )}
-
-
-      {/* Instructions */}
-      <div className="text-xs text-warm-cream/60 space-y-1">
-        <p>• Click "Start Recording" to begin voice recognition</p>
-        <p>• Speak clearly into your microphone</p>
-        <p>• Click "Stop Recording" when finished</p>
-        <p>• The system will automatically use LEMONFOX if available</p>
-        <p>• Falls back to browser speech recognition if needed</p>
-        <p>• Check the status indicator above to see which method is being used</p>
-        <p>• 📶 Blue = LEMONFOX (high-quality), 🌐 Green = Browser (fallback), ❌ Red = Offline</p>
-      </div>
     </motion.div>
   );
 }

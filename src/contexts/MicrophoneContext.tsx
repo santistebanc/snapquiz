@@ -337,8 +337,8 @@ export function MicrophoneProvider({ children }: { children: React.ReactNode }) 
 
   const getStatusText = useCallback(() => {
     if (!isOnline) return "Offline";
-    if (useLemonfox) return "Using LEMONFOX (Primary)";
-    return "Using Browser (Fallback)";
+    if (useLemonfox) return "Using Enhanced Recognition";
+    return "Using Browser API";
   }, [isOnline, useLemonfox]);
 
   const getStatusIcon = useCallback(() => {

@@ -24,7 +24,7 @@ export default function Lobby() {
         <CardContent className="p-6">
           <AnimatePresence mode="wait">
             {showMicrophoneTest ? (
-              // Microphone Test Section
+              // Audio Test Section
               <motion.div
                 key="microphone-test"
                 initial={{ opacity: 0, y: 10 }}
@@ -33,7 +33,7 @@ export default function Lobby() {
                 transition={{ duration: 0.2 }}
               >
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-semibold text-warm-cream">Microphone Test</h2>
+                  <h2 className="text-xl font-semibold text-warm-cream">Audio Test</h2>
                   <Button
                     onClick={() => setShowMicrophoneTest(false)}
                     size="sm"
