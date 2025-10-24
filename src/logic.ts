@@ -221,12 +221,6 @@ function buzzIn(this: ServerState, playerId: string) {
     this.router.toBuzzing();
 }
 
-function buzzingInit(this: ServerState) {
-    timeout(BUZZER_ANSWER_TIMEOUT, () => {
-        this.router.toEvaluatingAnswer();
-    });
-}
-
 function submitAnswer(this: ServerState, answer: string, playerId: string) {
     const round = this.gameState.rounds[this.gameState.currentRound - 1];
     if (!round) return;
@@ -334,7 +328,7 @@ export const routes = {
     preQuestioning: { init: preQuestioningInit, ...common },
     questioning: { init: questioningInit, buzzIn, ...common },
     afterQuestioning: { init: afterQuestioningInit, buzzIn, ...common },
-    buzzing: { init: buzzingInit, submitAnswer, ...common },
+    buzzing: { submitAnswer, ...common },
     evaluatingAnswer: { init: evaluatingAnswerInit, ...common },
     afterBuzzEvaluation: { init: afterBuzzEvaluationInit, ...common },
     revealAnswerAlone: { init: revealAnswerAloneInit, ...common },

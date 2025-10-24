@@ -30,8 +30,8 @@ export function RevealAnswerAlone({ isPlayerMode = false }: RevealAnswerAlonePro
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: 0.2, type: "spring", stiffness: 150 }}
-        className={`font-bold text-white bg-correct-green border-4 border-correct-green/50 rounded-2xl p-8 shadow-2xl ${
-          isPlayerMode ? "text-2xl" : "text-6xl"
+        className={`font-bold text-white bg-correct-green border-4 border-correct-green/50 rounded-2xl p-6 shadow-2xl ${
+          isPlayerMode ? "text-xl" : "text-4xl"
         }`}
       >
         {currentQuestion.answer}

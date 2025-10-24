@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Button } from "./ui/button";
-import { VoiceInput } from "./VoiceInput";
+import { SmartVoiceInput } from "./SmartVoiceInput";
+import { ContextVoiceInput } from "./ContextVoiceInput";
+import { useMicrophone } from "../contexts/MicrophoneContext";
 import { useGameStore } from "../store";
-import { BUZZER_ANSWER_TIMEOUT_SECONDS } from "../constants";
+// Timer constants removed - no longer using countdown timer
 
 interface AnswerInputProps {
   isPlayerMode?: boolean;
@@ -11,8 +13,8 @@ interface AnswerInputProps {
 
 export function AnswerInput({ isPlayerMode = false }: AnswerInputProps) {
   const { gameState, serverAction, connectionId } = useGameStore();
+  const microphone = useMicrophone();
   const [answer, setAnswer] = useState("");
-  const [timeLeft, setTimeLeft] = useState(BUZZER_ANSWER_TIMEOUT_SECONDS);
   
   // Load voice preference from localStorage, default to true
   const [useVoice, setUseVoice] = useState(() => {
@@ -33,8 +35,31 @@ export function AnswerInput({ isPlayerMode = false }: AnswerInputProps) {
   
   const handleSubmit = useCallback(() => {
     console.log('AnswerInput handleSubmit called with answer:', answerRef.current);
-    serverAction("submitAnswer", answerRef.current, connectionId);
-  }, [serverAction, connectionId]);
+    console.log('Current mode (useVoice):', useVoice);
+    
+    if (useVoice) {
+      // Voice mode: submit audio transcription
+      if (microphone.isListening) {
+        // Set up callback to submit when transcript is ready
+        microphone.setSubmitCallback((transcript: string) => {
+          console.log('Submitting with transcript from callback:', transcript);
+          answerRef.current = transcript;
+          serverAction("submitAnswer", transcript, connectionId);
+        });
+        microphone.stopListening();
+      } else {
+        // No voice recording active, submit current transcript if available
+        const currentTranscript = microphone.transcript || answer || answerRef.current;
+        console.log('Submitting current transcript:', currentTranscript);
+        console.log('Available transcripts - microphone.transcript:', microphone.transcript, 'answer:', answer, 'answerRef.current:', answerRef.current);
+        serverAction("submitAnswer", currentTranscript, connectionId);
+      }
+    } else {
+      // Type mode: submit typed text (ignore any audio)
+      console.log('Submitting typed text:', answerRef.current);
+      serverAction("submitAnswer", answerRef.current, connectionId);
+    }
+  }, [serverAction, connectionId, microphone, useVoice]);
 
   const handleVoiceTranscript = (transcript: string) => {
     console.log('AnswerInput handleVoiceTranscript called with:', transcript);
@@ -47,6 +72,23 @@ export function AnswerInput({ isPlayerMode = false }: AnswerInputProps) {
   // Save voice preference to localStorage when it changes
   const handleVoiceToggle = (newUseVoice: boolean) => {
     setUseVoice(newUseVoice);
+    
+    if (newUseVoice) {
+      // Switching to voice mode - start listening
+      console.log('Switching to voice mode - starting voice recording');
+      microphone.startListening().catch(error => {
+        console.error('Failed to start listening:', error);
+      });
+    } else {
+      // Switching to type mode - stop listening and clear any pending requests
+      if (microphone.isListening) {
+        console.log('Switching to type mode - stopping voice recording');
+        microphone.stopListening();
+        // Clear any pending submit callback
+        microphone.setSubmitCallback(() => {});
+      }
+    }
+    
     if (typeof window !== 'undefined') {
       localStorage.setItem('snapquiz-voice-preference', JSON.stringify(newUseVoice));
       // Show brief confirmation message
@@ -61,29 +103,12 @@ export function AnswerInput({ isPlayerMode = false }: AnswerInputProps) {
     }
   };
 
-  // Countdown timer - only runs when we're in the input mode
-  useEffect(() => {
-    if (gameState.phase !== 'buzzing' || !isPlayerMode || buzzedPlayerId !== connectionId) {
-      return;
-    }
+  // Timer removed - answers are only submitted when user submits manually
 
-    if (timeLeft <= 0) {
-      handleSubmit();
-      return;
-    }
-
-    const timer = setTimeout(() => {
-      setTimeLeft(timeLeft - 1);
-    }, 1000);
-
-    return () => clearTimeout(timer);
-  }, [timeLeft, gameState.phase, isPlayerMode, buzzedPlayerId, connectionId, handleSubmit]);
-
-  // Reset timer and answer when phase changes to buzzing (only once per buzzing session)
+  // Reset answer when phase changes to buzzing (only once per buzzing session)
   useEffect(() => {
     if (gameState.phase === 'buzzing' && !resetRef.current) {
-      console.log('Resetting answer and timer for new buzzing session');
-      setTimeLeft(BUZZER_ANSWER_TIMEOUT_SECONDS);
+      console.log('Resetting answer for new buzzing session');
       setAnswer("");
       answerRef.current = ""; // Also reset the ref
       resetRef.current = true;
@@ -129,11 +154,8 @@ export function AnswerInput({ isPlayerMode = false }: AnswerInputProps) {
       className="w-full max-w-2xl mx-auto space-y-4"
     >
       <div className="text-center">
-        <div className="text-6xl font-bold text-warm-yellow mb-2">
-          {timeLeft}
-        </div>
-        <div className="text-lg text-warm-cream/80">
-          seconds remaining
+        <div className="text-4xl font-bold text-warm-yellow mb-2">
+          Answer Now
         </div>
       </div>
 
@@ -146,7 +168,7 @@ export function AnswerInput({ isPlayerMode = false }: AnswerInputProps) {
               variant={!useVoice ? "default" : "outline"}
               size="sm"
               className={!useVoice 
-                ? "bg-warm-yellow hover:bg-warm-yellow/90 text-deep-purple" 
+                ? "bg-slate-600 hover:bg-slate-700 text-white" 
                 : "border-warm-cream/30 text-warm-cream hover:bg-warm-cream/10 bg-transparent"
               }
             >
@@ -157,19 +179,12 @@ export function AnswerInput({ isPlayerMode = false }: AnswerInputProps) {
               variant={useVoice ? "default" : "outline"}
               size="sm"
               className={useVoice 
-                ? "bg-warm-yellow hover:bg-warm-yellow/90 text-deep-purple" 
+                ? "bg-slate-600 hover:bg-slate-700 text-white" 
                 : "border-warm-cream/30 text-warm-cream hover:bg-warm-cream/10 bg-transparent"
               }
             >
               🎤 Voice
             </Button>
-          </div>
-          <div className="text-xs text-warm-cream/50">
-            {showSavedMessage ? (
-              <span className="text-warm-yellow">✓ Preference saved!</span>
-            ) : (
-              "Your preference is saved for next time"
-            )}
           </div>
         </div>
 
@@ -191,18 +206,20 @@ export function AnswerInput({ isPlayerMode = false }: AnswerInputProps) {
 
         {/* Voice input */}
         {useVoice && (
-          <VoiceInput
+          <ContextVoiceInput
             onTranscript={handleVoiceTranscript}
             isActive={gameState.phase === 'buzzing'}
-            disabled={timeLeft <= 0}
-            autoStart={true}
+            disabled={false}
             onSubmit={handleSubmit}
+            showStatus={true}
+            showTranscript={true}
           />
         )}
         
+        {/* Submit button - show for both voice and text input */}
         <Button
           onClick={handleSubmit}
-          className="w-full py-6 text-2xl font-bold bg-warm-yellow hover:bg-warm-yellow/90 text-deep-purple"
+          className="w-full py-6 text-2xl font-bold bg-teal-600 hover:bg-teal-700 text-white"
         >
           Submit Answer
         </Button>

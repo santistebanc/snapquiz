@@ -5,7 +5,9 @@
   "scripts": {
     "dev": "partykit dev --live",
     "deploy": "dotenv -e .env -- sh -c 'partykit deploy --domain $DOMAIN'",
-    "build:css": "tailwindcss -i ./src/styles.css -o ./public/dist/tailwind.css --minify"
+    "build:css": "tailwindcss -i ./src/styles.css -o ./public/dist/tailwind.css --minify",
+    "inject-env": "node scripts/inject-env.js",
+    "predeploy": "npm run inject-env && npm run build:css"
   },
   "dependencies": {
     "@ai-sdk/openai": "^2.0.52",
@@ -26,7 +28,7 @@
     "framer-motion": "^12.23.24",
     "howler": "^2.2.4",
     "lucide-react": "^0.536.0",
-    "openai": "^6.5.0",
+    "openai": "^6.6.0",
     "partysocket": "^1.0.2",
     "qrcode": "^1.5.4",
     "react": "^19.2.0",

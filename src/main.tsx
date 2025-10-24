@@ -5,6 +5,7 @@ import { useGameConnection } from "./useGameConnection";
 import { useGameStore, useCurrentPlayer } from "./store";
 import { useParticles } from "./hooks/useParticles";
 import { AudioProvider } from "./contexts/AudioContext";
+import { MicrophoneProvider } from "./contexts/MicrophoneContext";
 import { AudioPreloader } from "./components/AudioPreloader";
 import ScreenLobby from "./screen/lobby";
 import ScreenInRound from "./screen/inRound";
@@ -44,10 +45,11 @@ function App() {
     );
   }
 
-  // Wrap the entire app with AudioProvider to preload all question audios
+  // Wrap the entire app with AudioProvider and MicrophoneProvider
   return (
     <AudioProvider questions={gameState.questions}>
-      <AudioPreloader isPlayerMode={isPlayer} />
+      <MicrophoneProvider>
+        <AudioPreloader isPlayerMode={isPlayer} />
       {(() => {
         // Determine what to render based on view state
         if (isPlayer) {
@@ -101,6 +103,7 @@ function App() {
           </ScreenWrapper>
         );
       })()}
+      </MicrophoneProvider>
     </AudioProvider>
   );
 }
