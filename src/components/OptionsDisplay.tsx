@@ -1,6 +1,8 @@
 import { motion } from "framer-motion";
 import { Button } from "./ui/button";
 import { useGameStore } from "../store";
+import { useEffect, useRef } from "react";
+import { Howl } from "howler";
 
 interface OptionsDisplayProps {
   isPlayerMode?: boolean;
@@ -8,6 +10,7 @@ interface OptionsDisplayProps {
 
 export function OptionsDisplay({ isPlayerMode = false }: OptionsDisplayProps) {
   const { gameState, serverAction, connectionId } = useGameStore();
+  const hasPlayedSound = useRef(false);
 
   const currentRound = gameState.rounds[gameState.currentRound - 1]
   const currentQuestion = currentRound ? gameState.questions.find(q => q.id === currentRound.questionId) : null;
@@ -38,6 +41,25 @@ export function OptionsDisplay({ isPlayerMode = false }: OptionsDisplayProps) {
     if (!isPlayerMode || isPlayerBanned) return;
     serverAction("selectOption", option, connectionId);
   };
+
+  // Play reveal sound when answer is revealed (only in screen mode)
+  useEffect(() => {
+    if (!isPlayerMode && disabled && !hasPlayedSound.current) {
+      hasPlayedSound.current = true;
+      
+      const revealSound = new Howl({
+        src: ['/sounds/reveal.mp3'],
+        volume: 0.6
+      });
+      revealSound.play();
+    }
+    
+    // Reset sound flag when phase changes away from revealing
+    if (!disabled) {
+      hasPlayedSound.current = false;
+    }
+  }, [isPlayerMode, disabled]);
+
   const getOptionStyle = (option: string) => {
     if (disabled) {
       // Answer reveal mode

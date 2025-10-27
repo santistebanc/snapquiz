@@ -5,6 +5,7 @@ import { SmartVoiceInput } from "./SmartVoiceInput";
 import { ContextVoiceInput } from "./ContextVoiceInput";
 import { useMicrophone } from "../contexts/MicrophoneContext";
 import { useGameStore } from "../store";
+import { Howl } from "howler";
 // Timer constants removed - no longer using countdown timer
 
 interface AnswerInputProps {
@@ -119,6 +120,15 @@ export function AnswerInput({ isPlayerMode = false }: AnswerInputProps) {
       setAnswer("");
       answerRef.current = ""; // Also reset the ref
       resetRef.current = true;
+      
+      // Play buzzer sound when someone becomes the buzzed player (only on their device)
+      if (isPlayerMode && buzzedPlayerId === connectionId) {
+        const buzzerSound = new Howl({
+          src: ['/sounds/buzzer.mp3'],
+          volume: 0.7
+        });
+        buzzerSound.play();
+      }
     } else if (gameState.phase !== 'buzzing') {
       console.log('Phase changed away from buzzing, resetting flag');
       resetRef.current = false;
@@ -129,7 +139,7 @@ export function AnswerInput({ isPlayerMode = false }: AnswerInputProps) {
         microphone.stopListening();
       }
     }
-  }, [gameState.phase, microphone]);
+  }, [gameState.phase, microphone, isPlayerMode, buzzedPlayerId, connectionId]);
 
   // Only show during buzzing phase
   if (gameState.phase !== 'buzzing') return null;

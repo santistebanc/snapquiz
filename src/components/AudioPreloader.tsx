@@ -20,9 +20,8 @@ export function AudioPreloader({ isPlayerMode = false }: AudioPreloaderProps) {
     let questionToPreload: string | null = null;
 
     // Case 1: In lobby - preload the first question
-    if (gameState.phase === 'lobby' && gameState.rounds.length > 0) {
-      const firstRound = gameState.rounds[0];
-      const firstQuestion = gameState.questions.find(q => q.id === firstRound?.questionId);
+    if (gameState.phase === 'lobby' && gameState.questions.length > 0) {
+      const firstQuestion = gameState.questions[0];
       
       if (firstQuestion?.audioUrl) {
         questionToPreload = firstQuestion.id;

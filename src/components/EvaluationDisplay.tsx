@@ -63,44 +63,14 @@ export function EvaluationDisplay({ isPlayerMode = false }: EvaluationDisplayPro
         // Play correct sound
         const correctSound = new Howl({
           src: ['/sounds/correct.mp3'],
-          volume: 0.5,
-          onloaderror: () => {
-            console.log('Correct sound file not found, using fallback');
-            // Fallback to Web Audio API if sound file doesn't exist
-            const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-            const oscillator = audioContext.createOscillator();
-            const gainNode = audioContext.createGain();
-            oscillator.connect(gainNode);
-            gainNode.connect(audioContext.destination);
-            oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
-            oscillator.frequency.setValueAtTime(1000, audioContext.currentTime + 0.1);
-            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
-            oscillator.start(audioContext.currentTime);
-            oscillator.stop(audioContext.currentTime + 0.5);
-          }
+          volume: 0.5
         });
         correctSound.play();
       } else {
         // Play wrong sound
         const wrongSound = new Howl({
           src: ['/sounds/wrong.mp3'],
-          volume: 0.5,
-          onloaderror: () => {
-            console.log('Wrong sound file not found, using fallback');
-            // Fallback to Web Audio API if sound file doesn't exist
-            const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-            const oscillator = audioContext.createOscillator();
-            const gainNode = audioContext.createGain();
-            oscillator.connect(gainNode);
-            gainNode.connect(audioContext.destination);
-            oscillator.frequency.setValueAtTime(200, audioContext.currentTime);
-            oscillator.frequency.setValueAtTime(150, audioContext.currentTime + 0.1);
-            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
-            oscillator.start(audioContext.currentTime);
-            oscillator.stop(audioContext.currentTime + 0.3);
-          }
+          volume: 0.5
         });
         wrongSound.play();
       }
