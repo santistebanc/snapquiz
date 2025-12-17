@@ -35,6 +35,11 @@ export interface Round {
   pointsAwarded: Record<string, number>;
 }
 
+export interface GameSettings {
+  language: string;
+  voiceId: string;
+}
+
 export interface GameState {
   roomId: string;
   players: Record<string, Player>;
@@ -43,6 +48,7 @@ export interface GameState {
   rounds: Round[];
   currentRound: number;
   connections: Record<string, string>;
+  settings: GameSettings;
 }
 
 export interface ServerMessage {

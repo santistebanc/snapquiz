@@ -19,7 +19,9 @@ const QuestionsResponseSchema = z.object({
 // This will be called from the server side with PartyKit environment
 export async function generateQuestions(
   categories: string[],
-  existingQuestions: Question[]
+  existingQuestions: Question[],
+  voiceId: string = 'Daniel',
+  language: string = 'American'
 ): Promise<Question[]> {
   console.log('generateQuestions called with categories:', categories);
 
@@ -33,6 +35,18 @@ export async function generateQuestions(
   const categoryText = singleCategory || categories.join(', ');
   const existingTexts = existingQuestions.map(q => q.text.toLowerCase());
 
+  // Map language setting to language name for the prompt
+  const languageMap: Record<string, string> = {
+    'American': 'English',
+    'Chinese': 'Chinese',
+    'Spanish': 'Spanish',
+    'French': 'French',
+    'Hindi': 'Hindi',
+    'Italian': 'Italian',
+    'Portuguese': 'Portuguese',
+  };
+  const languageName = languageMap[language] || 'English';
+
   console.log('Generating questions with Vercel AI SDK...');
   const openai = createOpenAI({
     apiKey: apiKey,
@@ -43,12 +57,13 @@ export async function generateQuestions(
     schema: QuestionsResponseSchema,
     prompt: `Generate 5 unique quiz questions strictly in the category "${categoryText}".
 Each question must have:
-- A clear, engaging question text
-- 4 multiple choice options (provide only the text content, no letters like A, B, C, D)
-- One correct answer (the full text of the correct option, not the letter)
+- A clear, engaging question text written in ${languageName}
+- 4 multiple choice options (provide only the text content, no letters like A, B, C, D) written in ${languageName}
+- One correct answer (the full text of the correct option, not the letter) written in ${languageName}
 - The field "category" set EXACTLY to "${categoryText}" for every question (do not invent or substitute another category)
 
 IMPORTANT:
+- All question text, options, and answers must be written in ${languageName}
 - The options array should contain only the text content of each option, without any letter prefixes like "A.", "B.", etc.
 - Do not create new categories. Use exactly "${categoryText}" as category for all questions.
 
@@ -82,7 +97,8 @@ Make sure questions are unique and not similar to these existing questions: ${ex
     uniqueQuestions.map(async (question) => {
       try {
         const { audioUrl, wordTimestamps } = await generateAudioWithTimestamps(
-          question.text
+          question.text,
+          voiceId
         );
         return {
           ...question,

@@ -155,7 +155,9 @@ function removeQuestion(this: ServerState, questionId: string) {
 
 async function generateQuestions(this: ServerState, categories: string[]) {
     const { generateQuestions: generateQuestionsUtil } = await import('./utils/generateQuestions');
-    const newQuestions = await generateQuestionsUtil(categories, this.gameState.questions);
+    const voiceId = this.gameState.settings?.voiceId || 'Daniel';
+    const language = this.gameState.settings?.language || 'American';
+    const newQuestions = await generateQuestionsUtil(categories, this.gameState.questions, voiceId, language);
     this.gameState.questions = [...this.gameState.questions, ...newQuestions];
     return newQuestions;
 }
@@ -202,6 +204,27 @@ function togglePlayerAdmin(this: ServerState, playerId: string) {
         player.isAdmin = !player.isAdmin;
     }
 }
+
+function updateLanguage(this: ServerState, language: string) {
+    this.gameState.settings.language = language;
+    // Reset voice to first voice of the new language
+    const languageToVoices: Record<string, string[]> = {
+        'American': ['Noah', 'Jasper', 'Caleb', 'Ronan', 'Ethan', 'Daniel', 'Zane', 'Autumn', 'Melody', 'Hannah', 'Emily', 'Ivy', 'Kaitlyn', 'Luna', 'Willow', 'Lauren', 'Sierra'],
+        'Chinese': ['Wei', 'Jian', 'Hao', 'Sheng', 'Mei', 'Lian', 'Ting', 'Jing'],
+        'Spanish': ['Mateo', 'Javier', 'Lucía'],
+        'French': ['Élodie'],
+        'Hindi': ['Arjun', 'Rohan', 'Ananya', 'Priya'],
+        'Italian': ['Luca', 'Giulia'],
+        'Portuguese': ['Thiago', 'Rafael', 'Camila'],
+    };
+    const voices = languageToVoices[language] || ['Daniel'];
+    this.gameState.settings.voiceId = voices[0];
+}
+
+function updateVoice(this: ServerState, voiceId: string) {
+    this.gameState.settings.voiceId = voiceId;
+}
+
 
 // Buzzer system functions
 function buzzIn(this: ServerState, playerId: string) {
@@ -321,7 +344,7 @@ function givingPointsAfterBuzzInit(this: ServerState) {
     }
 }
 
-const common = { resetGame, nextRound, updateQuestions, reorderQuestions, removeQuestion, generateQuestions, joinAsPlayer, changeProfile, createOrUpdatePlayer, togglePlayerAdmin }
+const common = { resetGame, nextRound, updateQuestions, reorderQuestions, removeQuestion, generateQuestions, joinAsPlayer, changeProfile, createOrUpdatePlayer, togglePlayerAdmin, updateLanguage, updateVoice }
 
 export const routes = {
     lobby: { startGame, ...common },

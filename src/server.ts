@@ -4,7 +4,7 @@ import { router, store, type Router } from "./machine";
 import { routes, type ServerState } from "./logic";
 import type { GameState, Player, Question } from "./types";
 import { createOpenAI } from "@ai-sdk/openai";
-import { generateObject } from "ai";
+import { generateObject, experimental_transcribe } from "ai";
 import { z } from "zod";
 
 export default class Server implements Party.Server, ServerState {
@@ -16,6 +16,15 @@ export default class Server implements Party.Server, ServerState {
 
     this.gameState.roomId = room.id;
     this.router = (router as any).call(this, routes, "lobby", () => { this.gameState.phase = this.router.state })
+
+    // Ensure settings exist for backward compatibility
+    if (!this.gameState.settings) {
+      this.gameState.settings = { language: 'American', voiceId: 'Daniel' };
+    }
+    // Migrate old settings without language
+    if (this.gameState.settings && !this.gameState.settings.language) {
+      this.gameState.settings.language = 'American';
+    }
 
     // Load questions from storage on room initialization
     this.loadQuestionsFromStorage();
@@ -57,6 +66,114 @@ export default class Server implements Party.Server, ServerState {
         return new Response(JSON.stringify({ suggestions }), { status: 200, headers: { "Content-Type": "application/json" } });
       } catch (err) {
         return new Response(JSON.stringify({ suggestions: [] }), { status: 200, headers: { "Content-Type": "application/json" } });
+      }
+    }
+    if (url.pathname.endsWith("/transcribe")) {
+      try {
+        const formData = await req.formData();
+        const audioFile = formData.get('file') as File;
+        const language = (formData.get('language') as string) || 'en';
+        
+        if (!audioFile) {
+          return new Response(JSON.stringify({ error: "No audio file provided" }), { status: 400, headers: { "Content-Type": "application/json" } });
+        }
+        
+        // Check if file is too small (likely empty or invalid)
+        if (audioFile.size < 1024) {
+          return new Response(JSON.stringify({ error: "Audio file too small or empty" }), { status: 400, headers: { "Content-Type": "application/json" } });
+        }
+        
+        const apiKey = process.env.OPENAI_API_KEY;
+        if (!apiKey) {
+          return new Response(JSON.stringify({ error: "OpenAI API key not configured" }), { status: 500, headers: { "Content-Type": "application/json" } });
+        }
+
+        // Convert File to ArrayBuffer, then to Uint8Array for AI SDK
+        const arrayBuffer = await audioFile.arrayBuffer();
+        const audioData = new Uint8Array(arrayBuffer);
+
+        // Use AI SDK's experimental_transcribe function
+        const openai = createOpenAI({ apiKey });
+        
+        const result = await experimental_transcribe({
+          model: openai.transcription('whisper-1'),
+          audio: audioData,
+          providerOptions: { 
+            openai: { 
+              language: language 
+            } 
+          },
+        });
+
+        return new Response(JSON.stringify({ text: result.text }), { status: 200, headers: { "Content-Type": "application/json" } });
+      } catch (err) {
+        console.error("Error transcribing audio:", err);
+        return new Response(JSON.stringify({ error: `Failed to transcribe audio: ${err}` }), { status: 500, headers: { "Content-Type": "application/json" } });
+      }
+    }
+    if (url.pathname.endsWith("/test-voice")) {
+      const voiceId = url.searchParams.get("voiceId");
+      if (!voiceId) {
+        return new Response(JSON.stringify({ error: "voiceId parameter required" }), { status: 400, headers: { "Content-Type": "application/json" } });
+      }
+      try {
+        const { generateAudioWithTimestamps } = await import('./utils/generateAudio');
+        
+        // Map voices to their languages and test phrases
+        const voiceToPhrase: Record<string, string> = {
+          // American voices
+          'Noah': 'Hello, this is a test of the voice.',
+          'Jasper': 'Hello, this is a test of the voice.',
+          'Caleb': 'Hello, this is a test of the voice.',
+          'Ronan': 'Hello, this is a test of the voice.',
+          'Ethan': 'Hello, this is a test of the voice.',
+          'Daniel': 'Hello, this is a test of the voice.',
+          'Zane': 'Hello, this is a test of the voice.',
+          'Autumn': 'Hello, this is a test of the voice.',
+          'Melody': 'Hello, this is a test of the voice.',
+          'Hannah': 'Hello, this is a test of the voice.',
+          'Emily': 'Hello, this is a test of the voice.',
+          'Ivy': 'Hello, this is a test of the voice.',
+          'Kaitlyn': 'Hello, this is a test of the voice.',
+          'Luna': 'Hello, this is a test of the voice.',
+          'Willow': 'Hello, this is a test of the voice.',
+          'Lauren': 'Hello, this is a test of the voice.',
+          'Sierra': 'Hello, this is a test of the voice.',
+          // Chinese voices
+          'Wei': '你好，这是语音测试。',
+          'Jian': '你好，这是语音测试。',
+          'Hao': '你好，这是语音测试。',
+          'Sheng': '你好，这是语音测试。',
+          'Mei': '你好，这是语音测试。',
+          'Lian': '你好，这是语音测试。',
+          'Ting': '你好，这是语音测试。',
+          'Jing': '你好，这是语音测试。',
+          // Spanish voices
+          'Mateo': 'Hola, esta es una prueba de voz.',
+          'Javier': 'Hola, esta es una prueba de voz.',
+          'Lucía': 'Hola, esta es una prueba de voz.',
+          // French voices
+          'Élodie': 'Bonjour, ceci est un test de voix.',
+          // Hindi voices
+          'Arjun': 'नमस्ते, यह आवाज़ का परीक्षण है।',
+          'Rohan': 'नमस्ते, यह आवाज़ का परीक्षण है।',
+          'Ananya': 'नमस्ते, यह आवाज़ का परीक्षण है।',
+          'Priya': 'नमस्ते, यह आवाज़ का परीक्षण है।',
+          // Italian voices
+          'Luca': 'Ciao, questo è un test della voce.',
+          'Giulia': 'Ciao, questo è un test della voce.',
+          // Portuguese voices
+          'Thiago': 'Olá, este é um teste de voz.',
+          'Rafael': 'Olá, este é um teste de voz.',
+          'Camila': 'Olá, este é um teste de voz.',
+        };
+        
+        const testPhrase = voiceToPhrase[voiceId] || 'Hello, this is a test of the voice.';
+        const { audioUrl } = await generateAudioWithTimestamps(testPhrase, voiceId);
+        return new Response(JSON.stringify({ audioUrl }), { status: 200, headers: { "Content-Type": "application/json" } });
+      } catch (err) {
+        console.error("Error generating test voice:", err);
+        return new Response(JSON.stringify({ error: "Failed to generate test audio" }), { status: 500, headers: { "Content-Type": "application/json" } });
       }
     }
     return new Response("Not found", { status: 404 });

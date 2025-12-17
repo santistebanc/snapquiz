@@ -2,12 +2,14 @@
   "name": "snapquiz",
   "version": "0.0.0",
   "private": true,
+  "engines": {
+    "node": ">=20 <21"
+  },
   "scripts": {
     "dev": "partykit dev --live",
-    "deploy": "dotenv -e .env -- sh -c 'partykit deploy --domain $DOMAIN'",
+    "deploy": "dotenv -e .env -- partykit deploy --with-vars --domain %DOMAIN%",
     "build:css": "tailwindcss -i ./src/styles.css -o ./public/dist/tailwind.css --minify",
-    "inject-env": "node scripts/inject-env.js",
-    "predeploy": "npm run inject-env && npm run build:css"
+    "predeploy": "npm run build:css"
   },
   "dependencies": {
     "@ai-sdk/openai": "^2.0.52",
@@ -46,6 +48,7 @@
     "@types/qrcode": "^1.5.5",
     "@vitejs/plugin-react": "^5.0.4",
     "autoprefixer": "^10.4.21",
+    "baseline-browser-mapping": "^2.9.8",
     "dotenv-cli": "^10.0.0",
     "partykit": "^0.0.115",
     "postcss": "^8.5.6",

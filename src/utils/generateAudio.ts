@@ -14,7 +14,8 @@ interface TimestampData {
 }
 
 export async function generateAudioWithTimestamps(
-  text: string
+  text: string,
+  voiceId: string = 'Daniel'
 ): Promise<{ audioUrl: string; wordTimestamps: WordTimestamp[] }> {
   const apiKey = process.env.UNREALSPEECH_API_KEY;
   
@@ -32,10 +33,10 @@ export async function generateAudioWithTimestamps(
       },
       body: JSON.stringify({
         Text: text,
-        VoiceId: 'Daniel',
+        VoiceId: voiceId,
         Bitrate: '192k',
-        Speed: '0',
-        Pitch: '1',
+        Speed: 0,
+        Pitch: 1.0,
         TimestampType: 'word', // Request word-level timestamps
       }),
     });

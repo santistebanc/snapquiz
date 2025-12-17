@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Button } from "./ui/button";
-import { SmartVoiceInput } from "./SmartVoiceInput";
 import { ContextVoiceInput } from "./ContextVoiceInput";
 import { useMicrophone } from "../contexts/MicrophoneContext";
 import { useGameStore } from "../store";
@@ -67,13 +66,21 @@ export function AnswerInput({ isPlayerMode = false }: AnswerInputProps) {
     }
   }, [serverAction, connectionId, microphone, useVoice, answer]);
 
-  const handleVoiceTranscript = (transcript: string) => {
+  const lastTranscriptRef = useRef<string>('');
+  
+  const handleVoiceTranscript = useCallback((transcript: string) => {
+    // Prevent duplicate transcript updates
+    if (transcript === lastTranscriptRef.current) {
+      return;
+    }
+    lastTranscriptRef.current = transcript;
+    
     console.log('AnswerInput handleVoiceTranscript called with:', transcript);
     console.log('Current answer state before setting:', answer);
     setAnswer(transcript);
     answerRef.current = transcript; // Update ref with latest value
     console.log('Answer state set to:', transcript);
-  };
+  }, [answer]);
 
   // Save voice preference to localStorage when it changes
   const handleVoiceToggle = (newUseVoice: boolean) => {

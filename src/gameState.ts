@@ -9,6 +9,10 @@ export const initialState: GameState = {
     questions: [],
     phase: "lobby",
     connections: {},
+    settings: {
+        language: 'American',
+        voiceId: 'Daniel',
+    },
 }
 
 export const gameState = store<GameState>(initialState)

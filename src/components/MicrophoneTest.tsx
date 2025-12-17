@@ -1,7 +1,5 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { SmartVoiceInput } from "./SmartVoiceInput";
-import { ContextVoiceInput } from "./ContextVoiceInput";
 import { useMicrophone } from "../contexts/MicrophoneContext";
 import { Wifi, Volume2, WifiOff, Mic, MicOff, Speaker } from "lucide-react";
 import { Howl } from "howler";
