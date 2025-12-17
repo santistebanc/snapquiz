@@ -71,12 +71,15 @@ export default class Server implements Party.Server, ServerState {
     if (url.pathname.endsWith("/transcribe")) {
       try {
         const formData = await req.formData();
-        const audioFile = formData.get('file') as File;
+        const audioFileEntry = formData.get('file');
         const language = (formData.get('language') as string) || 'en';
+        const prompt = (formData.get('prompt') as string) || undefined;
         
-        if (!audioFile) {
+        if (!audioFileEntry || typeof audioFileEntry === 'string') {
           return new Response(JSON.stringify({ error: "No audio file provided" }), { status: 400, headers: { "Content-Type": "application/json" } });
         }
+        
+        const audioFile = audioFileEntry as File;
         
         // Check if file is too small (likely empty or invalid)
         if (audioFile.size < 1024) {
@@ -95,14 +98,21 @@ export default class Server implements Party.Server, ServerState {
         // Use AI SDK's experimental_transcribe function
         const openai = createOpenAI({ apiKey });
         
+        // Build provider options with optional prompt
+        const providerOptions: { openai: { language: string; prompt?: string } } = {
+          openai: {
+            language: language
+          }
+        };
+        
+        if (prompt) {
+          providerOptions.openai.prompt = prompt;
+        }
+        
         const result = await experimental_transcribe({
           model: openai.transcription('whisper-1'),
           audio: audioData,
-          providerOptions: { 
-            openai: { 
-              language: language 
-            } 
-          },
+          providerOptions: providerOptions,
         });
 
         return new Response(JSON.stringify({ text: result.text }), { status: 200, headers: { "Content-Type": "application/json" } });

@@ -1,6 +1,7 @@
 interface OpenAISpeechRecognitionOptions {
   language?: string;
   getLanguage?: () => string; // Function to get current language dynamically
+  getQuestionContext?: () => { question: string; options: string[] } | null; // Function to get current question context
   onTranscript?: (text: string) => void;
   onError?: (error: string) => void;
   onStart?: () => void;
@@ -10,6 +11,7 @@ interface OpenAISpeechRecognitionOptions {
 export class OpenAISpeechRecognition {
   private language: string;
   private getLanguage?: () => string; // Function to get current language dynamically
+  private getQuestionContext?: () => { question: string; options: string[] } | null; // Function to get current question context
   private mediaRecorder: MediaRecorder | null = null;
   private audioChunks: Blob[] = [];
   private isRecording = false;
@@ -22,6 +24,7 @@ export class OpenAISpeechRecognition {
   constructor(options: OpenAISpeechRecognitionOptions) {
     this.language = options.language || 'American';
     this.getLanguage = options.getLanguage;
+    this.getQuestionContext = options.getQuestionContext;
     this.onTranscript = options.onTranscript;
     this.onError = options.onError;
     this.onStart = options.onStart;
@@ -163,12 +166,21 @@ export class OpenAISpeechRecognition {
       };
       const languageCode = languageMap[currentLanguage] || 'en';
       
+      // Get current question context if available
+      const questionContext = this.getQuestionContext ? this.getQuestionContext() : null;
+      
       const formData = new FormData();
       const fileName = audioBlob.type.includes('mp4') ? 'audio.mp4' : 
                       audioBlob.type.includes('webm') ? 'audio.webm' : 
                       audioBlob.type.includes('wav') ? 'audio.wav' : 'audio.webm';
       formData.append('file', audioBlob, fileName);
       formData.append('language', languageCode);
+      
+      // Add question context as prompt if available
+      if (questionContext) {
+        const prompt = `This is an answer to a quiz question. The question is: "${questionContext.question}". The possible answer options are: ${questionContext.options.join(', ')}.`;
+        formData.append('prompt', prompt);
+      }
 
       const response = await fetch(`${protocol}//${host}/parties/main/${roomId}/transcribe`, {
         method: 'POST',

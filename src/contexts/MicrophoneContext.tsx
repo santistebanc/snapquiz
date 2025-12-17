@@ -70,6 +70,22 @@ export function MicrophoneProvider({ children }: { children: React.ReactNode }) 
     openAIRef.current = new OpenAISpeechRecognition({
       language: gameState.settings?.language || 'American',
       getLanguage: () => gameState.settings?.language || 'American', // Always get current language
+      getQuestionContext: () => {
+        // Get current question from gameState
+        if (gameState.currentRound > 0 && gameState.rounds.length > 0) {
+          const currentRound = gameState.rounds[gameState.currentRound - 1];
+          if (currentRound) {
+            const question = gameState.questions.find(q => q.id === currentRound.questionId);
+            if (question) {
+              return {
+                question: question.text,
+                options: question.options
+              };
+            }
+          }
+        }
+        return null;
+      },
       onTranscript: (text) => {
         // Clean quotes from transcript
         const cleanText = text.replace(/^"|"$/g, '').trim();
@@ -94,7 +110,7 @@ export function MicrophoneProvider({ children }: { children: React.ReactNode }) 
         setIsListening(false);
       }
     });
-  }, [gameState.settings?.language, handleAutoSubmit]);
+  }, [gameState.settings?.language, gameState.currentRound, gameState.rounds, gameState.questions, handleAutoSubmit]);
 
   // Initialize speech recognition
   useEffect(() => {
