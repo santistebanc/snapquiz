@@ -3,6 +3,7 @@ import { useGameStore } from "../store";
 import { Container } from "../components/ui/container";
 import { PlayerDrawer } from "../components/PlayerDrawer";
 import { InRoundContent } from "./inRoundContent";
+import { AdminButtons } from "../components/AdminButtons";
 
 export default function InRound() {
   const { gameState } = useGameStore();
@@ -13,6 +14,7 @@ export default function InRound() {
         players={Object.values(gameState.players)}
         isPlayerMode={true}
       />
+      <AdminButtons />
       <motion.div
         layout
         transition={{
