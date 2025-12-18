@@ -494,13 +494,13 @@ export default function Settings() {
               <div className="space-y-3">
                 <div className="flex flex-col sm:flex-row gap-0 items-end">
                   <div className="flex-1">
-                    <CategoryInput
-                      onCategoriesChange={handleCategoriesChange}
-                      onGenerate={handleGenerate}
-                      isGenerating={isGenerating}
-                      roomId={gameState.roomId || ""}
-                      inputValue={categoryInputValue}
-                      onInputValueChange={setCategoryInputValue}
+              <CategoryInput
+                onCategoriesChange={handleCategoriesChange}
+                onGenerate={handleGenerate}
+                isGenerating={isGenerating}
+                roomId={gameState.roomId || ""}
+                inputValue={categoryInputValue}
+                onInputValueChange={setCategoryInputValue}
                       showGenerateButton={false}
                       roundedRight={false}
                     />

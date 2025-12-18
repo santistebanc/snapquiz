@@ -18,5 +18,11 @@
       "format": "esm",
       "sourcemap": true
     }
+  },
+  "bindings": {
+    "AUDIO_BUCKET": {
+      "type": "r2",
+      "bucket_name": "snapquiz-audio"
+    }
   }
 }
