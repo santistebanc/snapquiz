@@ -13,9 +13,11 @@ interface TimestampData {
   text_offset: number;
 }
 
-export async function generateAudioWithTimestamps(
+export async function generateAudioWithTimestampsUnrealSpeech(
   text: string,
-  voiceId: string = 'Daniel'
+  voiceId: string = 'Daniel',
+  audioBucket?: R2Bucket | null,
+  questionId?: string
 ): Promise<{ audioUrl: string; wordTimestamps: WordTimestamp[] }> {
   const apiKey = process.env.UNREALSPEECH_API_KEY;
   
@@ -76,8 +78,23 @@ export async function generateAudioWithTimestamps(
       }
     }
 
+    // UnrealSpeech already returns a public URL, but we can optionally upload to R2 for consistency
+    let audioUrl = data.OutputUri;
+    
+    // If R2 is available and we want to store a copy, we could fetch and upload
+    // For now, we'll use the UnrealSpeech URL directly since it's already publicly accessible
+    if (audioBucket && questionId) {
+      try {
+        // Optionally: fetch the audio from UnrealSpeech and upload to R2
+        // For now, we'll just use the UnrealSpeech URL
+        console.log(`[UnrealSpeech] Using UnrealSpeech URL: ${audioUrl}`);
+      } catch (r2Error) {
+        console.error(`[UnrealSpeech] R2 upload failed, using UnrealSpeech URL:`, r2Error);
+      }
+    }
+    
     return {
-      audioUrl: data.OutputUri,
+      audioUrl,
       wordTimestamps,
     };
   } catch (error) {
@@ -87,6 +104,24 @@ export async function generateAudioWithTimestamps(
       audioUrl: '',
       wordTimestamps: [],
     };
+  }
+}
+
+import type { R2Bucket } from '@cloudflare/workers-types';
+
+// Main function that routes to the appropriate TTS provider
+export async function generateAudioWithTimestamps(
+  text: string,
+  voiceId: string = 'Daniel',
+  provider: 'unrealspeech' | 'openai' = 'unrealspeech',
+  audioBucket?: R2Bucket | null,
+  questionId?: string
+): Promise<{ audioUrl: string; wordTimestamps: WordTimestamp[] }> {
+  if (provider === 'openai') {
+    const { generateAudioWithTimestampsOpenAI } = await import('./generateAudioOpenAI');
+    return generateAudioWithTimestampsOpenAI(text, voiceId, audioBucket, questionId);
+  } else {
+    return generateAudioWithTimestampsUnrealSpeech(text, voiceId, audioBucket, questionId);
   }
 }
 

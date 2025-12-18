@@ -1,7 +1,7 @@
 interface OpenAISpeechRecognitionOptions {
   language?: string;
   getLanguage?: () => string; // Function to get current language dynamically
-  getQuestionContext?: () => { question: string; options: string[] } | null; // Function to get current question context
+  getQuestionContext?: () => { question: string; options: string[]; language?: string } | null; // Function to get current question context
   onTranscript?: (text: string) => void;
   onError?: (error: string) => void;
   onStart?: () => void;
@@ -11,7 +11,7 @@ interface OpenAISpeechRecognitionOptions {
 export class OpenAISpeechRecognition {
   private language: string;
   private getLanguage?: () => string; // Function to get current language dynamically
-  private getQuestionContext?: () => { question: string; options: string[] } | null; // Function to get current question context
+  private getQuestionContext?: () => { question: string; options: string[]; language?: string } | null; // Function to get current question context
   private mediaRecorder: MediaRecorder | null = null;
   private audioChunks: Blob[] = [];
   private isRecording = false;
@@ -115,7 +115,8 @@ export class OpenAISpeechRecognition {
     } catch (error) {
       console.error('Error processing audio:', error);
       // Don't show error for empty audio - it's expected when recording stops quickly
-      if (!error?.message?.includes('400') && !error?.message?.includes('Bad Request')) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (!errorMessage.includes('400') && !errorMessage.includes('Bad Request')) {
         this.onError?.(`Failed to process audio: ${error}`);
       }
     } finally {
@@ -151,21 +152,6 @@ export class OpenAISpeechRecognition {
       const urlParams = new URLSearchParams(window.location.search);
       const roomId = urlParams.get('room') || localStorage.getItem('snapquiz_roomId') || '';
       
-      // Get current language (use getter function if available, otherwise use stored language)
-      const currentLanguage = this.getLanguage ? this.getLanguage() : this.language;
-      
-      // Map language setting to ISO 639-1 code
-      const languageMap: Record<string, string> = {
-        'American': 'en',
-        'Chinese': 'zh',
-        'Spanish': 'es',
-        'French': 'fr',
-        'Hindi': 'hi',
-        'Italian': 'it',
-        'Portuguese': 'pt',
-      };
-      const languageCode = languageMap[currentLanguage] || 'en';
-      
       // Get current question context if available
       const questionContext = this.getQuestionContext ? this.getQuestionContext() : null;
       
@@ -174,7 +160,7 @@ export class OpenAISpeechRecognition {
                       audioBlob.type.includes('webm') ? 'audio.webm' : 
                       audioBlob.type.includes('wav') ? 'audio.wav' : 'audio.webm';
       formData.append('file', audioBlob, fileName);
-      formData.append('language', languageCode);
+      
       
       // Add question context as prompt if available
       if (questionContext) {

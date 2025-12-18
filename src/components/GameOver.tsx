@@ -51,11 +51,36 @@ export function GameOver({ isPlayerMode = false }: GameOverProps) {
       if (!question) return;
 
       const playerAnswer = round.playerAnswers[player.id];
-      if (playerAnswer) {
-        if (playerAnswer === question.answer) {
-          correctAnswers++;
-        } else {
-          wrongAnswers++;
+      const pointsAwarded = round.pointsAwarded?.[player.id];
+      
+      // Check if player gave an answer
+      if (playerAnswer !== undefined && playerAnswer !== null && playerAnswer !== '') {
+        // For buzzer rounds: use evaluationResult (most reliable for buzzer)
+        if (round.buzzedPlayerId === player.id && round.evaluationResult) {
+          if (round.evaluationResult === 'correct') {
+            correctAnswers++;
+          } else if (round.evaluationResult === 'wrong') {
+            wrongAnswers++;
+          }
+        }
+        // For option selection rounds or when evaluationResult is not available:
+        // Use pointsAwarded if available (positive = correct, negative = wrong)
+        else if (pointsAwarded !== undefined) {
+          if (pointsAwarded > 0) {
+            correctAnswers++;
+          } else if (pointsAwarded < 0) {
+            wrongAnswers++;
+          }
+        }
+        // Fallback: check direct answer match (for option selection rounds)
+        // Note: pointsAwarded is only set for correct answers in option selection,
+        // so if no pointsAwarded but answer exists, check if it matches
+        else {
+          if (playerAnswer === question.answer) {
+            correctAnswers++;
+          } else {
+            wrongAnswers++;
+          }
         }
       }
     });

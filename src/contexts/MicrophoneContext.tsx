@@ -79,7 +79,8 @@ export function MicrophoneProvider({ children }: { children: React.ReactNode }) 
             if (question) {
               return {
                 question: question.text,
-                options: question.options
+                options: question.options,
+                language: question.language || gameState.settings?.language || 'American' // Use question's language, fallback to settings
               };
             }
           }

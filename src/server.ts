@@ -1,4 +1,5 @@
 import type * as Party from "partykit/server";
+import type { R2Bucket } from "@cloudflare/workers-types";
 import { initialState } from "./gameState";
 import { router, store, type Router } from "./machine";
 import { routes, type ServerState } from "./logic";
@@ -11,20 +12,41 @@ export default class Server implements Party.Server, ServerState {
   connections: Record<string, string> = {};
   gameState = store<GameState>(initialState)
   router: Router<typeof routes>;
+  audioBucket: R2Bucket | null = null;
 
-  constructor(readonly room: Party.Room) {
+  constructor(readonly room: Party.Room, readonly ctx?: Party.ExecutionContext) {
+    // Access R2 bucket from environment
+    // In PartyKit, R2 buckets are bound at deployment time and available via env
+    // The bucket binding name should match what's configured in PartyKit deployment
+    try {
+      const env = (ctx as any)?.env || (room as any).env || {};
+      if (env.AUDIO_BUCKET) {
+        this.audioBucket = env.AUDIO_BUCKET as R2Bucket;
+        console.log('[Server] R2 bucket initialized');
+      } else {
+        console.warn('[Server] R2 bucket not available - audio will use data URLs');
+        console.warn('[Server] To enable R2: Configure R2 bucket binding when deploying with PartyKit');
+      }
+    } catch (error) {
+      console.warn('[Server] Error accessing R2 bucket:', error);
+      console.warn('[Server] Audio will use data URLs as fallback');
+    }
 
     this.gameState.roomId = room.id;
     this.router = (router as any).call(this, routes, "lobby", () => { this.gameState.phase = this.router.state })
 
-    // Ensure settings exist for backward compatibility
-    if (!this.gameState.settings) {
-      this.gameState.settings = { language: 'American', voiceId: 'Daniel' };
-    }
-    // Migrate old settings without language
-    if (this.gameState.settings && !this.gameState.settings.language) {
-      this.gameState.settings.language = 'American';
-    }
+          // Ensure settings exist for backward compatibility
+          if (!this.gameState.settings) {
+            this.gameState.settings = { language: 'American', voiceId: 'Daniel', ttsProvider: 'unrealspeech' };
+          }
+          // Migrate old settings without language
+          if (this.gameState.settings && !this.gameState.settings.language) {
+            this.gameState.settings.language = 'American';
+          }
+          // Migrate old settings without ttsProvider
+          if (this.gameState.settings && !this.gameState.settings.ttsProvider) {
+            this.gameState.settings.ttsProvider = 'unrealspeech';
+          }
 
     // Load questions from storage on room initialization
     this.loadQuestionsFromStorage();
@@ -179,8 +201,19 @@ export default class Server implements Party.Server, ServerState {
         };
         
         const testPhrase = voiceToPhrase[voiceId] || 'Hello, this is a test of the voice.';
-        const { audioUrl } = await generateAudioWithTimestamps(testPhrase, voiceId);
-        return new Response(JSON.stringify({ audioUrl }), { status: 200, headers: { "Content-Type": "application/json" } });
+        const ttsProvider = this.gameState.settings?.ttsProvider || 'unrealspeech';
+        console.log(`Test voice: generating with provider ${ttsProvider} for voice ${voiceId}`);
+        try {
+          const { audioUrl } = await generateAudioWithTimestamps(testPhrase, voiceId, ttsProvider);
+          console.log(`Test voice: generated audio URL length ${audioUrl?.length || 0}`);
+          if (!audioUrl) {
+            return new Response(JSON.stringify({ error: "Failed to generate audio URL" }), { status: 500, headers: { "Content-Type": "application/json" } });
+          }
+          return new Response(JSON.stringify({ audioUrl }), { status: 200, headers: { "Content-Type": "application/json" } });
+        } catch (error) {
+          console.error('Test voice error:', error);
+          return new Response(JSON.stringify({ error: String(error) }), { status: 500, headers: { "Content-Type": "application/json" } });
+        }
       } catch (err) {
         console.error("Error generating test voice:", err);
         return new Response(JSON.stringify({ error: "Failed to generate test audio" }), { status: 500, headers: { "Content-Type": "application/json" } });
@@ -202,12 +235,54 @@ export default class Server implements Party.Server, ServerState {
 
   private async saveQuestionsToStorage() {
     try {
-      // Ensure we're storing plain JSON-serializable objects
-      const questionsToStore = JSON.parse(JSON.stringify(this.gameState.questions));
+      // Get a snapshot of questions to avoid reactive proxy issues
+      const questionsSnapshot = Array.from(this.gameState.questions);
+      
+      // Store questions with audioUrl - R2 URLs are small strings, not large base64 data
+      // If audioUrl is a data URL (base64), exclude it to avoid KV size limits
+      // Fully serialize to JSON and back to ensure completely plain objects
+      const questionsToStore = questionsSnapshot.map((question) => {
+        // Create a plain object with only serializable properties
+        const plainQuestion: any = {
+          id: String(question.id || ''),
+          text: String(question.text || ''),
+          category: String(question.category || ''),
+          answer: String(question.answer || ''),
+          options: Array.isArray(question.options) ? question.options.map(opt => String(opt)) : [],
+          revealedQuestion: Boolean(question.revealedQuestion),
+          openOptions: Boolean(question.openOptions),
+        };
+        
+        // Only include language if present
+        if (question.language) {
+          plainQuestion.language = String(question.language);
+        }
+        
+        // Only include audioUrl if it's not a data URL (data URLs are too large)
+        if (question.audioUrl && !question.audioUrl.startsWith('data:')) {
+          plainQuestion.audioUrl = String(question.audioUrl);
+        }
+        
+        // Include wordTimestamps if present (ensure they're plain objects)
+        if (question.wordTimestamps && Array.isArray(question.wordTimestamps) && question.wordTimestamps.length > 0) {
+          plainQuestion.wordTimestamps = question.wordTimestamps.map(ts => ({
+            word: String(ts.word || ''),
+            start: Number(ts.start || 0),
+            end: Number(ts.end || 0),
+          }));
+        }
+        
+        return plainQuestion;
+      });
 
-      await this.room.storage.put("questions", questionsToStore);
+      // Double-serialize to ensure completely plain objects (handles any nested reactive properties)
+      const jsonString = JSON.stringify(questionsToStore);
+      const fullySerialized = JSON.parse(jsonString);
+      
+      await this.room.storage.put("questions", fullySerialized);
     } catch (error) {
       console.error("Failed to save questions to storage:", error);
+      console.error("Error details:", error instanceof Error ? error.message : String(error));
     }
   }
 

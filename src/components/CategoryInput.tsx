@@ -9,9 +9,11 @@ interface CategoryInputProps {
   roomId: string;
   inputValue?: string;
   onInputValueChange?: (value: string) => void;
+  showGenerateButton?: boolean; // Option to hide the built-in generate button
+  roundedRight?: boolean; // Option to control right border radius (default: true)
 }
 
-export function CategoryInput({ onCategoriesChange, onGenerate, isGenerating, roomId, inputValue: externalInputValue, onInputValueChange }: CategoryInputProps) {
+export function CategoryInput({ onCategoriesChange, onGenerate, isGenerating, roomId, inputValue: externalInputValue, onInputValueChange, showGenerateButton = true, roundedRight = true }: CategoryInputProps) {
   const [internalInputValue, setInternalInputValue] = useState('');
   const inputValue = externalInputValue !== undefined ? externalInputValue : internalInputValue;
   const setInputValue = onInputValueChange || setInternalInputValue;
@@ -185,69 +187,70 @@ export function CategoryInput({ onCategoriesChange, onGenerate, isGenerating, ro
   // Show dropdown when there are suggestions and input has focus
   const shouldShowDropdown = showDropdown && suggestions.length > 0 && inputValue.length > 0;
 
+
   return (
     <div className="space-y-2">
-      <div className="flex flex-col sm:flex-row gap-2">
-        <div className="flex-1 relative">
-          <div className="relative flex items-center p-1.5 bg-card-dark/60 border border-border-muted/30 rounded-md h-[46.67px]">
-            {/* Inline autocomplete: mask typed text, show remainder with identical typography */}
-            {!!remainder && (
-              <div className="absolute inset-0 pointer-events-none flex items-center">
-                <span className="pl-4 text-base whitespace-pre select-none font-inherit leading-normal tracking-normal">
-                  <span className="opacity-0">{inputValue}</span>
-                  <span className="text-warm-cream/30">{remainder}</span>
-                </span>
-              </div>
-            )}
-            <input
-              ref={inputRef}
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              onKeyDown={handleKeyDown}
-              onFocus={() => setShowDropdown(true)}
-              onBlur={() => {
-                // Delay hiding to allow clicking on suggestions
-                setTimeout(() => setShowDropdown(false), 150);
-              }}
-              placeholder={isGenerating ? "Generating questions..." : "Enter a category (e.g., Science)"}
-              disabled={isGenerating}
-              className="relative z-10 flex-1 bg-transparent text-warm-cream placeholder:text-warm-cream/60 border-none outline-none min-w-[120px] text-base pl-2.5 disabled:opacity-50 disabled:cursor-not-allowed"
-              type="text"
-              autoComplete="off"
-            />
-            {isSuggesting && (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin text-warm-cream/60" />
-            )}
-          </div>
-          
-          {/* Suggestions Dropdown */}
-          {shouldShowDropdown && (
-            <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-card-dark border border-border-muted/30 rounded-md shadow-lg">
-              <div 
-                ref={dropdownRef}
-                className="max-h-48 overflow-y-auto custom-scrollbar"
-                style={{
-                  scrollbarWidth: 'thin',
-                  scrollbarColor: 'rgba(156, 163, 175, 0.5) transparent'
-                }}
-              >
-                {suggestions.map((suggestion, index) => (
-                  <button
-                    key={index}
-                    ref={index === selectedIndex ? selectedItemRef : null}
-                    onClick={() => selectSuggestion(suggestion)}
-                    className={`w-full px-3 py-2 text-left text-warm-cream hover:bg-border-muted/30 transition-colors text-sm flex items-center ${
-                      index === selectedIndex ? 'bg-border-muted/30' : ''
-                    }`}
-                  >
-                    {suggestion}
-                  </button>
-                ))}
-              </div>
+      <div className="flex-1 relative">
+        <div className={`relative flex items-center p-1.5 bg-card-dark/60 border border-border-muted/30 ${roundedRight ? 'rounded-md' : 'rounded-l-md rounded-r-none'} h-[46.67px]`}>
+          {/* Inline autocomplete: mask typed text, show remainder with identical typography */}
+          {!!remainder && (
+            <div className="absolute inset-0 pointer-events-none flex items-center">
+              <span className="pl-4 text-base whitespace-pre select-none font-inherit leading-normal tracking-normal">
+                <span className="opacity-0">{inputValue}</span>
+                <span className="text-warm-cream/30">{remainder}</span>
+              </span>
             </div>
+          )}
+          <input
+            ref={inputRef}
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            onKeyDown={handleKeyDown}
+            onFocus={() => setShowDropdown(true)}
+            onBlur={() => {
+              // Delay hiding to allow clicking on suggestions
+              setTimeout(() => setShowDropdown(false), 150);
+            }}
+            placeholder={isGenerating ? "Generating questions..." : "Enter a category (e.g., Science)"}
+            disabled={isGenerating}
+            className="relative z-10 flex-1 bg-transparent text-warm-cream placeholder:text-warm-cream/60 border-none outline-none min-w-[120px] text-base pl-2.5 disabled:opacity-50 disabled:cursor-not-allowed"
+            type="text"
+            autoComplete="off"
+          />
+          {isSuggesting && (
+            <Loader2 className="w-4 h-4 mr-2 animate-spin text-warm-cream/60" />
           )}
         </div>
         
+        {/* Suggestions Dropdown */}
+        {shouldShowDropdown && (
+          <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-card-dark border border-border-muted/30 rounded-md shadow-lg">
+            <div 
+              ref={dropdownRef}
+              className="max-h-48 overflow-y-auto custom-scrollbar"
+              style={{
+                scrollbarWidth: 'thin',
+                scrollbarColor: 'rgba(156, 163, 175, 0.5) transparent'
+              }}
+            >
+              {suggestions.map((suggestion, index) => (
+                <button
+                  key={index}
+                  ref={index === selectedIndex ? selectedItemRef : null}
+                  onClick={() => selectSuggestion(suggestion)}
+                  className={`w-full px-3 py-2 text-left text-warm-cream hover:bg-border-muted/30 transition-colors text-sm flex items-center ${
+                    index === selectedIndex ? 'bg-border-muted/30' : ''
+                  }`}
+                >
+                  {suggestion}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+      
+      {showGenerateButton && (
         <div className="flex justify-end sm:justify-start">
           <Button
             onClick={handleGenerate}
@@ -267,7 +270,7 @@ export function CategoryInput({ onCategoriesChange, onGenerate, isGenerating, ro
             )}
           </Button>
         </div>
-      </div>
+      )}
     </div>
   );
 }

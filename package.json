@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "partykit dev --live",
-    "deploy": "dotenv -e .env -- partykit deploy --with-vars --domain %DOMAIN%",
+    "deploy": "node scripts/deploy.js",
     "build:css": "tailwindcss -i ./src/styles.css -o ./public/dist/tailwind.css --minify",
     "predeploy": "npm run build:css"
   },

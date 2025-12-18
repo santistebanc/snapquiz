@@ -23,6 +23,7 @@ export interface Question {
   openOptions: boolean;
   audioUrl?: string;
   wordTimestamps?: WordTimestamp[];
+  language?: string; // Language in which the question was generated
 }
 
 export interface Round {
@@ -38,6 +39,7 @@ export interface Round {
 export interface GameSettings {
   language: string;
   voiceId: string;
+  ttsProvider: 'unrealspeech' | 'openai';
 }
 
 export interface GameState {

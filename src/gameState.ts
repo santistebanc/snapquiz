@@ -12,6 +12,7 @@ export const initialState: GameState = {
     settings: {
         language: 'American',
         voiceId: 'Daniel',
+        ttsProvider: 'unrealspeech',
     },
 }
 

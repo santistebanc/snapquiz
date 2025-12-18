@@ -20,6 +20,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { QuestionItem } from './QuestionItem';
 import { Text } from './ui/text';
+import { useAudio } from '../contexts/AudioContext';
 import type { Question } from '../types';
 
 interface QuestionListProps {
@@ -33,12 +34,14 @@ function SortableQuestionItem({
   question, 
   isExpanded, 
   onToggleExpand, 
-  onRemove 
+  onRemove,
+  onPlayAudio
 }: {
   question: Question;
   isExpanded: boolean;
   onToggleExpand: () => void;
   onRemove: () => void;
+  onPlayAudio?: (questionId: string) => void;
 }) {
   const {
     attributes,
@@ -63,6 +66,7 @@ function SortableQuestionItem({
         onToggleExpand={onToggleExpand}
         onRemove={onRemove}
         dragHandleProps={{ ...attributes, ...listeners }}
+        onPlayAudio={onPlayAudio}
       />
     </div>
   );
@@ -70,6 +74,7 @@ function SortableQuestionItem({
 
 export function QuestionList({ questions, onReorder, onRemove, rightActions }: QuestionListProps) {
   const [expandedQuestionId, setExpandedQuestionId] = useState<string | null>(null);
+  const { playAudio } = useAudio();
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -134,6 +139,7 @@ export function QuestionList({ questions, onReorder, onRemove, rightActions }: Q
                 isExpanded={expandedQuestionId === question.id}
                 onToggleExpand={() => handleToggleExpand(question.id)}
                 onRemove={() => onRemove(question.id)}
+                onPlayAudio={playAudio}
               />
             ))}
           </div>

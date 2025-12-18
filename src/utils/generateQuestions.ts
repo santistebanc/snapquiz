@@ -16,12 +16,16 @@ const QuestionsResponseSchema = z.object({
   questions: z.array(QuestionSchema).length(5).describe('Array of 5 quiz questions'),
 });
 
+import type { R2Bucket } from '@cloudflare/workers-types';
+
 // This will be called from the server side with PartyKit environment
 export async function generateQuestions(
   categories: string[],
   existingQuestions: Question[],
   voiceId: string = 'Daniel',
-  language: string = 'American'
+  language: string = 'American',
+  ttsProvider: 'unrealspeech' | 'openai' = 'unrealspeech',
+  audioBucket?: R2Bucket | null
 ): Promise<Question[]> {
   console.log('generateQuestions called with categories:', categories);
 
@@ -82,6 +86,7 @@ Make sure questions are unique and not similar to these existing questions: ${ex
     answer: q.answer, // Direct text answer from structured output
     revealedQuestion: false,
     openOptions: false,
+    language: language, // Save the language in which the question was generated
   }));
 
   // Filter out duplicates by checking text similarity
@@ -92,25 +97,51 @@ Make sure questions are unique and not similar to these existing questions: ${ex
   );
 
   // Generate audio with timestamps for each question
-  console.log('Generating audio for questions with UnrealSpeech...');
+  console.log(`[generateQuestions] Starting audio generation for ${uniqueQuestions.length} questions with provider: ${ttsProvider}, voiceId: ${voiceId}`);
   const questionsWithAudio = await Promise.all(
-    uniqueQuestions.map(async (question) => {
+    uniqueQuestions.map(async (question, index) => {
       try {
+        console.log(`[generateQuestions] [${index + 1}/${uniqueQuestions.length}] Generating audio for: "${question.text.substring(0, 50)}..."`);
+        const startTime = Date.now();
         const { audioUrl, wordTimestamps } = await generateAudioWithTimestamps(
           question.text,
-          voiceId
+          voiceId,
+          ttsProvider,
+          audioBucket,
+          question.id
         );
+        const duration = Date.now() - startTime;
+        console.log(`[generateQuestions] [${index + 1}/${uniqueQuestions.length}] Audio generated in ${duration}ms. URL length: ${audioUrl?.length || 0}, timestamps: ${wordTimestamps?.length || 0}`);
+        const finalAudioUrl = audioUrl && audioUrl.trim().length > 0 ? audioUrl : undefined;
+        if (!finalAudioUrl) {
+          console.warn(`[generateQuestions] [${index + 1}/${uniqueQuestions.length}] WARNING: audioUrl is empty or undefined!`);
+        }
+        console.log(`[generateQuestions] [${index + 1}/${uniqueQuestions.length}] Final audioUrl:`, finalAudioUrl ? `SET (${finalAudioUrl.substring(0, 50)}...)` : 'NOT SET');
         return {
           ...question,
-          audioUrl,
-          wordTimestamps,
+          audioUrl: finalAudioUrl,
+          wordTimestamps: wordTimestamps && wordTimestamps.length > 0 ? wordTimestamps : undefined,
         };
-      } catch (error) {
-        console.error(`Failed to generate audio for question: ${question.text}`, error);
-        return question; // Return question without audio if generation fails
+      } catch (error: any) {
+        console.error(`[generateQuestions] [${index + 1}/${uniqueQuestions.length}] FAILED to generate audio:`, error);
+        console.error(`[generateQuestions] Error details:`, {
+          message: error?.message,
+          name: error?.name,
+          stack: error?.stack?.substring(0, 500),
+          provider: ttsProvider,
+          voiceId: voiceId
+        });
+        // Return question without audio if generation fails
+        return {
+          ...question,
+          audioUrl: undefined,
+          wordTimestamps: undefined,
+        };
       }
     })
   );
+  const questionsWithAudioCount = questionsWithAudio.filter(q => q.audioUrl).length;
+  console.log(`[generateQuestions] Completed: ${questionsWithAudioCount}/${uniqueQuestions.length} questions have audio URLs`);
   return questionsWithAudio;
 }
 

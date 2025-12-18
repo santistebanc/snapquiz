@@ -69,27 +69,39 @@ export function AudioProvider({ children, questions }: AudioProviderProps) {
       }
       
       console.log(`📥 Loading audio on-demand for ${questionId}`);
-      howl = new Howl({
+      
+      // Determine format based on URL type
+      const isDataUrl = audioUrl.startsWith('data:');
+      
+      // For data URLs, don't specify format (MIME type is in the data URL itself)
+      // For regular URLs, specify format
+      const howlConfig: any = {
         src: [audioUrl],
-        html5: true,
-        format: ['mp3'],
+        html5: true, // Always use HTML5 for better compatibility with data URLs
         volume: 1.0,
         onload: () => {
-          console.log(`✅ Audio loaded for ${questionId}`);
+          console.log(`✅ Audio loaded for ${questionId}`, isDataUrl ? '(data URL)' : '');
         },
         onloaderror: (id, error) => {
-          console.error(`❌ Load error for ${questionId}:`, error);
+          console.error(`❌ Load error for ${questionId}:`, error, isDataUrl ? 'data URL' : audioUrl.substring(0, 50));
         },
         onplay: () => {
           console.log(`▶️ Now playing ${questionId}`);
         },
         onplayerror: (id, error) => {
-          console.error(`❌ Play error for ${questionId}:`, error);
+          console.error(`❌ Play error for ${questionId}:`, error, isDataUrl ? 'data URL' : audioUrl.substring(0, 50));
         },
         onend: () => {
           console.log(`⏹️ Finished playing ${questionId}`);
         },
-      });
+      };
+      
+      // Only specify format for non-data URLs
+      if (!isDataUrl) {
+        howlConfig.format = ['mp3'];
+      }
+      
+      howl = new Howl(howlConfig);
       
       audioCache.current[questionId] = howl;
     }
@@ -187,23 +199,30 @@ export function AudioProvider({ children, questions }: AudioProviderProps) {
     }
 
     console.log(`📦 Preloading audio for ${questionId}`);
+    
+    // Determine format based on URL type
+    const isDataUrl = audioUrl.startsWith('data:');
+    const formats = isDataUrl 
+      ? ['mpeg', 'mp3'] // Data URLs might need explicit format
+      : ['mp3'];
+    
     const howl = new Howl({
       src: [audioUrl],
       html5: true,
-      format: ['mp3'],
+      format: formats,
       volume: 1.0,
       preload: true,
       onload: () => {
         console.log(`✅ Audio preloaded successfully for ${questionId}`);
       },
       onloaderror: (id, error) => {
-        console.error(`❌ Preload error for ${questionId}:`, error);
+        console.error(`❌ Preload error for ${questionId}:`, error, audioUrl.substring(0, 50));
       },
       onplay: () => {
         console.log(`▶️ Now playing ${questionId}`);
       },
       onplayerror: (id, error) => {
-        console.error(`❌ Play error for ${questionId}:`, error);
+        console.error(`❌ Play error for ${questionId}:`, error, audioUrl.substring(0, 50));
       },
       onend: () => {
         console.log(`⏹️ Finished playing ${questionId}`);

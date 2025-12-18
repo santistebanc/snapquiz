@@ -6,13 +6,233 @@ import { CategoryInput } from "../components/CategoryInput";
 import { QuestionList } from "../components/QuestionList";
 import { useGameStore } from "../store";
 import { Alert, AlertDescription } from "../components/ui/alert";
-import { AlertTriangle, Shuffle, Shield, ShieldOff, User, Volume2 } from "lucide-react";
+import { AlertTriangle, Shuffle, Shield, ShieldOff, User, Volume2, ChevronDown, Plus } from "lucide-react";
 import type { Question } from "../types";
 import { Button } from "../components/ui/button";
 import { Avatar, AvatarFallback } from "../components/ui/avatar";
 import { PlayerDrawer } from "../components/PlayerDrawer";
 import { Label } from "../components/ui/label";
 import { Howl } from "howler";
+
+// Language flag mapping
+const languageFlags: Record<string, string> = {
+  'American': 'https://flagcdn.com/w40/us.png',
+  'Chinese': 'https://flagcdn.com/w40/cn.png',
+  'Spanish': 'https://flagcdn.com/w40/es.png',
+  'French': 'https://flagcdn.com/w40/fr.png',
+  'Hindi': 'https://flagcdn.com/w40/in.png',
+  'Italian': 'https://flagcdn.com/w40/it.png',
+  'Portuguese': 'https://flagcdn.com/w40/pt.png',
+};
+
+const languages = ['American', 'Chinese', 'Spanish', 'French', 'Hindi', 'Italian', 'Portuguese'];
+
+interface LanguageSelectProps {
+  value: string;
+  onChange: (value: string) => void;
+}
+
+function LanguageSelect({ value, onChange }: LanguageSelectProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen]);
+
+  return (
+    <div className="relative w-auto" ref={dropdownRef}>
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex h-[46.67px] w-auto min-w-fit rounded-l-none rounded-r-md border-l-0 border-r border-t border-b border-border-muted/30 bg-card-dark/50 px-2 text-warm-cream ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-warm-yellow focus-visible:ring-offset-2 items-center justify-center"
+      >
+        <img 
+          src={languageFlags[value] || languageFlags['American']} 
+          alt={value}
+          className="w-6 h-4 object-cover rounded"
+        />
+      </button>
+      
+      {isOpen && (
+        <div className="absolute z-50 w-auto min-w-fit mt-1 bg-card-dark border border-border-muted/30 rounded-md shadow-lg">
+          <div className="max-h-60 overflow-y-auto custom-scrollbar">
+            {languages.map((lang) => (
+              <button
+                key={lang}
+                type="button"
+                onClick={() => {
+                  onChange(lang);
+                  setIsOpen(false);
+                }}
+                className={`w-full px-2 py-2 text-left text-warm-cream hover:bg-border-muted/30 transition-colors flex items-center justify-center ${
+                  value === lang ? 'bg-teal-primary/30' : ''
+                }`}
+              >
+                <img 
+                  src={languageFlags[lang]} 
+                  alt={lang}
+                  className="w-6 h-4 object-cover rounded"
+                />
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+interface VoiceSelectProps {
+  value: string;
+  onChange: (value: string) => void;
+  ttsProvider: 'unrealspeech' | 'openai';
+  language: string;
+}
+
+function VoiceSelect({ value, onChange, ttsProvider, language }: VoiceSelectProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen]);
+
+  // Get available voices based on TTS provider
+  const getVoices = () => {
+    if (ttsProvider === 'openai') {
+      return [
+        { name: 'alloy', description: 'Alloy' },
+        { name: 'echo', description: 'Echo' },
+        { name: 'fable', description: 'Fable' },
+        { name: 'onyx', description: 'Onyx' },
+        { name: 'nova', description: 'Nova' },
+        { name: 'shimmer', description: 'Shimmer' },
+      ];
+    }
+    
+    // UnrealSpeech voices (language-specific)
+    const languageToVoices: Record<string, { name: string; gender: string }[]> = {
+      'American': [
+        { name: 'Noah', gender: 'Male' },
+        { name: 'Jasper', gender: 'Male' },
+        { name: 'Caleb', gender: 'Male' },
+        { name: 'Ronan', gender: 'Male' },
+        { name: 'Ethan', gender: 'Male' },
+        { name: 'Daniel', gender: 'Male' },
+        { name: 'Zane', gender: 'Male' },
+        { name: 'Autumn', gender: 'Female' },
+        { name: 'Melody', gender: 'Female' },
+        { name: 'Hannah', gender: 'Female' },
+        { name: 'Emily', gender: 'Female' },
+        { name: 'Ivy', gender: 'Female' },
+        { name: 'Kaitlyn', gender: 'Female' },
+        { name: 'Luna', gender: 'Female' },
+        { name: 'Willow', gender: 'Female' },
+        { name: 'Lauren', gender: 'Female' },
+        { name: 'Sierra', gender: 'Female' },
+      ],
+      'Chinese': [
+        { name: 'Wei', gender: 'Male' },
+        { name: 'Jian', gender: 'Male' },
+        { name: 'Hao', gender: 'Male' },
+        { name: 'Sheng', gender: 'Male' },
+        { name: 'Mei', gender: 'Female' },
+        { name: 'Lian', gender: 'Female' },
+        { name: 'Ting', gender: 'Female' },
+        { name: 'Jing', gender: 'Female' },
+      ],
+      'Spanish': [
+        { name: 'Mateo', gender: 'Male' },
+        { name: 'Javier', gender: 'Male' },
+        { name: 'Lucía', gender: 'Female' },
+      ],
+      'French': [
+        { name: 'Élodie', gender: 'Female' },
+      ],
+      'Hindi': [
+        { name: 'Arjun', gender: 'Male' },
+        { name: 'Rohan', gender: 'Male' },
+        { name: 'Ananya', gender: 'Female' },
+        { name: 'Priya', gender: 'Female' },
+      ],
+      'Italian': [
+        { name: 'Luca', gender: 'Male' },
+        { name: 'Giulia', gender: 'Female' },
+      ],
+      'Portuguese': [
+        { name: 'Thiago', gender: 'Male' },
+        { name: 'Rafael', gender: 'Male' },
+        { name: 'Camila', gender: 'Female' },
+      ],
+    };
+    
+    const voices = languageToVoices[language] || [];
+    return voices.map(v => ({ name: v.name, description: v.name }));
+  };
+
+  const voices = getVoices();
+  const currentVoice = voices.find(v => v.name.toLowerCase() === value.toLowerCase()) || voices[0];
+  const displayText = currentVoice?.description || value;
+
+  return (
+    <div className="relative w-auto min-w-fit" ref={dropdownRef}>
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex h-[46.67px] w-auto min-w-fit rounded-l-none rounded-r-md border-l-0 border-r border-t border-b border-border-muted/30 bg-card-dark/50 px-3 text-warm-cream text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-warm-yellow focus-visible:ring-offset-2 items-center justify-center whitespace-nowrap"
+      >
+        {displayText}
+      </button>
+      
+      {isOpen && (
+        <div className="absolute z-50 w-auto min-w-fit mt-1 bg-card-dark border border-border-muted/30 rounded-md shadow-lg">
+          <div className="max-h-60 overflow-y-auto custom-scrollbar">
+            {voices.map((voice) => (
+              <button
+                key={voice.name}
+                type="button"
+                onClick={() => {
+                  onChange(voice.name);
+                  setIsOpen(false);
+                }}
+                className={`w-full px-3 py-2 text-left text-warm-cream hover:bg-border-muted/30 transition-colors whitespace-nowrap ${
+                  value.toLowerCase() === voice.name.toLowerCase() ? 'bg-teal-primary/30' : ''
+                }`}
+              >
+                {voice.description}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function Settings() {
   const { gameState, serverAction } = useGameStore();
@@ -150,22 +370,36 @@ export default function Settings() {
       const data = await response.json();
       
       if (data.audioUrl) {
-        // Play the audio using Howler
-        const howl = new Howl({
+        // Determine format based on URL type
+        const isDataUrl = data.audioUrl.startsWith('data:');
+        
+        // For data URLs, don't specify format (MIME type is in the data URL itself)
+        const howlConfig: any = {
           src: [data.audioUrl],
           html5: true,
-          format: ['mp3'],
           volume: 1.0,
           onend: () => {
             setIsTestingVoice(false);
             testAudioRef.current = null;
           },
-          onplayerror: () => {
+          onplayerror: (id, error) => {
+            console.error('Play error:', error, data.audioUrl.substring(0, 50));
+            setIsTestingVoice(false);
+            testAudioRef.current = null;
+          },
+          onloaderror: (id, error) => {
+            console.error('Load error:', error, data.audioUrl.substring(0, 50));
             setIsTestingVoice(false);
             testAudioRef.current = null;
           }
-        });
+        };
         
+        // Only specify format for non-data URLs
+        if (!isDataUrl) {
+          howlConfig.format = ['mp3'];
+        }
+        
+        const howl = new Howl(howlConfig);
         testAudioRef.current = howl;
         howl.play();
       } else {
@@ -205,120 +439,6 @@ export default function Settings() {
                 <Text variant="large" className="text-warm-cream text-4xl font-bold mb-3">
                   Game Settings
                 </Text>
-              </div>
-
-              {/* Voice Selection Section */}
-              <div className="space-y-3">
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="language-select" className="text-warm-cream/90">
-                      Language
-                    </Label>
-                    <select
-                      id="language-select"
-                      value={gameState.settings?.language || 'American'}
-                      onChange={(e) => serverAction("updateLanguage", e.target.value)}
-                      className="themed-select flex h-10 w-full rounded-md border border-border-muted/30 bg-card-dark/50 px-3 py-2 text-warm-cream text-base ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-warm-yellow focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
-                    >
-                      <option value="American">American</option>
-                      <option value="Chinese">Chinese</option>
-                      <option value="Spanish">Spanish</option>
-                      <option value="French">French</option>
-                      <option value="Hindi">Hindi</option>
-                      <option value="Italian">Italian</option>
-                      <option value="Portuguese">Portuguese</option>
-                    </select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="voice-select" className="text-warm-cream/90">
-                      Voice
-                    </Label>
-                    <select
-                      id="voice-select"
-                      value={gameState.settings?.voiceId || 'Daniel'}
-                      onChange={(e) => serverAction("updateVoice", e.target.value)}
-                      className="themed-select flex h-10 w-full rounded-md border border-border-muted/30 bg-card-dark/50 px-3 py-2 text-warm-cream text-base ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-warm-yellow focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
-                    >
-                      {(() => {
-                        const language = gameState.settings?.language || 'American';
-                        const languageToVoices: Record<string, { name: string; gender: string }[]> = {
-                          'American': [
-                            { name: 'Noah', gender: 'Male' },
-                            { name: 'Jasper', gender: 'Male' },
-                            { name: 'Caleb', gender: 'Male' },
-                            { name: 'Ronan', gender: 'Male' },
-                            { name: 'Ethan', gender: 'Male' },
-                            { name: 'Daniel', gender: 'Male' },
-                            { name: 'Zane', gender: 'Male' },
-                            { name: 'Autumn', gender: 'Female' },
-                            { name: 'Melody', gender: 'Female' },
-                            { name: 'Hannah', gender: 'Female' },
-                            { name: 'Emily', gender: 'Female' },
-                            { name: 'Ivy', gender: 'Female' },
-                            { name: 'Kaitlyn', gender: 'Female' },
-                            { name: 'Luna', gender: 'Female' },
-                            { name: 'Willow', gender: 'Female' },
-                            { name: 'Lauren', gender: 'Female' },
-                            { name: 'Sierra', gender: 'Female' },
-                          ],
-                          'Chinese': [
-                            { name: 'Wei', gender: 'Male' },
-                            { name: 'Jian', gender: 'Male' },
-                            { name: 'Hao', gender: 'Male' },
-                            { name: 'Sheng', gender: 'Male' },
-                            { name: 'Mei', gender: 'Female' },
-                            { name: 'Lian', gender: 'Female' },
-                            { name: 'Ting', gender: 'Female' },
-                            { name: 'Jing', gender: 'Female' },
-                          ],
-                          'Spanish': [
-                            { name: 'Mateo', gender: 'Male' },
-                            { name: 'Javier', gender: 'Male' },
-                            { name: 'Lucía', gender: 'Female' },
-                          ],
-                          'French': [
-                            { name: 'Élodie', gender: 'Female' },
-                          ],
-                          'Hindi': [
-                            { name: 'Arjun', gender: 'Male' },
-                            { name: 'Rohan', gender: 'Male' },
-                            { name: 'Ananya', gender: 'Female' },
-                            { name: 'Priya', gender: 'Female' },
-                          ],
-                          'Italian': [
-                            { name: 'Luca', gender: 'Male' },
-                            { name: 'Giulia', gender: 'Female' },
-                          ],
-                          'Portuguese': [
-                            { name: 'Thiago', gender: 'Male' },
-                            { name: 'Rafael', gender: 'Male' },
-                            { name: 'Camila', gender: 'Female' },
-                          ],
-                        };
-                        const voices = languageToVoices[language] || [];
-                        return (
-                          <>
-                            {voices.map(voice => (
-                              <option key={voice.name} value={voice.name}>{voice.name}</option>
-                            ))}
-                          </>
-                        );
-                      })()}
-                    </select>
-                  </div>
-                  <Text className="text-warm-cream/60 text-sm">
-                    Select the language and voice used for reading questions aloud
-                  </Text>
-                  <Button
-                    onClick={handleTestVoice}
-                    disabled={isTestingVoice}
-                    variant="outline"
-                    className="mt-2 border-border-muted/30 bg-card-dark/50 hover:bg-border-muted/30 text-warm-cream/80"
-                  >
-                    <Volume2 className="w-4 h-4 mr-2" />
-                    {isTestingVoice ? 'Generating...' : 'Test Voice'}
-                  </Button>
-                </div>
               </div>
 
               {/* Player Management Section */}
@@ -375,14 +495,92 @@ export default function Settings() {
                 </div>
               )}
 
-              <CategoryInput
-                onCategoriesChange={handleCategoriesChange}
-                onGenerate={handleGenerate}
-                isGenerating={isGenerating}
-                roomId={gameState.roomId || ""}
-                inputValue={categoryInputValue}
-                onInputValueChange={setCategoryInputValue}
-              />
+              {/* Generate Questions Section with Language/Voice inline */}
+              <div className="space-y-3">
+                <div className="flex flex-col sm:flex-row gap-0 items-end">
+                  <div className="flex-1">
+                    <CategoryInput
+                      onCategoriesChange={handleCategoriesChange}
+                      onGenerate={handleGenerate}
+                      isGenerating={isGenerating}
+                      roomId={gameState.roomId || ""}
+                      inputValue={categoryInputValue}
+                      onInputValueChange={setCategoryInputValue}
+                      showGenerateButton={false}
+                      roundedRight={false}
+                    />
+                  </div>
+                  <div className="flex gap-0 items-end">
+                    <LanguageSelect
+                      value={gameState.settings?.language || 'American'}
+                      onChange={(value) => serverAction("updateLanguage", value)}
+                    />
+                    <VoiceSelect
+                      value={gameState.settings?.voiceId || 'Daniel'}
+                      onChange={(value) => serverAction("updateVoice", value)}
+                      ttsProvider={gameState.settings?.ttsProvider || 'unrealspeech'}
+                      language={gameState.settings?.language || 'American'}
+                    />
+                    <Button
+                      onClick={handleTestVoice}
+                      disabled={isTestingVoice}
+                      variant="outline"
+                      size="sm"
+                      className="h-[46.67px] rounded-l-none border-l-0 border-r border-t border-b border-border-muted/30 bg-card-dark/50 hover:bg-border-muted/30 text-warm-cream/80"
+                    >
+                      <Volume2 className="w-4 h-4" />
+                    </Button>
+                    <div className="flex h-[46.67px] rounded-l-none rounded-r-md border-l-0 border-r border-t border-b border-border-muted/30 bg-card-dark/50 overflow-hidden">
+                      <button
+                        onClick={() => serverAction("updateTTSProvider", "unrealspeech")}
+                        className={`px-3 py-2 text-xs font-medium transition-colors ${
+                          (gameState.settings?.ttsProvider || 'unrealspeech') === 'unrealspeech'
+                            ? 'bg-teal-primary text-warm-cream'
+                            : 'text-warm-cream/60 hover:text-warm-cream hover:bg-border-muted/30'
+                        }`}
+                        title="UnrealSpeech (with accurate timestamps)"
+                      >
+                        US
+                      </button>
+                      <button
+                        onClick={() => serverAction("updateTTSProvider", "openai")}
+                        className={`px-3 py-2 text-xs font-medium transition-colors border-l border-border-muted/30 ${
+                          gameState.settings?.ttsProvider === 'openai'
+                            ? 'bg-teal-primary text-warm-cream'
+                            : 'text-warm-cream/60 hover:text-warm-cream hover:bg-border-muted/30'
+                        }`}
+                        title="OpenAI TTS (with estimated timestamps)"
+                      >
+                        AI
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex justify-end sm:justify-start">
+                  <Button
+                    onClick={() => {
+                      const category = categoryInputValue.trim();
+                      if (category.length > 0) {
+                        handleGenerate([category]);
+                      }
+                    }}
+                    disabled={categoryInputValue.trim().length === 0 || isGenerating}
+                    className="bg-warm-orange hover:bg-warm-orange/90 text-white disabled:opacity-50 text-base px-4 h-[46.67px] transition-all duration-200"
+                  >
+                    {isGenerating ? (
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        <span className="font-medium">Generating...</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <Plus className="w-4 h-4" />
+                        <span className="font-medium">Generate</span>
+                      </div>
+                    )}
+                  </Button>
+                </div>
+              </div>
 
               {/* Category usage summary */}
               {Object.keys(categoryCounts).length > 0 && (

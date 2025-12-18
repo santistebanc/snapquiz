@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { GripVertical, Eye, EyeOff, ChevronDown, ChevronUp, Trash2 } from 'lucide-react';
+import { GripVertical, Eye, EyeOff, ChevronDown, ChevronUp, Trash2, Volume2 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
+import { useAudio } from '../contexts/AudioContext';
 import type { Question } from '../types';
 
 interface QuestionItemProps {
@@ -10,6 +11,7 @@ interface QuestionItemProps {
   onToggleExpand: () => void;
   onRemove: () => void;
   dragHandleProps?: any;
+  onPlayAudio?: (questionId: string) => void;
 }
 
 // Large screen component (current layout)
@@ -20,7 +22,8 @@ function QuestionItemLarge({
   onRemove, 
   dragHandleProps,
   isRevealed,
-  toggleReveal
+  toggleReveal,
+  onPlayAudio
 }: QuestionItemProps & { isRevealed: boolean; toggleReveal: () => void }) {
   return (
     <div className="bg-card-dark/60 border border-border-muted/30 rounded-lg p-2 hover:bg-card-dark/80 transition-colors">
@@ -107,7 +110,25 @@ function QuestionItemLarge({
                 )}
               </div>
 
-              {/* Third Slot: Remove Button (always visible) */}
+              {/* Play Audio Button (if audioUrl exists and question is revealed) - positioned before trash button */}
+              {isRevealed && question.audioUrl && onPlayAudio && (
+                <Button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onPlayAudio(question.id);
+                  }}
+                  size="sm"
+                  variant="outline"
+                  className="border-border-muted/50 text-warm-cream bg-card-dark/80 hover:bg-border-muted/30 hover:text-white"
+                  type="button"
+                  title="Play audio"
+                >
+                  <Volume2 className="w-4 h-4" />
+                </Button>
+              )}
+
+              {/* Remove Button (always visible) */}
               <Button
                 onClick={(e) => {
                   e.preventDefault();
@@ -160,7 +181,8 @@ function QuestionItemSmall({
   onRemove, 
   dragHandleProps,
   isRevealed,
-  toggleReveal
+  toggleReveal,
+  onPlayAudio
 }: QuestionItemProps & { isRevealed: boolean; toggleReveal: () => void }) {
   return (
     <div className="bg-card-dark/60 border border-border-muted/30 rounded-lg p-2 hover:bg-card-dark/80 transition-colors">
@@ -245,7 +267,25 @@ function QuestionItemSmall({
                 )}
               </div>
 
-              {/* Third Slot: Remove Button (always visible) */}
+              {/* Play Audio Button (if audioUrl exists and question is revealed) - positioned before trash button */}
+              {isRevealed && question.audioUrl && onPlayAudio && (
+                <Button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onPlayAudio(question.id);
+                  }}
+                  size="sm"
+                  variant="outline"
+                  className="border-border-muted/50 text-warm-cream bg-card-dark/80 hover:bg-border-muted/30 hover:text-white"
+                  type="button"
+                  title="Play audio"
+                >
+                  <Volume2 className="w-4 h-4" />
+                </Button>
+              )}
+
+              {/* Remove Button (always visible) */}
               <Button
                 onClick={(e) => {
                   e.preventDefault();
@@ -295,7 +335,8 @@ export function QuestionItem({
   isExpanded, 
   onToggleExpand, 
   onRemove, 
-  dragHandleProps 
+  dragHandleProps,
+  onPlayAudio
 }: QuestionItemProps) {
   const [isRevealed, setIsRevealed] = useState(false);
 
@@ -324,6 +365,7 @@ export function QuestionItem({
           dragHandleProps={dragHandleProps}
           isRevealed={isRevealed}
           toggleReveal={toggleReveal}
+          onPlayAudio={onPlayAudio}
         />
       </div>
 
@@ -337,6 +379,7 @@ export function QuestionItem({
           dragHandleProps={dragHandleProps}
           isRevealed={isRevealed}
           toggleReveal={toggleReveal}
+          onPlayAudio={onPlayAudio}
         />
       </div>
     </>

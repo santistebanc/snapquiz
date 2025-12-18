@@ -1,5 +1,6 @@
 import { router, store, timeout, type Config, type Router } from "./machine";
 import type { GameState, Player, Question } from "./types";
+import type { R2Bucket } from "@cloudflare/workers-types";
 import { BUZZER_ANSWER_TIMEOUT } from "./constants";
 import { evaluateAnswer } from "./utils/evaluateAnswer";
 
@@ -7,6 +8,7 @@ export interface ServerState {
     gameState: GameState;
     router: Router<typeof routes>;
     connections: Record<string, string>;
+    audioBucket?: R2Bucket | null;
 }
 
 // Helper function to shuffle array
@@ -157,7 +159,8 @@ async function generateQuestions(this: ServerState, categories: string[]) {
     const { generateQuestions: generateQuestionsUtil } = await import('./utils/generateQuestions');
     const voiceId = this.gameState.settings?.voiceId || 'Daniel';
     const language = this.gameState.settings?.language || 'American';
-    const newQuestions = await generateQuestionsUtil(categories, this.gameState.questions, voiceId, language);
+    const ttsProvider = this.gameState.settings?.ttsProvider || 'unrealspeech';
+    const newQuestions = await generateQuestionsUtil(categories, this.gameState.questions, voiceId, language, ttsProvider, this.audioBucket);
     this.gameState.questions = [...this.gameState.questions, ...newQuestions];
     return newQuestions;
 }
@@ -223,6 +226,38 @@ function updateLanguage(this: ServerState, language: string) {
 
 function updateVoice(this: ServerState, voiceId: string) {
     this.gameState.settings.voiceId = voiceId;
+}
+
+function updateTTSProvider(this: ServerState, provider: 'unrealspeech' | 'openai') {
+    this.gameState.settings.ttsProvider = provider;
+    // If switching to OpenAI and current voice is not an OpenAI voice, set default
+    if (provider === 'openai') {
+        const openAIVoices = ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer'];
+        const currentVoice = this.gameState.settings.voiceId || 'Daniel';
+        if (!openAIVoices.includes(currentVoice.toLowerCase())) {
+            this.gameState.settings.voiceId = 'alloy'; // Default OpenAI voice
+        }
+    }
+    // If switching to UnrealSpeech and current voice is an OpenAI voice, set default
+    else if (provider === 'unrealspeech') {
+        const openAIVoices = ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer'];
+        const currentVoice = this.gameState.settings.voiceId || 'alloy';
+        if (openAIVoices.includes(currentVoice.toLowerCase())) {
+            // Set to first voice of current language
+            const language = this.gameState.settings.language || 'American';
+            const languageToVoices: Record<string, string[]> = {
+                'American': ['Noah', 'Jasper', 'Caleb', 'Ronan', 'Ethan', 'Daniel', 'Zane', 'Autumn', 'Melody', 'Hannah', 'Emily', 'Ivy', 'Kaitlyn', 'Luna', 'Willow', 'Lauren', 'Sierra'],
+                'Chinese': ['Wei', 'Jian', 'Hao', 'Sheng', 'Mei', 'Lian', 'Ting', 'Jing'],
+                'Spanish': ['Mateo', 'Javier', 'Lucía'],
+                'French': ['Élodie'],
+                'Hindi': ['Arjun', 'Rohan', 'Ananya', 'Priya'],
+                'Italian': ['Luca', 'Giulia'],
+                'Portuguese': ['Thiago', 'Rafael', 'Camila'],
+            };
+            const voices = languageToVoices[language] || ['Daniel'];
+            this.gameState.settings.voiceId = voices[0];
+        }
+    }
 }
 
 
@@ -344,7 +379,7 @@ function givingPointsAfterBuzzInit(this: ServerState) {
     }
 }
 
-const common = { resetGame, nextRound, updateQuestions, reorderQuestions, removeQuestion, generateQuestions, joinAsPlayer, changeProfile, createOrUpdatePlayer, togglePlayerAdmin, updateLanguage, updateVoice }
+const common = { resetGame, nextRound, updateQuestions, reorderQuestions, removeQuestion, generateQuestions, joinAsPlayer, changeProfile, createOrUpdatePlayer, togglePlayerAdmin, updateLanguage, updateVoice, updateTTSProvider }
 
 export const routes = {
     lobby: { startGame, ...common },
