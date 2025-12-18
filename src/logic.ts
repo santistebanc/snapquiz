@@ -9,6 +9,7 @@ export interface ServerState {
     router: Router<typeof routes>;
     connections: Record<string, string>;
     audioBucket?: R2Bucket | null;
+    showingOptionsTimeoutId?: number | null;
 }
 
 // Helper function to shuffle array
@@ -25,7 +26,7 @@ const shuffleArray = <T>(array: T[]): T[] => {
 const REVEAL_WORD_SPEED = 200; // 100ms
 const INITIAL_QUESTION_DELAY = 2000; // 2 seconds delay before first word
 const WAIT_AFTER_QUESTION_TIME = 3000; // 3 seconds after question reveal
-const OPTION_SELECTION_TIMEOUT = 5000; // 5 seconds after options reveal
+const OPTION_SELECTION_TIMEOUT = 15000; // 15 seconds after options reveal
 const REVEAL_ANSWER_TIME = 6500; // 6.5 seconds after answer reveal
 const GIVE_POINTS_TIME = 3000; // 3 seconds after points given
 const POINTS_PER_CORRECT_ANSWER = 10; // Points awarded for correct answer
@@ -85,12 +86,42 @@ function afterQuestioningInit(this: ServerState) {
 }
 
 function showingOptionsInit(this: ServerState) {
-    timeout(OPTION_SELECTION_TIMEOUT, () => this.router.toRevealingAnswer());
+    // Clear any existing timeout
+    if (this.showingOptionsTimeoutId) {
+        clearTimeout(this.showingOptionsTimeoutId);
+        this.showingOptionsTimeoutId = null;
+    }
+    
+    // Set default timeout if not all players have answered
+    const timeoutId = timeout(OPTION_SELECTION_TIMEOUT, () => {
+        this.showingOptionsTimeoutId = null;
+        this.router.toRevealingAnswer();
+    });
+    this.showingOptionsTimeoutId = timeoutId as number;
 }
 
 function selectOption(this: ServerState, option: string, playerId: string) {
     const round = this.gameState.rounds[this.gameState.currentRound - 1];
     round.playerAnswers[playerId] = option;
+    
+    // Check if all players have selected an option
+    const totalPlayers = Object.keys(this.gameState.players).length;
+    const playersWhoAnswered = Object.keys(round.playerAnswers).length;
+    
+    if (playersWhoAnswered >= totalPlayers) {
+        // All players have answered - clear existing timeout and set 1 second timeout
+        if (this.showingOptionsTimeoutId) {
+            clearTimeout(this.showingOptionsTimeoutId);
+            this.showingOptionsTimeoutId = null;
+        }
+        
+        // Transition after 1 second
+        const timeoutId = timeout(1000, () => {
+            this.showingOptionsTimeoutId = null;
+            this.router.toRevealingAnswer();
+        });
+        this.showingOptionsTimeoutId = timeoutId as number;
+    }
 }
 
 function revealingAnswerInit(this: ServerState) {

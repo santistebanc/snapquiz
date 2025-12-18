@@ -1,6 +1,8 @@
 import { motion } from "framer-motion";
 import { Button } from "./ui/button";
+import { Avatar, AvatarImage } from "./ui/avatar";
 import { useGameStore } from "../store";
+import { generateAvatarUrl } from "../utils";
 
 interface OptionsDisplayProps {
   isPlayerMode?: boolean;
@@ -38,6 +40,14 @@ export function OptionsDisplay({ isPlayerMode = false }: OptionsDisplayProps) {
   const selectedOption = isPlayerMode && currentRound && connectionId
     ? currentRound.playerAnswers[connectionId]
     : null;
+
+  // Get players who selected each option (screen mode, revealingAnswer phase only)
+  const getPlayersForOption = (option: string) => {
+    if (isPlayerMode || !disabled || gameState.phase !== 'revealingAnswer') return [];
+    return Object.values(gameState.players).filter(player =>
+      currentRound.playerAnswers[player.id] === option
+    );
+  };
 
   const handleOptionSelect = (option: string) => {
     if (!isPlayerMode || isPlayerBanned) return;
@@ -110,6 +120,27 @@ export function OptionsDisplay({ isPlayerMode = false }: OptionsDisplayProps) {
           >
             {option}
           </Button>
+          
+          {/* Show player avatars overlaid on options during revealingAnswer phase (screen mode only) */}
+          {!isPlayerMode && gameState.phase === 'revealingAnswer' && (
+            <div className="absolute top-2 right-2 flex flex-wrap gap-1 justify-end">
+              {getPlayersForOption(option).map((player) => (
+                <motion.div
+                  key={player.id}
+                  initial={{ opacity: 0, scale: 0 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.3 + (getPlayersForOption(option).indexOf(player) * 0.1) }}
+                >
+                  <Avatar className="w-8 h-8 border-2 border-white shadow-lg">
+                    <AvatarImage
+                      src={generateAvatarUrl(player.avatar || 'robot-1')}
+                      alt={player.name}
+                    />
+                  </Avatar>
+                </motion.div>
+              ))}
+            </div>
+          )}
         </motion.div>
       ))}
     </div>
