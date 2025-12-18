@@ -8,6 +8,10 @@ interface RevealAnswerAloneProps {
 export function RevealAnswerAlone({ isPlayerMode = false }: RevealAnswerAloneProps) {
   const { gameState } = useGameStore();
 
+  // Safely access current round
+  if (!gameState.rounds || gameState.currentRound < 1 || gameState.currentRound > gameState.rounds.length) {
+    return null;
+  }
   const currentRound = gameState.rounds[gameState.currentRound - 1];
   if (!currentRound) return null;
 

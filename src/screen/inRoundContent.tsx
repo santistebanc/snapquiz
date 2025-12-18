@@ -148,16 +148,26 @@ export function InRoundContent() {
       {/* Reveal answer alone - shown when all players are banned OR when correct answer is given but doesn't match exactly */}
       <AnimatePresence mode="wait">
         {(() => {
+          // Safely access current round
+          if (!gameState.rounds || gameState.currentRound < 1 || gameState.currentRound > gameState.rounds.length) {
+            return null;
+          }
           const currentRound = gameState.rounds[gameState.currentRound - 1];
+          if (!currentRound) return null;
+          
           const shouldShowRevealAnswer = ['revealAnswerAlone', 'finishingAfterAnswerAlone'].includes(gameState.phase);
           
           // Also show if answer is correct but doesn't match exactly
           const isAfterBuzzEval = gameState.phase === 'afterBuzzEvaluation';
           const isCorrect = currentRound?.evaluationResult === 'correct';
-          const buzzedPlayerId = currentRound?.buzzedPlayerId;
-          const submittedAnswer = buzzedPlayerId ? currentRound?.playerAnswers[buzzedPlayerId] : null;
+          const buzzedPlayerId = currentRound?.buzzedPlayerId ?? null;
+          const submittedAnswer = buzzedPlayerId && currentRound?.playerAnswers ? currentRound.playerAnswers[buzzedPlayerId] : null;
           const currentQuestion = gameState.questions.find(q => q.id === currentRound?.questionId);
-          const isExactMatch = submittedAnswer?.toLowerCase().trim() === currentQuestion?.answer.toLowerCase().trim();
+          
+          // Safely compare answers with proper null checks
+          const isExactMatch = submittedAnswer && currentQuestion?.answer
+            ? submittedAnswer.toLowerCase().trim() === currentQuestion.answer.toLowerCase().trim()
+            : false;
           
           const shouldShowForInexactMatch = isAfterBuzzEval && isCorrect && !isExactMatch && submittedAnswer;
           

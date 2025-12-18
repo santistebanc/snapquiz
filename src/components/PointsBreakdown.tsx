@@ -57,7 +57,10 @@ export function PointsBreakdown({ isPlayerMode = false }: PointsBreakdownProps) 
   const [animatedPoints, setAnimatedPoints] = useState<Record<string, number>>({});
   const [playersData, setPlayersData] = useState<PlayerWithPoints[]>([]);
 
-  const currentRound = gameState.rounds[gameState.currentRound - 1];
+  // Safely access current round
+  const currentRound = gameState.rounds && gameState.currentRound >= 1 && gameState.currentRound <= gameState.rounds.length
+    ? gameState.rounds[gameState.currentRound - 1]
+    : null;
 
   useEffect(() => {
     if (!currentRound) return;
@@ -113,6 +116,8 @@ export function PointsBreakdown({ isPlayerMode = false }: PointsBreakdownProps) 
 
     return () => clearTimeout(timer);
   }, [gameState.phase, currentRound, gameState.players]);
+
+  if (!currentRound) return null;
 
   return (
     <motion.div

@@ -7,7 +7,7 @@ import { useParticles } from "./hooks/useParticles";
 import { AudioProvider } from "./contexts/AudioContext";
 import { MicrophoneProvider } from "./contexts/MicrophoneContext";
 import { AudioPreloader } from "./components/AudioPreloader";
-import { SoundPreloader } from "./components/SoundPreloader";
+// import { SoundPreloader } from "./components/SoundPreloader"; // Temporarily disabled for debugging
 import ScreenLobby from "./screen/lobby";
 import ScreenInRound from "./screen/inRound";
 import ScreenSettings from "./screen/settings";
@@ -48,10 +48,10 @@ function App() {
 
   // Wrap the entire app with AudioProvider and MicrophoneProvider
   return (
-    <AudioProvider questions={gameState.questions}>
+      <AudioProvider questions={gameState.questions}>
       <MicrophoneProvider>
         <AudioPreloader isPlayerMode={isPlayer} />
-        <SoundPreloader isPlayerMode={isPlayer} />
+        {/* <SoundPreloader isPlayerMode={isPlayer} /> */}
       {(() => {
         // Determine what to render based on view state
         if (isPlayer) {

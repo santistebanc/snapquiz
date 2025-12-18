@@ -4,7 +4,6 @@ import { Button } from "./ui/button";
 import { ContextVoiceInput } from "./ContextVoiceInput";
 import { useMicrophone } from "../contexts/MicrophoneContext";
 import { useGameStore } from "../store";
-import { Howl } from "howler";
 // Timer constants removed - no longer using countdown timer
 
 interface AnswerInputProps {
@@ -29,9 +28,15 @@ export function AnswerInput({ isPlayerMode = false }: AnswerInputProps) {
   const resetRef = useRef(false);
   const answerRef = useRef("");
 
+  // Safely access current round
+  if (!gameState.rounds || gameState.currentRound < 1 || gameState.currentRound > gameState.rounds.length) {
+    return null;
+  }
   const currentRound = gameState.rounds[gameState.currentRound - 1];
-  const buzzedPlayerId = currentRound?.buzzedPlayerId;
-  const buzzedPlayer = buzzedPlayerId ? gameState.players[buzzedPlayerId] : null;
+  if (!currentRound) return null;
+  
+  const buzzedPlayerId = currentRound.buzzedPlayerId ?? null;
+  const buzzedPlayer = buzzedPlayerId ? gameState.players?.[buzzedPlayerId] : null;
   
   const handleSubmit = useCallback(() => {
     console.log('AnswerInput handleSubmit called with answer:', answerRef.current);
@@ -128,14 +133,7 @@ export function AnswerInput({ isPlayerMode = false }: AnswerInputProps) {
       answerRef.current = ""; // Also reset the ref
       resetRef.current = true;
       
-      // Play buzzer sound when someone becomes the buzzed player (only on their device)
-      if (isPlayerMode && buzzedPlayerId === connectionId) {
-        const buzzerSound = new Howl({
-          src: ['/sounds/buzzer.mp3'],
-          volume: 0.7
-        });
-        buzzerSound.play();
-      }
+      // Sound effects temporarily removed for debugging
     } else if (gameState.phase !== 'buzzing') {
       console.log('Phase changed away from buzzing, resetting flag');
       resetRef.current = false;

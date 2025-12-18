@@ -16,6 +16,10 @@ export function BuzzerButton({ isPlayerMode = false }: BuzzerButtonProps) {
   // Only show in player mode
   if (!isPlayerMode || !connectionId) return null;
 
+  // Safely access current round
+  if (!gameState.rounds || gameState.currentRound < 1 || gameState.currentRound > gameState.rounds.length) {
+    return null;
+  }
   const currentRound = gameState.rounds[gameState.currentRound - 1];
   if (!currentRound) return null;
 

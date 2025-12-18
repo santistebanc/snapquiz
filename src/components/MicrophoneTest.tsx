@@ -34,12 +34,8 @@ export function MicrophoneTest({ isPlayerMode = false }: MicrophoneTestProps) {
   };
 
   const handleTestSpeaker = () => {
-    // Play buzzer sound for testing
-    const buzzerSound = new Howl({
-      src: ['/sounds/buzzer.mp3'],
-      volume: 0.7
-    });
-    buzzerSound.play();
+    // Sound effects temporarily removed for debugging
+    console.log('Speaker test (sound disabled)');
   };
 
 

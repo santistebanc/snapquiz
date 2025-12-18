@@ -1,8 +1,6 @@
 import { motion } from "framer-motion";
 import { useGameStore } from "../store";
 import { Check, X } from "lucide-react";
-import { useEffect, useRef } from "react";
-import { Howl } from "howler";
 
 interface EvaluationDisplayProps {
   isPlayerMode?: boolean;
@@ -10,9 +8,13 @@ interface EvaluationDisplayProps {
 
 export function EvaluationDisplay({ isPlayerMode = false }: EvaluationDisplayProps) {
   const { gameState, connectionId } = useGameStore();
-  const hasPlayedSound = useRef(false);
 
+  // Safely access current round
+  if (!gameState.rounds || gameState.currentRound < 1 || gameState.currentRound > gameState.rounds.length) {
+    return null;
+  }
   const currentRound = gameState.rounds[gameState.currentRound - 1];
+  if (!currentRound) return null;
   
   // Show during buzz-related phases
   const buzzPhases = [
@@ -25,23 +27,32 @@ export function EvaluationDisplay({ isPlayerMode = false }: EvaluationDisplayPro
   ];
   
   // Also show during certain phases if this player has already answered but is not the current buzzer
-  const playerHasAnswered = isPlayerMode && currentRound?.playerAnswers[connectionId];
+  const playerHasAnswered = isPlayerMode && currentRound?.playerAnswers?.[connectionId];
   const isNotCurrentBuzzer = currentRound?.buzzedPlayerId !== connectionId;
   const showInQuestioningPhase = playerHasAnswered && isNotCurrentBuzzer && 
     ['questioning', 'afterQuestioning', 'showingOptions', 'buzzing', 'evaluatingAnswer', 'afterBuzzEvaluation'].includes(gameState.phase);
   
   if (!buzzPhases.includes(gameState.phase) && !showInQuestioningPhase) return null;
-  if (!currentRound) return null;
 
-  const { evaluationResult, buzzedPlayerId } = currentRound;
+  // Safely extract values - they might be null after a wrong answer resets the state
+  const evaluationResult = currentRound.evaluationResult ?? null;
+  const buzzedPlayerId = currentRound.buzzedPlayerId ?? null;
   
   // If player is viewing their own wrong answer during questioning, use their connectionId
-  const displayPlayerId = showInQuestioningPhase ? connectionId : buzzedPlayerId;
-  const player = displayPlayerId ? gameState.players[displayPlayerId] : null;
-  const submittedAnswer = displayPlayerId ? currentRound.playerAnswers[displayPlayerId] : null;
+  // Only use buzzedPlayerId if it's not null and we're not in questioning phase
+  const displayPlayerId = showInQuestioningPhase ? connectionId : (buzzedPlayerId || null);
+  
+  // If we don't have a valid displayPlayerId and we're not in questioning phase, don't render
+  // This prevents crashes when buzzedPlayerId is null during state transitions
+  if (!displayPlayerId && !showInQuestioningPhase) return null;
+  
+  // Only access player and answer if we have a valid displayPlayerId
+  const player = displayPlayerId ? gameState.players?.[displayPlayerId] : null;
+  const submittedAnswer = displayPlayerId && currentRound.playerAnswers ? currentRound.playerAnswers[displayPlayerId] : null;
   
   // When showing in questioning phase, the answer was wrong (otherwise they wouldn't be there)
-  const displayEvaluationResult = showInQuestioningPhase ? 'wrong' : evaluationResult;
+  // Only show evaluation result if we have a valid result or we're in questioning phase
+  const displayEvaluationResult = showInQuestioningPhase ? 'wrong' : (evaluationResult || null);
   
   // During evaluatingAnswer: show only answer text (and player name for screen)
   // In all other phases: show the evaluation result (checkmark/X)
@@ -54,33 +65,7 @@ export function EvaluationDisplay({ isPlayerMode = false }: EvaluationDisplayPro
     !isPlayerMode || (isPlayerMode && displayPlayerId !== connectionId)
   );
 
-  // Play sound effects when evaluation result is shown (only in screen mode)
-  useEffect(() => {
-    if (!isPlayerMode && showEvaluationResult && displayEvaluationResult && !hasPlayedSound.current) {
-      hasPlayedSound.current = true;
-      
-      if (displayEvaluationResult === 'correct') {
-        // Play correct sound
-        const correctSound = new Howl({
-          src: ['/sounds/correct.mp3'],
-          volume: 0.5
-        });
-        correctSound.play();
-      } else {
-        // Play wrong sound
-        const wrongSound = new Howl({
-          src: ['/sounds/wrong.mp3'],
-          volume: 0.5
-        });
-        wrongSound.play();
-      }
-    }
-    
-    // Reset sound flag when phase changes
-    if (!buzzPhases.includes(gameState.phase)) {
-      hasPlayedSound.current = false;
-    }
-  }, [showEvaluationResult, displayEvaluationResult, gameState.phase, buzzPhases]);
+  // Sound effects temporarily removed for debugging
 
   return (
     <motion.div
@@ -99,7 +84,7 @@ export function EvaluationDisplay({ isPlayerMode = false }: EvaluationDisplayPro
         }`}
       >
         <div className="font-bold text-warm-cream">
-          {showPlayerName && (
+          {showPlayerName && player && (
             <>
               <span className="text-warm-yellow">{player.name}</span>
               <span className="text-warm-cream/80">: </span>
@@ -109,7 +94,7 @@ export function EvaluationDisplay({ isPlayerMode = false }: EvaluationDisplayPro
         </div>
       </motion.div>
 
-      {showEvaluationResult && displayEvaluationResult && (
+      {showEvaluationResult && displayEvaluationResult && displayEvaluationResult !== null && (
         <motion.div
           initial={{ opacity: 0, scale: 0.5 }}
           animate={{ opacity: 1, scale: 1 }}
