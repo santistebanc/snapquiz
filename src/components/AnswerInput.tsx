@@ -27,6 +27,8 @@ export function AnswerInput({ isPlayerMode = false }: AnswerInputProps) {
   const [showSavedMessage, setShowSavedMessage] = useState(false);
   const resetRef = useRef(false);
   const answerRef = useRef("");
+  const [hasStoppedListening, setHasStoppedListening] = useState(false);
+  const [finalTranscript, setFinalTranscript] = useState("");
 
   // Safely access current round
   if (!gameState.rounds || gameState.currentRound < 1 || gameState.currentRound > gameState.rounds.length) {
@@ -46,30 +48,29 @@ export function AnswerInput({ isPlayerMode = false }: AnswerInputProps) {
     if (microphone.isListening) {
       console.log('Stopping voice recording immediately on submit');
       microphone.stopListening();
+      // Capture final transcript if we were listening
+      const currentTranscript = microphone.transcript || answer || answerRef.current;
+      setFinalTranscript(currentTranscript);
+      answerRef.current = currentTranscript;
+      setAnswer(currentTranscript);
     }
     
     if (useVoice) {
       // Voice mode: submit audio transcription
-      if (microphone.transcript || answer) {
-        // Use current transcript if available
-        const currentTranscript = microphone.transcript || answer || answerRef.current;
-        console.log('Submitting current transcript:', currentTranscript);
-        console.log('Available transcripts - microphone.transcript:', microphone.transcript, 'answer:', answer, 'answerRef.current:', answerRef.current);
-        serverAction("submitAnswer", currentTranscript, connectionId);
+      // Prefer finalTranscript (shown to user), then current transcript, then answerRef
+      const transcriptToSubmit = finalTranscript || microphone.transcript || answer || answerRef.current;
+      if (transcriptToSubmit) {
+        console.log('Submitting transcript:', transcriptToSubmit);
+        serverAction("submitAnswer", transcriptToSubmit, connectionId);
       } else {
-        // Set up callback to submit when transcript is ready (if no current transcript)
-        microphone.setSubmitCallback((transcript: string) => {
-          console.log('Submitting with transcript from callback:', transcript);
-          answerRef.current = transcript;
-          serverAction("submitAnswer", transcript, connectionId);
-        });
+        console.warn('No transcript available to submit');
       }
     } else {
       // Type mode: submit typed text (ignore any audio)
       console.log('Submitting typed text:', answerRef.current);
       serverAction("submitAnswer", answerRef.current, connectionId);
     }
-  }, [serverAction, connectionId, microphone, useVoice, answer]);
+  }, [serverAction, connectionId, microphone, useVoice, answer, finalTranscript]);
 
   const lastTranscriptRef = useRef<string>('');
   
@@ -85,21 +86,78 @@ export function AnswerInput({ isPlayerMode = false }: AnswerInputProps) {
     setAnswer(transcript);
     answerRef.current = transcript; // Update ref with latest value
     console.log('Answer state set to:', transcript);
-  }, [answer]);
+    
+    // Update final transcript if we've stopped listening
+    if (hasStoppedListening) {
+      setFinalTranscript(transcript);
+    }
+  }, [answer, hasStoppedListening]);
+  
+  const handleStartListening = async () => {
+    try {
+      // Clear previous transcript and state when starting fresh
+      setHasStoppedListening(false);
+      setFinalTranscript("");
+      setAnswer("");
+      answerRef.current = "";
+      lastTranscriptRef.current = "";
+      microphone.clearTranscript(); // Clear the microphone transcript too
+      await microphone.startListening();
+    } catch (error) {
+      console.error('Failed to start listening:', error);
+    }
+  };
+  
+  const handleStopListening = () => {
+    microphone.stopListening();
+    setHasStoppedListening(true);
+    
+    // Immediately capture any existing transcript (from partial updates during listening)
+    const currentTranscript = microphone.transcript?.trim() || '';
+    if (currentTranscript) {
+      setFinalTranscript(currentTranscript);
+      answerRef.current = currentTranscript;
+      setAnswer(currentTranscript);
+    }
+    // Note: Final transcript may also arrive asynchronously after audio processing
+    // The useEffect below will update it if a new/final transcript arrives
+  };
+  
+  // Update transcript from microphone context when listening
+  useEffect(() => {
+    if (microphone.isListening && microphone.transcript) {
+      // Prevent duplicate transcript updates
+      if (microphone.transcript === lastTranscriptRef.current) {
+        return;
+      }
+      lastTranscriptRef.current = microphone.transcript;
+      
+      // Update answer textbox with live transcript while listening
+      setAnswer(microphone.transcript);
+      answerRef.current = microphone.transcript;
+    }
+  }, [microphone.transcript, microphone.isListening]);
+  
+  // Capture final transcript after stopping (transcript arrives async after audio processing)
+  useEffect(() => {
+    if (hasStoppedListening && !microphone.isListening && microphone.transcript) {
+      // Transcript has arrived after stopping (or was already available)
+      const currentTranscript = microphone.transcript.trim();
+      if (currentTranscript) {
+        setFinalTranscript(currentTranscript);
+        // Update answer textbox with final transcript
+        answerRef.current = currentTranscript;
+        setAnswer(currentTranscript);
+        lastTranscriptRef.current = currentTranscript;
+      }
+    }
+  }, [hasStoppedListening, microphone.transcript, microphone.isListening]);
 
   // Save voice preference to localStorage when it changes
   const handleVoiceToggle = (newUseVoice: boolean) => {
     setUseVoice(newUseVoice);
     
-    if (newUseVoice) {
-      // Switching to voice mode - start listening (but only if we're in buzzing phase)
-      if (gameState.phase === 'buzzing') {
-        console.log('Switching to voice mode - starting voice recording');
-        microphone.startListening().catch(error => {
-          console.error('Failed to start listening:', error);
-        });
-      }
-    } else {
+    if (!newUseVoice) {
       // Switching to type mode - stop listening and clear any pending requests
       if (microphone.isListening) {
         console.log('Switching to type mode - stopping voice recording');
@@ -107,6 +165,13 @@ export function AnswerInput({ isPlayerMode = false }: AnswerInputProps) {
         // Clear any pending submit callback
         microphone.setSubmitCallback(() => {});
       }
+      // Reset voice-related state
+      setHasStoppedListening(false);
+      setFinalTranscript("");
+    } else {
+      // Switching to voice mode - reset state but don't auto-start
+      setHasStoppedListening(false);
+      setFinalTranscript("");
     }
     
     if (typeof window !== 'undefined') {
@@ -131,12 +196,16 @@ export function AnswerInput({ isPlayerMode = false }: AnswerInputProps) {
       console.log('Resetting answer for new buzzing session');
       setAnswer("");
       answerRef.current = ""; // Also reset the ref
+      setHasStoppedListening(false);
+      setFinalTranscript("");
       resetRef.current = true;
       
       // Sound effects temporarily removed for debugging
     } else if (gameState.phase !== 'buzzing') {
       console.log('Phase changed away from buzzing, resetting flag');
       resetRef.current = false;
+      setHasStoppedListening(false);
+      setFinalTranscript("");
       
       // Stop listening when phase changes away from buzzing
       if (microphone.isListening) {
@@ -188,69 +257,90 @@ export function AnswerInput({ isPlayerMode = false }: AnswerInputProps) {
       </div>
 
       <div className="space-y-4">
-        {/* Input method toggle */}
-        <div className="flex flex-col items-center gap-2">
-          <div className="flex gap-2 justify-center">
-            <Button
-              onClick={() => handleVoiceToggle(false)}
-              variant={!useVoice ? "default" : "outline"}
-              size="sm"
-              className={!useVoice 
-                ? "bg-slate-600 hover:bg-slate-700 text-white" 
-                : "border-warm-cream/30 text-warm-cream hover:bg-warm-cream/10 bg-transparent"
-              }
-            >
-              Type
-            </Button>
-            <Button
-              onClick={() => handleVoiceToggle(true)}
-              variant={useVoice ? "default" : "outline"}
-              size="sm"
-              className={useVoice 
-                ? "bg-slate-600 hover:bg-slate-700 text-white" 
-                : "border-warm-cream/30 text-warm-cream hover:bg-warm-cream/10 bg-transparent"
-              }
-            >
-              🎤 Voice
-            </Button>
-          </div>
+        {/* Voice input with manual start/stop controls */}
+        <div className="space-y-4">
+            {/* Start/Stop Listening buttons */}
+            {!microphone.isListening && (
+              <Button
+                onClick={handleStartListening}
+                className="w-full py-6 text-2xl font-bold bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                🎤 Start Listening
+              </Button>
+            )}
+            
+            {microphone.isListening && (
+              <Button
+                onClick={handleStopListening}
+                className="w-full py-6 text-2xl font-bold bg-red-600 hover:bg-red-700 text-white"
+              >
+                ⏹️ Stop Listening
+              </Button>
+            )}
+            
+            {/* Listening indicator */}
+            {microphone.isListening && (
+              <div className="flex items-center justify-center gap-2 text-lg text-warm-yellow">
+                <div className="w-3 h-3 bg-warm-yellow rounded-full animate-pulse"></div>
+                <span>Listening...</span>
+              </div>
+            )}
+            
+            {/* Show processing message while waiting for transcript */}
+            {hasStoppedListening && !finalTranscript && !microphone.transcript && !microphone.error && (
+              <div className="bg-card-dark/60 p-4 rounded-lg border-2 border-warm-yellow/30">
+                <div className="flex items-center justify-center gap-2 text-warm-yellow">
+                  <div className="w-4 h-4 border-2 border-warm-yellow border-t-transparent rounded-full animate-spin"></div>
+                  <p className="text-lg">Processing your answer...</p>
+                </div>
+              </div>
+            )}
+            
+            {/* Error display */}
+            {microphone.error && (
+              <div className="text-red-400 text-sm bg-red-900/20 border border-red-800/30 p-2 rounded-lg">
+                {microphone.error}
+              </div>
+            )}
         </div>
 
-        {/* Text input */}
-        {!useVoice && (
+        {/* Answer textbox - always visible */}
+        <div className="space-y-2">
+          {hasStoppedListening && (finalTranscript || microphone.transcript) && (
+            <p className="text-sm text-warm-cream/80">Your answer:</p>
+          )}
           <input
             type="text"
-            value={answer}
+            value={hasStoppedListening && (finalTranscript || microphone.transcript) 
+              ? (finalTranscript || microphone.transcript || answer)
+              : answer}
             onChange={(e) => {
-              setAnswer(e.target.value);
-              answerRef.current = e.target.value; // Also update ref
+              const newValue = e.target.value;
+              setAnswer(newValue);
+              answerRef.current = newValue;
+              // If we have a final transcript, update it too
+              if (hasStoppedListening && finalTranscript) {
+                setFinalTranscript(newValue);
+              }
             }}
             onKeyPress={handleKeyPress}
-            placeholder="Type your answer..."
-            autoFocus
+            placeholder={hasStoppedListening && (finalTranscript || microphone.transcript)
+              ? "Edit your answer..."
+              : "Type your answer..."}
+            autoFocus={!hasStoppedListening}
             className="w-full px-6 py-4 text-2xl text-center bg-card-dark/60 border-2 border-border-muted/30 rounded-lg text-warm-cream placeholder-warm-cream/40 focus:outline-none focus:border-warm-yellow transition-colors"
           />
-        )}
-
-        {/* Voice input */}
-        {useVoice && (
-          <ContextVoiceInput
-            onTranscript={handleVoiceTranscript}
-            isActive={gameState.phase === 'buzzing'}
-            disabled={false}
-            onSubmit={handleSubmit}
-            showStatus={true}
-            showTranscript={true}
-          />
-        )}
+        </div>
         
-        {/* Submit button - show for both voice and text input */}
-        <Button
-          onClick={handleSubmit}
-          className="w-full py-6 text-2xl font-bold bg-teal-600 hover:bg-teal-700 text-white"
-        >
-          Submit Answer
-        </Button>
+        {/* Submit button - show when we have an answer (either from voice or text) */}
+        {answer ? (
+          <Button
+            onClick={handleSubmit}
+            className="w-full py-6 text-2xl font-bold bg-teal-600 hover:bg-teal-700 text-white"
+          >
+            Submit Answer
+          </Button>
+        ) : null}
       </div>
     </motion.div>
   );

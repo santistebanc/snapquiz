@@ -20,6 +20,9 @@ export class OpenAISpeechRecognition {
   private onStart?: () => void;
   private onStop?: () => void;
   private stream: MediaStream | null = null;
+  private recordingStartTime: number = 0;
+  private readonly MIN_RECORDING_DURATION_MS = 500; // Minimum 0.5 seconds of recording
+  private readonly MIN_AUDIO_SIZE_BYTES = 2048; // Minimum 2KB of audio data
 
   constructor(options: OpenAISpeechRecognitionOptions) {
     this.language = options.language || 'American';
@@ -64,6 +67,7 @@ export class OpenAISpeechRecognition {
 
       this.audioChunks = [];
       this.isRecording = true;
+      this.recordingStartTime = Date.now(); // Track when recording started
 
       this.mediaRecorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
@@ -92,42 +96,77 @@ export class OpenAISpeechRecognition {
 
   private async processAudio(): Promise<void> {
     if (this.audioChunks.length === 0) {
-      console.log('No audio chunks to process');
+      console.log('No audio chunks to process - skipping transcription');
+      this.cleanup();
       return;
     }
 
     try {
+      // Calculate recording duration
+      const recordingDuration = Date.now() - this.recordingStartTime;
+      
+      // Check if recording was too short (likely no speech)
+      if (recordingDuration < this.MIN_RECORDING_DURATION_MS) {
+        console.log(`Recording too short (${recordingDuration}ms < ${this.MIN_RECORDING_DURATION_MS}ms) - skipping transcription`);
+        this.cleanup();
+        return;
+      }
+
       // Create audio blob
       const audioBlob = new Blob(this.audioChunks, { type: 'audio/webm' });
       
-      // Check if blob has minimum size (at least 1KB to avoid empty audio)
-      if (audioBlob.size < 1024) {
-        console.log('Audio blob too small, skipping transcription:', audioBlob.size, 'bytes');
+      // Check if blob has minimum size (at least 2KB to avoid empty/silent audio)
+      if (audioBlob.size < this.MIN_AUDIO_SIZE_BYTES) {
+        console.log(`Audio blob too small (${audioBlob.size} bytes < ${this.MIN_AUDIO_SIZE_BYTES} bytes) - skipping transcription`);
+        this.cleanup();
         return;
       }
+      
+      console.log(`Processing audio: ${audioBlob.size} bytes, ${recordingDuration}ms duration`);
       
       // Send to OpenAI API via server endpoint
       const transcript = await this.sendToOpenAI(audioBlob);
       
-      if (transcript && transcript.trim()) {
-        this.onTranscript?.(transcript);
+      // Only use transcript if it's not empty and seems valid
+      if (transcript && transcript.trim() && transcript.trim().length > 0) {
+        // Additional validation: reject very short transcripts that might be noise
+        const trimmedTranscript = transcript.trim();
+        if (trimmedTranscript.length >= 2) { // At least 2 characters
+          this.onTranscript?.(trimmedTranscript);
+        } else {
+          console.log('Transcript too short, likely noise - ignoring:', trimmedTranscript);
+        }
+      } else {
+        console.log('Empty or invalid transcript received - ignoring');
       }
     } catch (error) {
       console.error('Error processing audio:', error);
       // Don't show error for empty audio - it's expected when recording stops quickly
       const errorMessage = error instanceof Error ? error.message : String(error);
-      if (!errorMessage.includes('400') && !errorMessage.includes('Bad Request')) {
+      // Check if error is about no transcript generated - treat as empty string, don't show error
+      if (errorMessage.includes('No transcript generated') || errorMessage.includes('AI_NoTranscriptGeneratedError')) {
+        console.log('No transcript generated (empty/silent audio) - treating as empty string');
+        // Don't call onError, just return silently
+        this.cleanup();
+        return;
+      }
+      if (!errorMessage.includes('400') && !errorMessage.includes('Bad Request') && !errorMessage.includes('too small')) {
         this.onError?.(`Failed to process audio: ${error}`);
       }
     } finally {
-      // Clear audio chunks after processing
-      this.audioChunks = [];
-      
-      // Stop all tracks
-      if (this.stream) {
-        this.stream.getTracks().forEach(track => track.stop());
-        this.stream = null;
-      }
+      this.cleanup();
+    }
+  }
+  
+  private cleanup(): void {
+    // Clear audio chunks after processing
+    this.audioChunks = [];
+    this.recordingStartTime = 0;
+    
+    // Stop all tracks
+    if (this.stream) {
+      this.stream.getTracks().forEach(track => track.stop());
+      this.stream = null;
     }
   }
 
@@ -163,8 +202,9 @@ export class OpenAISpeechRecognition {
       
       
       // Add question context as prompt if available
+      // Note: We only provide context, not instructions to generate answers
       if (questionContext) {
-        const prompt = `This is an answer to a quiz question. The question is: "${questionContext.question}". The possible answer options are: ${questionContext.options.join(', ')}.`;
+        const prompt = `This audio contains an answer to a quiz question. The question is: "${questionContext.question}". So expect an answer in the same language as the question. Only transcribe what is actually spoken in the audio. If the audio is silent or contains no speech, return an empty string.`;
         formData.append('prompt', prompt);
       }
 
@@ -178,6 +218,11 @@ export class OpenAISpeechRecognition {
         // Don't throw error for 400 (bad request) - likely empty or invalid audio
         if (response.status === 400) {
           console.log('Audio transcription rejected (likely empty/invalid audio):', errorText);
+          return ''; // Return empty string instead of throwing
+        }
+        // Check if error is about no transcript generated - treat as empty string
+        if (errorText.includes('No transcript generated') || errorText.includes('AI_NoTranscriptGeneratedError')) {
+          console.log('No transcript generated (empty/silent audio) - returning empty string');
           return ''; // Return empty string instead of throwing
         }
         throw new Error(`OpenAI transcription error: ${response.status} ${response.statusText} - ${errorText}`);

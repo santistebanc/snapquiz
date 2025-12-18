@@ -1,4 +1,5 @@
 import React from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useGameStore } from "../store";
 import { CategoryDisplay } from "../components/CategoryDisplay";
@@ -11,7 +12,13 @@ import { RevealAnswerAlone } from "../components/RevealAnswerAlone";
 import { PointsBreakdown } from "../components/PointsBreakdown";
 
 export function InRoundContent() {
-  const { gameState } = useGameStore();
+  const { gameState, connectionId } = useGameStore();
+  
+  // Check if current player is banned (answered incorrectly)
+  const currentRound = gameState.rounds && gameState.currentRound > 0 && gameState.currentRound <= gameState.rounds.length
+    ? gameState.rounds[gameState.currentRound - 1]
+    : null;
+  const isPlayerBanned = currentRound && connectionId && (currentRound.pointsAwarded[connectionId] || 0) < 0;
 
   // Animation variants
   const containerVariants = {
@@ -43,21 +50,66 @@ export function InRoundContent() {
     }
   };
 
+  // Phases where the overlay message SHOULD be shown
+  const allowedPhases = [
+    'preQuestioning',
+    'questioning',
+    'afterQuestioning',
+    'showingOptions',
+    'revealingAnswer'
+  ];
+  const shouldShowOverlay = isPlayerBanned && allowedPhases.includes(gameState.phase);
+
   return (
-    <motion.div
-      key={gameState.currentRound}
-      className="space-y-8"
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-      layout
-      transition={{
-        layout: {
-          duration: 0.5,
-          ease: "easeInOut"
-        }
-      }}
-    >
+    <>
+      {/* Overlay message for banned players - rendered via portal to ensure fixed positioning relative to viewport */}
+      {shouldShowOverlay && typeof document !== 'undefined' && createPortal(
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 20 }}
+          style={{
+            position: 'fixed',
+            bottom: '1rem',
+            left: 0,
+            right: 0,
+            zIndex: 9999,
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'flex-end',
+            paddingLeft: '1rem',
+            paddingRight: '1rem',
+            pointerEvents: 'none'
+          }}
+        >
+          <div 
+            className="bg-red-900/90 border-2 border-red-500 rounded-lg px-6 py-4 shadow-2xl"
+            style={{
+              maxWidth: '42rem',
+              width: '100%'
+            }}
+          >
+            <p className="text-red-200 text-xl font-bold text-center">
+              You answered incorrectly. Only other players can answer now.
+            </p>
+          </div>
+        </motion.div>,
+        document.body
+      )}
+      <motion.div
+        key={gameState.currentRound}
+        className="space-y-8"
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        layout
+        transition={{
+          layout: {
+            duration: 0.5,
+            ease: "easeInOut"
+          }
+        }}
+      >
       <AnimatePresence mode="wait">
         {!['transitioningNextRound', 'givingPoints', 'givingPointsAfterBuzz'].includes(gameState.phase) && (<motion.div
           variants={itemVariants}
@@ -261,6 +313,7 @@ export function InRoundContent() {
         <PointsBreakdown isPlayerMode={true} />
       )}
     </motion.div>
+    </>
   );
 }
 

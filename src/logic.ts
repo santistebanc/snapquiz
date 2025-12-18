@@ -107,7 +107,11 @@ function revealingAnswerInit(this: ServerState) {
         });
     }
 
-    timeout(REVEAL_ANSWER_TIME, () => this.router.toGivingPoints());
+    // Timer removed - transition is now manual via "Give Points" button
+}
+
+function goToGivingPoints(this: ServerState) {
+    this.router.toGivingPoints();
 }
 
 function givingPointsInit(this: ServerState) {
@@ -327,27 +331,50 @@ async function evaluatingAnswerInit(this: ServerState) {
 
 function afterBuzzEvaluationInit(this: ServerState) {
     const round = this.gameState.rounds[this.gameState.currentRound - 1];
-
-    timeout(SHOW_EVALUATION_RESULT_TIME, () => {
-        if (round.evaluationResult === 'correct') {
+    
+    // Only use timer if answer was correct OR all players have answered (will go to revealAnswerAlone or givingPointsAfterBuzz)
+    // If wrong and not all players answered, wait for manual "Continue" button to go back to questioning
+    if (round.evaluationResult === 'correct') {
+        // Correct answer - auto-transition to givingPointsAfterBuzz
+        timeout(SHOW_EVALUATION_RESULT_TIME, () => {
             this.router.toGivingPointsAfterBuzz();
-        } else {
-            // Check if all players have answered
-            const totalPlayers = Object.keys(this.gameState.players).length;
-            const playersWhoAnswered = Object.keys(round.playerAnswers).length;
-
-            if (playersWhoAnswered >= totalPlayers) {
-                // All players have answered, reveal answer alone
+        });
+    } else {
+        // Wrong answer - check if all players have answered
+        const totalPlayers = Object.keys(this.gameState.players).length;
+        const playersWhoAnswered = Object.keys(round.playerAnswers).length;
+        
+        if (playersWhoAnswered >= totalPlayers) {
+            // All players have answered - auto-transition to revealAnswerAlone
+            timeout(SHOW_EVALUATION_RESULT_TIME, () => {
                 this.router.toRevealAnswerAlone();
-            } else {
-                // Some players haven't answered yet, reset buzzer state and go back to questioning
-                round.buzzedPlayerId = null;
-                round.evaluationResult = null;
-                round.revealedWordsIndex = 0; // Reset to re-reveal words
-                this.router.toQuestioning();
-            }
+            });
         }
-    });
+        // If not all players answered, wait for manual "Continue" button (no timer)
+    }
+}
+
+function continueAfterBuzzEvaluation(this: ServerState) {
+    const round = this.gameState.rounds[this.gameState.currentRound - 1];
+    
+    if (round.evaluationResult === 'correct') {
+        this.router.toGivingPointsAfterBuzz();
+    } else {
+        // Check if all players have answered
+        const totalPlayers = Object.keys(this.gameState.players).length;
+        const playersWhoAnswered = Object.keys(round.playerAnswers).length;
+
+        if (playersWhoAnswered >= totalPlayers) {
+            // All players have answered, reveal answer alone
+            this.router.toRevealAnswerAlone();
+        } else {
+            // Some players haven't answered yet, reset buzzer state and go back to questioning
+            round.buzzedPlayerId = null;
+            round.evaluationResult = null;
+            round.revealedWordsIndex = 0; // Reset to re-reveal words
+            this.router.toQuestioning();
+        }
+    }
 }
 
 function revealAnswerAloneInit(this: ServerState) {
@@ -360,9 +387,11 @@ function revealAnswerAloneInit(this: ServerState) {
         round.revealedWordsIndex = words.length;
     }
 
-    timeout(REVEAL_ANSWER_TIME, () => {
-        this.router.toGivingPointsAfterBuzz();
-    });
+    // Timer removed - transition is now manual via "Give Points" button
+}
+
+function goToGivingPointsAfterBuzz(this: ServerState) {
+    this.router.toGivingPointsAfterBuzz();
 }
 
 function givingPointsAfterBuzzInit(this: ServerState) {
@@ -388,10 +417,10 @@ export const routes = {
     afterQuestioning: { init: afterQuestioningInit, buzzIn, ...common },
     buzzing: { submitAnswer, ...common },
     evaluatingAnswer: { init: evaluatingAnswerInit, ...common },
-    afterBuzzEvaluation: { init: afterBuzzEvaluationInit, ...common },
-    revealAnswerAlone: { init: revealAnswerAloneInit, ...common },
+    afterBuzzEvaluation: { init: afterBuzzEvaluationInit, continueAfterBuzzEvaluation, ...common },
+    revealAnswerAlone: { init: revealAnswerAloneInit, goToGivingPointsAfterBuzz, ...common },
     showingOptions: { init: showingOptionsInit, selectOption, ...common },
-    revealingAnswer: { init: revealingAnswerInit, ...common },
+    revealingAnswer: { init: revealingAnswerInit, goToGivingPoints, ...common },
     givingPoints: { init: givingPointsInit, ...common },
     givingPointsAfterBuzz: { init: givingPointsAfterBuzzInit, ...common },
     finishingRound: { ...common },

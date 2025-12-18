@@ -35,24 +35,15 @@ export function BuzzerButton({ isPlayerMode = false }: BuzzerButtonProps) {
   if (!['questioning', 'afterQuestioning'].includes(gameState.phase)) return null;
 
   const handleBuzz = async () => {
+    // Play buzzer sound effect
+    const buzzerSound = new Howl({
+      src: ['/sounds/buzzer.mp3'],
+      volume: 1.0,
+    });
+    buzzerSound.play();
+    
     serverAction("buzzIn", connectionId);
-    
-    // Check if user prefers voice input
-    const useVoice = typeof window !== 'undefined' 
-      ? JSON.parse(localStorage.getItem('snapquiz-voice-preference') || 'true')
-      : true;
-    
-    // Start listening if in voice mode (after a brief delay to allow phase change)
-    if (useVoice) {
-      setTimeout(async () => {
-        try {
-          console.log('Starting voice recording after buzz');
-          await microphone.startListening();
-        } catch (error) {
-          console.error('Failed to start listening after buzz:', error);
-        }
-      }, 100); // Small delay to allow phase to update
-    }
+    // No longer auto-starting listening - user will start it manually in AnswerInput
   };
 
   return (

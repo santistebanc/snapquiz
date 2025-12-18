@@ -104,7 +104,8 @@ export default class Server implements Party.Server, ServerState {
         const audioFile = audioFileEntry as File;
         
         // Check if file is too small (likely empty or invalid)
-        if (audioFile.size < 1024) {
+        // Require at least 2KB to prevent processing empty/silent audio
+        if (audioFile.size < 2048) {
           return new Response(JSON.stringify({ error: "Audio file too small or empty" }), { status: 400, headers: { "Content-Type": "application/json" } });
         }
         
@@ -137,9 +138,17 @@ export default class Server implements Party.Server, ServerState {
           providerOptions: providerOptions,
         });
 
-        return new Response(JSON.stringify({ text: result.text }), { status: 200, headers: { "Content-Type": "application/json" } });
+        return new Response(JSON.stringify({ text: result.text || '' }), { status: 200, headers: { "Content-Type": "application/json" } });
       } catch (err) {
         console.error("Error transcribing audio:", err);
+        
+        // Check if error is "No transcript generated" - this is expected for empty/silent audio
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        if (errorMessage.includes('No transcript generated') || errorMessage.includes('AI_NoTranscriptGeneratedError')) {
+          console.log('No transcript generated (empty/silent audio) - returning empty string');
+          return new Response(JSON.stringify({ text: '' }), { status: 200, headers: { "Content-Type": "application/json" } });
+        }
+        
         return new Response(JSON.stringify({ error: `Failed to transcribe audio: ${err}` }), { status: 500, headers: { "Content-Type": "application/json" } });
       }
     }
