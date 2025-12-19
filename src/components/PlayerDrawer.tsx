@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { Button } from "./ui/button";
 import { Avatar, AvatarImage } from "./ui/avatar";
 import { Badge } from "./ui/badge";
+import { Input } from "./ui/input";
 import { Menu, RotateCcw, ArrowRight, Settings, Gamepad2, Play, RotateCcw as Restart } from "lucide-react";
 import { generateAvatarUrl } from "../utils";
 import { useGameStore } from "../store";
@@ -35,6 +36,15 @@ interface PlayerDrawerProps {
 export function PlayerDrawer({ players, isPlayerMode = false, open: externalOpen, onOpenChange }: PlayerDrawerProps) {
   const [internalOpen, setInternalOpen] = useState(false);
   const [previousPoints, setPreviousPoints] = useState<Record<string, number>>({});
+  const [editingPlayerId, setEditingPlayerId] = useState<string | null>(null);
+  const [editingPoints, setEditingPoints] = useState<string>("");
+  const editingPointsRef = useRef<string>("");
+  const inputRef = useRef<HTMLInputElement>(null);
+  
+  // Keep ref in sync with state
+  useEffect(() => {
+    editingPointsRef.current = editingPoints;
+  }, [editingPoints]);
   const { gameState, connectionId, serverAction, setView, view } = useGameStore();
   const open = externalOpen !== undefined ? externalOpen : internalOpen;
   const setOpen = onOpenChange || setInternalOpen;
@@ -53,6 +63,66 @@ export function PlayerDrawer({ players, isPlayerMode = false, open: externalOpen
     });
     setPreviousPoints(newPreviousPoints);
   }, [players, previousPoints]);
+
+  // Cancel editing if player is removed or admin status changes
+  useEffect(() => {
+    if (editingPlayerId) {
+      const playerExists = players.some(p => p.id === editingPlayerId);
+      if (!playerExists || !isCurrentPlayerAdmin) {
+        setEditingPlayerId(null);
+        setEditingPoints("");
+      }
+    }
+  }, [players, editingPlayerId, isCurrentPlayerAdmin]);
+
+  // Handle clicking outside to save
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (editingPlayerId && inputRef.current && !inputRef.current.contains(event.target as Node)) {
+        // Use ref to get current value, not closure value
+        const points = parseInt(editingPointsRef.current, 10);
+        if (!isNaN(points) && points >= 0) {
+          serverAction("updatePlayerPoints", editingPlayerId, points);
+        }
+        setEditingPlayerId(null);
+        setEditingPoints("");
+      }
+    };
+
+    if (editingPlayerId) {
+      document.addEventListener("mousedown", handleClickOutside);
+      // Focus and select the input when it first becomes editable
+      setTimeout(() => {
+        inputRef.current?.focus();
+        inputRef.current?.select();
+      }, 0);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [editingPlayerId, serverAction]);
+
+  const handleBadgeClick = (player: Player) => {
+    if (isCurrentPlayerAdmin) {
+      setEditingPlayerId(player.id);
+      setEditingPoints(player.points.toString());
+    }
+  };
+
+  const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, playerId: string) => {
+    if (e.key === "Enter") {
+      const points = parseInt(editingPoints, 10);
+      if (!isNaN(points) && points >= 0) {
+        serverAction("updatePlayerPoints", playerId, points);
+      }
+      setEditingPlayerId(null);
+      setEditingPoints("");
+    } else if (e.key === "Escape") {
+      setEditingPlayerId(null);
+      setEditingPoints("");
+    }
+  };
 
   return (
     <>
@@ -168,20 +238,40 @@ export function PlayerDrawer({ players, isPlayerMode = false, open: externalOpen
                   </p>
                 </div>
               </div>
-              <motion.div
-                key={player.points}
-                initial={{ scale: 1.2, color: "#10b981" }}
-                animate={{ scale: 1, color: "#6b7280" }}
-                transition={{ duration: 0.6, ease: "easeOut" }}
-                className="flex-shrink-0 ml-2"
-              >
-                <Badge className="bg-teal-secondary text-white hover:bg-teal-secondary/80 text-sm font-bold">
-                  <AnimatedCounter 
-                    from={previousPoints[player.id] || 0} 
-                    to={player.points} 
+              {editingPlayerId === player.id ? (
+                <div className="flex-shrink-0 ml-2">
+                  <Input
+                    ref={inputRef}
+                    type="number"
+                    min="0"
+                    value={editingPoints}
+                    onChange={(e) => setEditingPoints(e.target.value)}
+                    onKeyDown={(e) => handleInputKeyDown(e, player.id)}
+                    className="w-20 h-7 text-sm font-bold text-center bg-teal-secondary text-white border-teal-primary focus:border-teal-primary focus:ring-teal-primary"
+                    style={{ padding: "0.25rem 0.5rem" }}
                   />
-                </Badge>
-              </motion.div>
+                </div>
+              ) : (
+                <motion.div
+                  key={player.points}
+                  initial={{ scale: 1.2, color: "#10b981" }}
+                  animate={{ scale: 1, color: "#6b7280" }}
+                  transition={{ duration: 0.6, ease: "easeOut" }}
+                  className="flex-shrink-0 ml-2"
+                >
+                  <Badge 
+                    className={`bg-teal-secondary text-white text-sm font-bold ${
+                      isCurrentPlayerAdmin ? "cursor-pointer hover:bg-teal-secondary/80" : ""
+                    }`}
+                    onClick={() => handleBadgeClick(player)}
+                  >
+                    <AnimatedCounter 
+                      from={previousPoints[player.id] || 0} 
+                      to={player.points} 
+                    />
+                  </Badge>
+                </motion.div>
+              )}
             </div>
           ))}
           {players.length === 0 && (

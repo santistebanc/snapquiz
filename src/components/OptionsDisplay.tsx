@@ -41,9 +41,9 @@ export function OptionsDisplay({ isPlayerMode = false }: OptionsDisplayProps) {
     ? currentRound.playerAnswers[connectionId]
     : null;
 
-  // Get players who selected each option (screen mode, revealingAnswer phase only)
+  // Get players who selected each option (revealingAnswer phase only)
   const getPlayersForOption = (option: string) => {
-    if (isPlayerMode || !disabled || gameState.phase !== 'revealingAnswer') return [];
+    if (!disabled || gameState.phase !== 'revealingAnswer') return [];
     return Object.values(gameState.players).filter(player =>
       currentRound.playerAnswers[player.id] === option
     );
@@ -60,9 +60,9 @@ export function OptionsDisplay({ isPlayerMode = false }: OptionsDisplayProps) {
     if (disabled) {
       // Answer reveal mode
       if (option === correctAnswer) {
-        // Keep the selected color if this was the selected option, otherwise show as correct
+        // If selected and correct, use gold/yellow color; otherwise show as correct green
         return selectedOption === option 
-          ? "bg-selected-blue text-white border-selected-blue" 
+          ? "bg-warm-yellow text-white border-warm-yellow" 
           : "bg-correct-green text-white border-correct-green";
       } else if (selectedOption === option) {
         return "bg-wrong-red text-white border-wrong-red";
@@ -113,7 +113,7 @@ export function OptionsDisplay({ isPlayerMode = false }: OptionsDisplayProps) {
                 : selectedOption === option && !disabled
                 ? { backgroundColor: 'hsl(var(--selected-blue))', borderColor: 'hsl(var(--selected-blue))', color: 'white' }
                 : disabled && option === correctAnswer && selectedOption === option
-                ? { backgroundColor: 'hsl(var(--selected-blue))', borderColor: 'hsl(var(--selected-blue))', color: 'white' }
+                ? { backgroundColor: 'hsl(var(--warm-yellow))', borderColor: 'hsl(var(--warm-yellow))', color: 'white' }
                 : {})
             }}
             disabled={isInteractive ? (disabled || !!isPlayerBanned) : false}
@@ -121,8 +121,8 @@ export function OptionsDisplay({ isPlayerMode = false }: OptionsDisplayProps) {
             {option}
           </Button>
           
-          {/* Show player avatars overlaid on options during revealingAnswer phase (screen mode only) */}
-          {!isPlayerMode && gameState.phase === 'revealingAnswer' && (
+          {/* Show player avatars overlaid on options during revealingAnswer phase */}
+          {gameState.phase === 'revealingAnswer' && (
             <div className="absolute top-2 right-2 flex flex-wrap gap-1 justify-end">
               {getPlayersForOption(option).map((player) => (
                 <motion.div

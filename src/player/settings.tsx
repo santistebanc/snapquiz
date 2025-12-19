@@ -9,7 +9,9 @@ import { Alert, AlertDescription } from "../components/ui/alert";
 import { AlertTriangle, Shuffle, Shield, ShieldOff, User, Volume2, ChevronDown, Plus } from "lucide-react";
 import type { Question } from "../types";
 import { Button } from "../components/ui/button";
-import { Avatar, AvatarFallback } from "../components/ui/avatar";
+import { Avatar, AvatarImage } from "../components/ui/avatar";
+import { generateAvatarUrl } from "../utils";
+import { Input } from "../components/ui/input";
 import { PlayerDrawer } from "../components/PlayerDrawer";
 import { Label } from "../components/ui/label";
 import { Howl } from "howler";
@@ -235,7 +237,7 @@ function VoiceSelect({ value, onChange, ttsProvider, language }: VoiceSelectProp
 }
 
 export default function Settings() {
-  const { gameState, serverAction } = useGameStore();
+  const { gameState, serverAction, connectionId } = useGameStore();
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [optimisticQuestions, setOptimisticQuestions] = useState<Question[]>([]);
@@ -244,6 +246,19 @@ export default function Settings() {
   const [categoryInputValue, setCategoryInputValue] = useState('');
   const [isTestingVoice, setIsTestingVoice] = useState(false);
   const testAudioRef = useRef<Howl | null>(null);
+  const [editingPlayerId, setEditingPlayerId] = useState<string | null>(null);
+  const [editingPoints, setEditingPoints] = useState<string>("");
+  const editingPointsRef = useRef<string>("");
+  const pointsInputRef = useRef<HTMLInputElement>(null);
+  
+  // Check if current player is admin
+  const currentPlayer = connectionId ? gameState.players[connectionId] : null;
+  const isCurrentPlayerAdmin = currentPlayer?.isAdmin || false;
+  
+  // Keep ref in sync with state
+  useEffect(() => {
+    editingPointsRef.current = editingPoints;
+  }, [editingPoints]);
 
   // Sync optimistic questions with server state
   useEffect(() => {
@@ -415,6 +430,55 @@ export default function Settings() {
   
   const playersList = useMemo(() => Object.values(gameState.players), [gameState.players]);
 
+  // Handle clicking outside to save points
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (editingPlayerId && pointsInputRef.current && !pointsInputRef.current.contains(event.target as Node)) {
+        // Use ref to get current value, not closure value
+        const points = parseInt(editingPointsRef.current, 10);
+        if (!isNaN(points) && points >= 0) {
+          serverAction("updatePlayerPoints", editingPlayerId, points);
+        }
+        setEditingPlayerId(null);
+        setEditingPoints("");
+      }
+    };
+
+    if (editingPlayerId) {
+      document.addEventListener("mousedown", handleClickOutside);
+      // Focus and select the input when it first becomes editable
+      setTimeout(() => {
+        pointsInputRef.current?.focus();
+        pointsInputRef.current?.select();
+      }, 0);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [editingPlayerId, serverAction]);
+
+  const handlePointsClick = (playerId: string, currentPoints: number) => {
+    if (isCurrentPlayerAdmin) {
+      setEditingPlayerId(playerId);
+      setEditingPoints(currentPoints.toString());
+    }
+  };
+
+  const handlePointsKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, playerId: string) => {
+    if (e.key === "Enter") {
+      const points = parseInt(editingPoints, 10);
+      if (!isNaN(points) && points >= 0) {
+        serverAction("updatePlayerPoints", playerId, points);
+      }
+      setEditingPlayerId(null);
+      setEditingPoints("");
+    } else if (e.key === "Escape") {
+      setEditingPlayerId(null);
+      setEditingPoints("");
+    }
+  };
+
   // Build category counts from current questions
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -455,17 +519,36 @@ export default function Settings() {
                       >
                         <div className="flex items-center gap-3">
                           <Avatar className="h-10 w-10 border-2 border-warm-yellow">
-                            <AvatarFallback className="bg-warm-orange text-white text-lg font-bold">
-                              {player.avatar}
-                            </AvatarFallback>
+                            <AvatarImage
+                              src={generateAvatarUrl(player.avatar)}
+                              alt={player.name || "Player"}
+                            />
                           </Avatar>
                           <div className="flex flex-col">
                             <Text className="text-warm-cream font-semibold text-lg">
                               {player.name || "Anonymous"}
                             </Text>
-                            <Text className="text-warm-cream/60 text-sm">
-                              {player.points} points
-                            </Text>
+                            {editingPlayerId === player.id ? (
+                              <Input
+                                ref={pointsInputRef}
+                                type="number"
+                                min="0"
+                                value={editingPoints}
+                                onChange={(e) => setEditingPoints(e.target.value)}
+                                onKeyDown={(e) => handlePointsKeyDown(e, player.id)}
+                                className="w-24 h-7 text-sm font-semibold text-center bg-teal-secondary text-white border-teal-primary focus:border-teal-primary focus:ring-teal-primary mt-1"
+                                style={{ padding: "0.25rem 0.5rem" }}
+                              />
+                            ) : (
+                              <Text 
+                                className={`text-warm-cream/60 text-sm mt-1 ${
+                                  isCurrentPlayerAdmin ? "cursor-pointer hover:text-warm-cream/80" : ""
+                                }`}
+                                onClick={() => handlePointsClick(player.id, player.points)}
+                              >
+                                {player.points} points
+                              </Text>
+                            )}
                           </div>
                         </div>
                         <Button

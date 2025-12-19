@@ -265,16 +265,16 @@ export function AnswerInput({ isPlayerMode = false }: AnswerInputProps) {
                 onClick={handleStartListening}
                 className="w-full py-6 text-2xl font-bold bg-blue-600 hover:bg-blue-700 text-white"
               >
-                🎤 Start Listening
+                🎤 Voice Answer
               </Button>
             )}
             
             {microphone.isListening && (
               <Button
                 onClick={handleStopListening}
-                className="w-full py-6 text-2xl font-bold bg-red-600 hover:bg-red-700 text-white"
+                className="w-full py-6 text-2xl font-bold bg-green-600 hover:bg-green-700 text-white"
               >
-                ⏹️ Stop Listening
+                Done
               </Button>
             )}
             

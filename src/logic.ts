@@ -243,6 +243,13 @@ function togglePlayerAdmin(this: ServerState, playerId: string) {
     }
 }
 
+function updatePlayerPoints(this: ServerState, playerId: string, points: number) {
+    const player = this.gameState.players[playerId];
+    if (player) {
+        player.points = Math.max(0, Math.floor(points)); // Ensure points are non-negative integers
+    }
+}
+
 function updateLanguage(this: ServerState, language: string) {
     this.gameState.settings.language = language;
     // Reset voice to first voice of the new language
@@ -439,7 +446,7 @@ function givingPointsAfterBuzzInit(this: ServerState) {
     }
 }
 
-const common = { resetGame, nextRound, updateQuestions, reorderQuestions, removeQuestion, generateQuestions, joinAsPlayer, changeProfile, createOrUpdatePlayer, togglePlayerAdmin, updateLanguage, updateVoice, updateTTSProvider }
+const common = { resetGame, nextRound, updateQuestions, reorderQuestions, removeQuestion, generateQuestions, joinAsPlayer, changeProfile, createOrUpdatePlayer, togglePlayerAdmin, updatePlayerPoints, updateLanguage, updateVoice, updateTTSProvider }
 
 export const routes = {
     lobby: { startGame, ...common },
