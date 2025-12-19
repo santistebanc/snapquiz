@@ -41,36 +41,30 @@ export function AnswerInput({ isPlayerMode = false }: AnswerInputProps) {
   const buzzedPlayer = buzzedPlayerId ? gameState.players?.[buzzedPlayerId] : null;
   
   const handleSubmit = useCallback(() => {
-    console.log('AnswerInput handleSubmit called with answer:', answerRef.current);
+    console.log('AnswerInput handleSubmit called with answer:', answer);
     console.log('Current mode (useVoice):', useVoice);
     
     // Stop listening immediately when submit is clicked
     if (microphone.isListening) {
       console.log('Stopping voice recording immediately on submit');
       microphone.stopListening();
-      // Capture final transcript if we were listening
+      // Capture final transcript if we were listening, but use current textbox value if user edited it
       const currentTranscript = microphone.transcript || answer || answerRef.current;
       setFinalTranscript(currentTranscript);
       answerRef.current = currentTranscript;
       setAnswer(currentTranscript);
     }
     
-    if (useVoice) {
-      // Voice mode: submit audio transcription
-      // Prefer finalTranscript (shown to user), then current transcript, then answerRef
-      const transcriptToSubmit = finalTranscript || microphone.transcript || answer || answerRef.current;
-      if (transcriptToSubmit) {
-        console.log('Submitting transcript:', transcriptToSubmit);
-        serverAction("submitAnswer", transcriptToSubmit, connectionId);
-      } else {
-        console.warn('No transcript available to submit');
-      }
+    // Always submit what's currently in the textbox (answer state)
+    // This ensures the submitted text matches what the user sees and can edit
+    const textToSubmit = answer.trim();
+    if (textToSubmit) {
+      console.log('Submitting answer from textbox:', textToSubmit);
+      serverAction("submitAnswer", textToSubmit, connectionId);
     } else {
-      // Type mode: submit typed text (ignore any audio)
-      console.log('Submitting typed text:', answerRef.current);
-      serverAction("submitAnswer", answerRef.current, connectionId);
+      console.warn('No answer available to submit');
     }
-  }, [serverAction, connectionId, microphone, useVoice, answer, finalTranscript]);
+  }, [serverAction, connectionId, microphone, answer]);
 
   const lastTranscriptRef = useRef<string>('');
   
