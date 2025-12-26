@@ -6,7 +6,7 @@ import { CategoryInput } from "../components/CategoryInput";
 import { QuestionList } from "../components/QuestionList";
 import { useGameStore } from "../store";
 import { Alert, AlertDescription } from "../components/ui/alert";
-import { AlertTriangle, Shuffle, Shield, ShieldOff, User, Volume2, ChevronDown, Plus } from "lucide-react";
+import { AlertTriangle, Shuffle, Shield, ShieldOff, User, Volume2, ChevronDown, Plus, Play } from "lucide-react";
 import type { Question } from "../types";
 import { Button } from "../components/ui/button";
 import { Avatar, AvatarImage } from "../components/ui/avatar";
@@ -236,7 +236,7 @@ function VoiceSelect({ value, onChange, ttsProvider, language }: VoiceSelectProp
 }
 
 export default function Settings() {
-  const { gameState, serverAction, connectionId } = useGameStore();
+  const { gameState, serverAction, connectionId, setView } = useGameStore();
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [optimisticQuestions, setOptimisticQuestions] = useState<Question[]>([]);
@@ -499,6 +499,24 @@ export default function Settings() {
                   Game Settings
                 </Text>
               </div>
+
+              {/* Start Game Button - show in lobby phase */}
+              {gameState.phase === 'lobby' && (
+                <div className="mb-4">
+                  <Button
+                    onClick={() => {
+                      setView('game');
+                      serverAction("startGame");
+                    }}
+                    size="lg"
+                    className="w-full bg-warm-orange hover:bg-warm-orange/90 text-white text-lg font-bold py-6"
+                    disabled={Object.keys(gameState.players).length === 0}
+                  >
+                    <Play className="w-5 h-5 mr-2" />
+                    {Object.keys(gameState.players).length === 0 ? "Waiting for players..." : "Start Game"}
+                  </Button>
+                </div>
+              )}
 
               {/* Player Management Section */}
               {playersList.length > 0 && (
