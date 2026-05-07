@@ -1,4 +1,8 @@
+[![SnapQuiz — quiz question screen](docs/screenshot.png)](https://snapquiz.fun/)
+
 # SnapQuiz - Multiplayer Quiz Game
+
+**Live app:** [snapquiz.fun](https://snapquiz.fun/)
 
 A real-time multiplayer quiz game built with PartyKit, React, and TypeScript.
 
