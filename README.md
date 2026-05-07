@@ -6,6 +6,31 @@
 
 A real-time multiplayer quiz game built with PartyKit, React, and TypeScript.
 
+## How to play
+
+SnapQuiz is a trivia game meant for a group of friends or family **in front of a TV**: one shared big screen shows the game, and **each player uses their own phone** to answer. Players can respond by **speaking into the microphone**, **choosing multiple-choice options** shown on their phone, or **typing** an answer—depending on what the round allows.
+
+### Creating the quiz
+
+An **admin** builds the quiz with **AI**. They enter a **topic**, and the AI generates questions on that topic for the session.
+
+### Joining the game
+
+The TV shows a **QR code**. Players scan it with their phones to join the same room before or as the game starts.
+
+### Each question (round flow)
+
+The game moves **question by question**:
+
+1. **Buzz in early:** If someone thinks they know the answer right away, they press the **buzzer** on their phone. They may then give the answer **on the mic** or **by typing** it. **AI checks** whether the answer is correct.
+2. **Wrong buzz:** If that answer is **wrong**, that player **loses points**, and the question **continues** for everyone else.
+3. **Other paths:** Remaining players can **buzz** again, or wait until **multiple-choice options** appear on the TV and on their phones. Each player selects the option they believe is correct on their device.
+4. **Reveal and scoring:** The **correct answer is revealed**, **points are awarded** to everyone who answered correctly for that question, and the game advances to the **next round**.
+
+### End of the game
+
+After **all questions** have been played, the **winner**—the player with the **highest score**—is announced.
+
 ## Development
 
 ### Environment Variables
