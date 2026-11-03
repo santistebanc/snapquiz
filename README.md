@@ -2,9 +2,19 @@
 
 # SnapQuiz - Multiplayer Quiz Game
 
+<<<<<<< HEAD
 **Live app:** [snapquiz.fun](https://snapquiz.fun/)
 
 A real-time multiplayer quiz game built with PartyKit, React, and TypeScript.
+=======
+![SnapQuiz shared screen showing a multiple-choice question with the correct answer highlighted](docs/screenshot.png)
+
+A real-time multiplayer party quiz built with PartyKit, React, and TypeScript. A shared screen hosts the game while players join from their phones by QR code and answer by tapping or speaking.
+
+- **Questions for any category**: the OpenAI API generates five four-option questions per category on demand, in the chosen language, as structured output validated with Zod.
+- **Spoken answers**: questions are read aloud with text-to-speech (audio cached in Cloudflare R2), spoken answers are transcribed, and free-text answers are judged leniently by a second model call.
+- **Real-time rooms**: avatars, points and admin controls stay in sync over WebSockets through a PartyKit server.
+>>>>>>> 3a960dc (Describe SnapQuiz and show a screenshot in the README)
 
 ## How to play
 
